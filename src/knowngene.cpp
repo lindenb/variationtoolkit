@@ -26,6 +26,15 @@ bool Segment::isSplicing(int32_t position) const
     return isSplicingAcceptor(position) || isSplicingDonor(position);
     }
 
+Intron::Intron()
+    {
+
+    }
+
+Intron::~Intron()
+    {
+
+    }
 
 bool Intron::isSplicingAcceptor(int32_t position) const
     {
