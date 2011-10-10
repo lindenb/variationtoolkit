@@ -35,18 +35,19 @@
 
 using namespace std;
 
-class ExtractInfo
+class ExtractFormat
 	{
 	public:
 		Tokenizer tokenizer;
-		Tokenizer semicolon;
-		int column;
+		Tokenizer colon;
+		int formatcolumn;
+		int callcolumn;
 		string tag;
 		string notFound;
 		
-		ExtractInfo():column(7),notFound("N/A")
+		ExtractFormat():formatcolumn(8),callcolumn(9),notFound("N/A")
 			{
-			semicolon.delim=';';
+			colon.delim=':';
 			}
 		
 		void run(std::istream& in)
@@ -63,33 +64,39 @@ class ExtractInfo
 					continue;
 					}
 				tokenizer.split(line,tokens);
-				if(column>=(int)tokens.size())
-						{
-						cerr << "Column out of range in " << line << endl;
-						continue;
-						}
+				if(formatcolumn>=(int)tokens.size())
+					{
+					cerr << "Column FORMAT out of range in " << line << endl;
+					continue;
+					}
+				if(callcolumn>=(int)tokens.size())
+					{
+					cerr << "Column CALL out of range in " << line << endl;
+					continue;
+					}
+					
 				for(size_t i=0;i< tokens.size();++i)
 					{
 					if(i>0) cout << tokenizer.delim;
 					cout << tokens[i];
 					}
 				string content(notFound);
-				semicolon.split(tokens[column],hash);
+				int tagIndex=-1;
+				colon.split(tokens[formatcolumn],hash);
 				for(size_t i=0;i< hash.size();++i)
 					{
-					string::size_type n=hash[i].find('=');
-					if(n==string::npos)
+					if(hash[i].compare(tag)==0)
 						{
-						if(hash[i].compare(tag)==0)
-							{
-							content.assign("true");
-							break;
-							}
-						}
-					else if(hash[i].substr(0,n).compare(tag)==0)
-						{
-						content.assign(hash[i].substr(n+1));
+						tagIndex=(int)i;
 						break;
+						}
+					}
+				if(tagIndex!=-1)
+					{
+					colon.split(tokens[callcolumn],hash);
+					if(tagIndex<(int)hash.size())
+						{
+						content.assign(hash[tagIndex]);
 						}
 					}
 				cout << tokenizer.delim << content << endl;
@@ -101,7 +108,8 @@ class ExtractInfo
 			cerr << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
 			cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 			cerr << "Options:\n";
-			cerr << "  -c <info-column-infex> ("<<  column << ")" << endl;
+			cerr << "  -f <format-column-infex> ("<<  formatcolumn << ")" << endl;
+			cerr << "  -c <call-column-infex> ("<<  callcolumn << ")" << endl;
 			cerr << "  --delim <column-delimiter> (default:tab)" << endl;
 			cerr << "  -t <tag> (required)" << endl;
 			cerr << "  -N <string> symbol for NOT-FOUND. default:"<< notFound << endl;
@@ -110,7 +118,7 @@ class ExtractInfo
 
 int main(int argc,char** argv)
 	{
-	ExtractInfo app;
+	ExtractFormat app;
 
 
 	int optind=1;
@@ -139,16 +147,27 @@ int main(int argc,char** argv)
 			{
 			app.tag.assign(argv[++optind]);
 			}
-	    else if(strcmp(argv[optind],"-c")==0 && optind+1<argc)
+	    else if(strcmp(argv[optind],"-f")==0 && optind+1<argc)
 			{
 			char* p2;
-			app.column=(int)strtol(argv[++optind],&p2,10);
-			if(*p2!=0 || app.column<1)
+			app.formatcolumn=(int)strtol(argv[++optind],&p2,10);
+			if(*p2!=0 || app.formatcolumn<1)
 			    {
-			    fprintf(stderr,"Bad INFO column:%s\n",argv[optind]);
+			    fprintf(stderr,"Bad FORMAT column:%s\n",argv[optind]);
 			    return EXIT_FAILURE;
 			    }
-			app.column--;/* to 0-based */
+			app.formatcolumn--;/* to 0-based */
+			}
+		else if(strcmp(argv[optind],"-c")==0 && optind+1<argc)
+			{
+			char* p2;
+			app.callcolumn=(int)strtol(argv[++optind],&p2,10);
+			if(*p2!=0 || app.callcolumn<1)
+			    {
+			    fprintf(stderr,"Bad CALL column:%s\n",argv[optind]);
+			    return EXIT_FAILURE;
+			    }
+			app.callcolumn--;/* to 0-based */
 			}
 	    else if(strcmp(argv[optind],"--")==0)
 			{
@@ -166,12 +185,16 @@ int main(int argc,char** argv)
 			}
 	    ++optind;
 	    }
+	if(app.callcolumn==app.formatcolumn)
+		{
+		cerr << "FORMAT column=CALL column" << endl;
+		return EXIT_FAILURE;
+		}
 	if(app.tag.empty())
 		{
 		cerr << "undefined tag" << endl;
 		return EXIT_FAILURE;
 		}
-		
 	if(optind==argc)
 		{
 		igzstreambuf buf;
