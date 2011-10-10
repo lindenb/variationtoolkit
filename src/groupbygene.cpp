@@ -42,17 +42,6 @@ typedef int column_t;
 	{\
 	THROW("Column index out of range ("<< idx << ") in "<< line);\
 	} } while(0)
-class GroupByGene
-    {
-    public:
-
-	class SampleInfo
-	    {
-	    public:
-		string sampleName;
-		int index;
-	    };
-
 
 	class Mutation
 	    {
@@ -99,6 +88,27 @@ class GroupByGene
 		    }
 	    };
 
+std::ostream&
+operator << (std::ostream& out,const Mutation& o)
+	{
+	out << o.pos << "("<< o.ref <<"/"<< o.alt << ")";
+	return out;
+	}
+
+class GroupByGene
+    {
+    public:
+
+	class SampleInfo
+	    {
+	    public:
+		string sampleName;
+		int index;
+	    };
+
+
+
+
 	class GeneInfo
 	    {
 	    public:
@@ -121,7 +131,6 @@ class GroupByGene
 	map<string,GeneInfo*> gene2info;
 	map<string,SampleInfo*> sample2info;
 	bool use_ref_alt;
-	bool first_line_header;
 
 
 
@@ -134,13 +143,13 @@ class GroupByGene
 	    delim='\t';
 	    chromcol=0;
 	    poscol=1;
-	    refcol=2;
-	    altcol=3;
+	    refcol=3;
+	    altcol=4;
 	    genecol=-1;
 	    samplecol=-1;
 	    use_ref_alt=true;
-	    first_line_header=true;
 	    }
+
 	~GroupByGene()
 	    {
 	    for(map<string,SampleInfo*>::iterator r1=sample2info.begin();
@@ -202,6 +211,14 @@ class GroupByGene
 			<< count_samples << "\t"
 			<< gene->mutations.size()
 			;
+		/*
+		for(set<Mutation>::iterator r2=gene->mutations.begin();
+			r2!=gene->mutations.end();
+			++r2)
+			{
+			cout <<":" << (*r2);
+			}*/
+
 		for(map<string,SampleInfo*>::iterator r2=sample2info.begin();
 		    r2!=sample2info.end();
 		    ++r2
@@ -225,23 +242,13 @@ class GroupByGene
 	void readVCF(std::istream& in)
 	    {
 	    Tokenizer tokenizer;
-	    vector<string> header;
 	    string line;
 	    tokenizer.delim=delim;
-	    if(first_line_header)
-		{
-		if(!getline(in,line,'\n')) THROW("Cannot read header");
-		tokenizer.split(line,header);
-		CHECK_COL_INDEX(chromcol,header);
-		CHECK_COL_INDEX(poscol,header);
-		if(use_ref_alt) CHECK_COL_INDEX(refcol,header);
-		if(use_ref_alt) CHECK_COL_INDEX(altcol,header);
-		CHECK_COL_INDEX(genecol,header);
-		CHECK_COL_INDEX(samplecol,header);
-		}
+	    
 	    while(getline(in,line,'\n'))
 		{
 		if(line.empty()) continue;
+		if(line[0]=='#') continue;
 		vector<string> tokens;
 		tokenizer.split(line,tokens);
 		CHECK_COL_INDEX(chromcol,tokens);
@@ -308,8 +315,12 @@ class GroupByGene
 		    geneInfo->chromEnd=max(geneInfo->chromEnd,pos);
 		    geneInfo=r1->second;
 		    }
-		geneInfo->sample2count.resize(sampleInfo->index+1,0);
-		geneInfo->sample2count.at(sampleInfo->index)++;
+		if(sampleInfo->index >= (int)geneInfo->sample2count.size())
+			{
+			geneInfo->sample2count.resize(sampleInfo->index+1,0);
+			}
+		int count=1+geneInfo->sample2count.at(sampleInfo->index);
+		geneInfo->sample2count.at(sampleInfo->index)=count;
 
 		Mutation mut(pos,"","");
 		if(use_ref_alt)
@@ -320,6 +331,25 @@ class GroupByGene
 		geneInfo->mutations.insert(mut);
 		}
 	    }
+
+    void usage(int argc,char** argv)
+	{
+	cerr << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
+	cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+	cerr << "Options:\n";
+	cerr << "  --delim (char) delimiter default:tab\n";
+	cerr << "  --norefalt : don't look at REF and ALT\n";
+	cerr << "  --sample SAMPLE column index\n";
+	cerr << "  --gene GENE column index\n";
+	cerr << "  --chrom CHROM column index: default "<< (chromcol+1) << "\n";
+	cerr << "  --pos POS position column index: default "<< (poscol+1) << "\n";
+	cerr << "  --ref REF reference allele column index: default "<< (refcol+1) << "\n";
+	cerr << "  --alt ALT alternate allele column index: default "<< (altcol+1) << "\n";
+	cerr << "(stdin|vcf|vcf.gz)\n\n";
+	}
+
+
+
     };
 
 #define SETINDEX(option,col) else if(std::strcmp(argv[optind],option)==0 && optind+1<argc) \
@@ -332,22 +362,6 @@ class GroupByGene
 #define SHOW_OPT(col) \
 	cerr << "  --"<< cols<< " (column index)\n";
 
-static void usage(const char* prg,GroupByGene& app)
-	{
-	cerr << prg << "Pierre Lindenbaum PHD. 2011.\n";
-	cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-	cerr << "Options:\n";
-	cerr << "  --delim (char) delimiter default:tab\n";
-	cerr << "  --norefalt : don't look at REF and ALT\n";
-	cerr << "  --sample SAMPLE column index\n";
-	cerr << "  --gene GENE column index\n";
-	cerr << "  --chrom CHROM column index: default "<< (app.chromcol+1) << "\n";
-	cerr << "  --pos POS position column index: default "<< (app.poscol+1) << "\n";
-	cerr << "  --ref REF reference allele column index: default "<< (app.refcol+1) << "\n";
-	cerr << "  --alt ALT alternate allele column index: default "<< (app.altcol+1) << "\n";
-	cerr << "  --no-header first line is NOT header.\n";
-	cerr << "(stdin|vcf|vcf.gz)\n";
-	}
 
 int main(int argc,char** argv)
     {
@@ -357,7 +371,7 @@ int main(int argc,char** argv)
    		{
    		if(std::strcmp(argv[optind],"-h")==0)
    			{
-   			usage(argv[0],app);
+   			app.usage(argc,argv);
    			return (EXIT_FAILURE);
    			}
    		SETINDEX("--sample",samplecol)
@@ -366,10 +380,6 @@ int main(int argc,char** argv)
    		SETINDEX("--ref",refcol)
    		SETINDEX("--alt",altcol)
    		SETINDEX("--gene",genecol)
-   		else if(std::strcmp(argv[optind],"--no-header")==0)
-		    {
-		    app.first_line_header=false;
-		    }
    		else if(std::strcmp(argv[optind],"--norefalt")==0)
    			{
    			app.use_ref_alt=false;
@@ -380,7 +390,7 @@ int main(int argc,char** argv)
 			if(strlen(p)!=1)
 			    {
 			    cerr << "Bad delimiter \""<< p << "\"\n";
-			    usage(argv[0],app);
+			    app.usage(argc,argv);
 			    return(EXIT_FAILURE);
 			    }
 			app.delim=p[0];
@@ -388,7 +398,7 @@ int main(int argc,char** argv)
    		else if(argv[optind][0]=='-')
    			{
    			fprintf(stderr,"unknown option '%s'\n",argv[optind]);
-   			usage(argv[0],app);
+   			app.usage(argc,argv);
    			return (EXIT_FAILURE);
    			}
    		else
@@ -400,13 +410,13 @@ int main(int argc,char** argv)
     if(app.genecol==-1)
 	{
 	cerr << "Undefined gene column."<< endl;
-	usage(argv[0],app);
+	app.usage(argc,argv);
 	return (EXIT_FAILURE);
 	}
     if(app.samplecol==-1)
     	{
     	cerr << "Undefined sample column."<< endl;
-    	usage(argv[0],app);
+    	app.usage(argc,argv);
     	return (EXIT_FAILURE);
     	}
     if(optind==argc)

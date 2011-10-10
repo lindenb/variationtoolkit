@@ -3,6 +3,7 @@ CPP=g++
 CFLAGS=-O3 -Wall
 all:$(BINDIR)/scanvcf \
 	$(BINDIR)/groupbygene \
+	$(BINDIR)/samplespersnp \
 	$(BINDIR)/numericsplit \
 	$(BINDIR)/extractinfo \
 	$(BINDIR)/extractformat \
@@ -20,3 +21,6 @@ $(BINDIR)/extractinfo: extractinfo.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/extractformat: extractformat.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/samplespersnp: samplespersnp.cpp tokenizer.h throw.h zstreambuf.h
+	$(CPP) -o $@ $< $(CFLAGS) -lz
+	
