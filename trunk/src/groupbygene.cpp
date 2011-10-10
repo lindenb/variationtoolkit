@@ -11,6 +11,40 @@
  *	group VCF data by y=Gene,x=Sample
  * Compilation:
  *	 g++ -o groupbygene -Wall -O3 groupbygene.cpp -lz
+ *
+__BEGIN_DOC__
+.TH groupbygene 1  "October 10, 2011" "version 0.1" "USER COMMANDS"
+.SH NAME
+.B groupbygene
+[options] (vcf|stdin|vcf.gz)
+.SH DESCRIPTION
+groups vcf data by gene.
+.SH OPTIONS
+.TP
+\-\-delim (char) delimiter default:tab
+.TP
+\-\-norefalt : don\'t look at REF and ALT
+.TP
+\-\-sample SAMPLE column index
+.TP
+\-\-gene
+GENE column index
+.TP
+\-\-chrom CHROM column index: default 1
+.TP
+\-\-pos
+POS position column index: default 2
+.TP
+\-\-ref
+REF reference allele column index: default 4
+.TP
+\-\-alt
+ALT alternate allele column index: default 5
+.SH AUTHOR
+Pierre Lindenbaum. plindenbaum@yahoo.fr
+.SH SEE ALSO
+variationtoolkit(1)
+__END_DOC__
  */
 #include <cstdlib>
 #include <vector>
