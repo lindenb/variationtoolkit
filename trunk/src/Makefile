@@ -4,6 +4,7 @@ CFLAGS=-O3 -Wall
 all:$(BINDIR)/scanvcf \
 	$(BINDIR)/groupbygene \
 	$(BINDIR)/numericsplit \
+	$(BINDIR)/extractinfo \
 	$(BINDIR)/normalizechrom
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
@@ -13,4 +14,6 @@ $(BINDIR)/groupbygene: groupbygene.cpp tokenizer.h throw.h zstreambuf.h
 $(BINDIR)/normalizechrom: normalizechrom.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/numericsplit: numericsplit.cpp tokenizer.h throw.h zstreambuf.h
+	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/extractinfo: extractinfo.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
