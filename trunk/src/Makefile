@@ -24,6 +24,8 @@ $(BINDIR)/extractformat: extractformat.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/samplespersnp: samplespersnp.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o 
+	$(CPP) -o $@ $< $(CFLAGS) knowngene.o xfaidx.o geneticcode.o  -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
 
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)

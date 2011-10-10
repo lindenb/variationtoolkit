@@ -23,6 +23,8 @@
 #include <cassert>
 #include <memory>
 #include <stdint.h>
+#include <mysql.h>
+
 #include "geneticcode.h"
 #include "zstreambuf.h"
 #include "xfaidx.h"
@@ -34,8 +36,12 @@ using namespace std;
 class AbstractCharSequence
 	{
 	public:
-	    AbstractCharSequence();
-	    virtual ~AbstractCharSequence();
+	    AbstractCharSequence()
+		{
+		}
+	    virtual ~AbstractCharSequence()
+		{
+		}
 	    virtual char at(int32_t index) const=0;
 	    virtual int32_t size() const=0;
 	    char operator[](int32_t index) const
@@ -204,12 +210,15 @@ class Prediction
 	Tokenizer tokenizer;
 	IndexedFasta* indexedFasta;
 	const char* fasta;
-	Prediction():indexedFasta(NULL),fasta(NULL)
+	MYSQL* mysql;
+	Prediction():indexedFasta(NULL),fasta(NULL),mysql(NULL)
 	    {
+	    if((mysql=::mysql_init(NULL))==NULL) THROW("Cannot init mysql");
 	    }
 	~Prediction()
 	    {
 	    if(indexedFasta!=NULL) delete indexedFasta;
+	    ::mysql_close(mysql);
 	    }
 
 	std::vector<KnownGene*> getGenes(
@@ -217,8 +226,52 @@ class Prediction
 	    int32_t pos0
 	    )
 	    {
+	    Tokenizer comma;
+	    comma.delim=',';
+	    vector<string> exonStarts;
+	    vector<string> exonEnds;
 	    std::vector<KnownGene*> genes;
+	    ostringstream os;
+	    os << "select "
+		    "name,strand,txStart,txEnd,cdsStart,cdsEnd,exonCount,exonStarts,exonEnds "
+		    " from knownGene where chrom=\"" << chrom
+		    << "\" and txStart<="<< pos0
+		    << " and txEnd >= "<< pos0
+		    ;
+	    string query=os.str();
+	    MYSQL_ROW row;
+	    if(mysql_real_query( mysql, query.c_str(),query.size())!=0)
+		 {
+		 THROW("Failure for "<< query << "\n" << mysql_error(mysql));
+		 }
+	    MYSQL_RES* res=mysql_use_result( mysql );
+	    //int ncols=mysql_field_count(mysql);
+	    while(( row = mysql_fetch_row( res ))!=NULL )
+		{
+		KnownGene* g=new KnownGene;
+		genes.push_back(g);
+		g->chrom.assign(chrom);
 
+		g->name.assign(row[0]);
+		g->strand=row[1][0];
+		g->txStart=atoi(row[2]);
+		g->txEnd=atoi(row[3]);
+		g->cdsStart=atoi(row[4]);
+		g->cdsEnd=atoi(row[5]);
+		int exonCount=atoi(row[6]);
+		comma.split(row[7],exonStarts);
+		comma.split(row[8],exonEnds);
+		for(int i=0;i< exonCount;++i)
+		    {
+		    Exon exon;
+		    exon.index=i;
+		    exon.gene=g;
+		    exon.start=atoi(exonStarts[i].c_str());
+		    exon.end=atoi(exonEnds[i].c_str());
+		    g->exons.push_back(exon);
+		    }
+		}
+	    ::mysql_free_result( res );
 	    return genes;
 	    }
 
@@ -729,7 +782,12 @@ class Prediction
 int main(int argc,char** argv)
     {
     Prediction app;
+    string host("genome-mysql.cse.ucsc.edu");
+    string username("genome");
+    string password;
+    string database("hg19");
 
+    int port=0;
     int optind=1;
     while(optind < argc)
 	{
@@ -737,6 +795,22 @@ int main(int argc,char** argv)
 	    {
 	    app.usage(argc,argv);
 	    return(EXIT_FAILURE);
+	    }
+	else if(std::strcmp(argv[optind],"--host")==0 && optind+1<argc)
+	    {
+	    host.assign(argv[++optind]);
+	    }
+	else if(std::strcmp(argv[optind],"--user")==0 && optind+1<argc)
+	    {
+	    username.assign(argv[++optind]);
+	    }
+	else if(std::strcmp(argv[optind],"--password")==0 && optind+1<argc)
+	    {
+	    password.assign(argv[++optind]);
+	    }
+	else if(std::strcmp(argv[optind],"--port")==0 && optind+1<argc)
+	    {
+	    port=atoi(argv[++optind]);
 	    }
 	else if(strcmp(argv[optind],"-d")==0 && optind+1< argc)
 	    {
@@ -774,6 +848,18 @@ int main(int argc,char** argv)
 	cerr << "genome fasta file undefined." << endl;
 	return EXIT_FAILURE;
 	}
+
+    if(::mysql_real_connect(
+    	    app. mysql,
+    	    host.c_str(),
+    	    username.c_str(),
+    	    password.c_str(),
+    	    database.c_str(), port,NULL, 0 )==NULL)
+    	{
+    	THROW("mysql_real_connect failed "<< mysql_error(app.mysql));
+    	}
+
+
     app.indexedFasta=new IndexedFasta(app.fasta);
 
     if(optind==argc)
