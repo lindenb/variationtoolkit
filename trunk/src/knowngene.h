@@ -3,18 +3,49 @@
 #include <vector>
 #include <string>
 #include <stdint.h>
-
+#include <memory>
 class KnownGene;
 
-
-struct Exon
+class Segment
+    {
+    protected:
+	Segment();
+    public:
+	const KnownGene* gene;
+	int32_t index;
+	int32_t start;
+	int32_t end;
+	virtual ~Segment();
+	int32_t size() const;
+    	bool contains(int32_t position) const;
+    	virtual bool isSplicingAcceptor(int32_t position) const=0;
+    	virtual bool isSplicingDonor(int32_t position) const=0;
+    	virtual bool isSplicing(int32_t position) const;
+    	virtual std::string name() const=0;
+    };
+class Intron:public Segment
 	{
-		KnownGene* gene;
-		int32_t index;
-		int32_t start;
-		int32_t end;
-		int32_t size() const;
+	public:
+		Intron();
+		virtual ~Intron();
+		virtual bool isSplicingAcceptor(int32_t position) const;
+	    	virtual bool isSplicingDonor(int32_t position) const;
+	    	virtual std::string name() const;
 	};
+
+class Exon:public Segment
+	{
+	public:
+	    Exon();
+	    virtual ~Exon();
+	    std::auto_ptr<Intron> getNextIntron() const;
+	    std::auto_ptr<Intron> getPrevIntron() const;
+	    virtual bool isSplicingAcceptor(int32_t position) const;
+	    virtual bool isSplicingDonor(int32_t position) const;
+	    virtual std::string name() const;
+	};
+
+
 
 class KnownGene
 	{
@@ -29,6 +60,8 @@ class KnownGene
 		int32_t cdsEnd;
 		std::vector<Exon> exons;
 		const Exon* exon(int32_t  idx) const;
+		std::auto_ptr<Intron> intron(int32_t  idx) const;
 		int32_t countExons() const;
+		bool isForward() const;
 	};
 #endif
