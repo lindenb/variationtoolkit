@@ -3,55 +3,55 @@
 
 #include <iostream>
 #include <cstdio>
+#include <bgzf.h>
 #include <cerrno>
 #include <cstring>
-#include <zlib.h>
 #include "throw.h"
 
-#define GZBUFSIZ BUFSIZ
+#define BGZBUFSIZ BUFSIZ
 
-class igzstreambuf:public std::streambuf
+class ibgzstreambuf:public std::streambuf
 	{
 	private:
-		gzFile in;
-		char buffer[GZBUFSIZ];
+		BGZF* in;
+		char buffer[BGZBUFSIZ];
 		unsigned int buffer_size;
 		bool owner;
 	public:
-		igzstreambuf(gzFile in):in(in),buffer_size(0),owner(false)
+		ibgzstreambuf(BGZF* in):in(in),buffer_size(0),owner(false)
 			{
 			setg( &this->buffer[0],
-				&this->buffer[GZBUFSIZ],
-				&this->buffer[GZBUFSIZ]
+				&this->buffer[BGZBUFSIZ],
+				&this->buffer[BGZBUFSIZ]
 				);
 			}
 		
-		igzstreambuf():in(NULL),buffer_size(0),owner(false)
+		ibgzstreambuf():in(NULL),buffer_size(0),owner(false)
 			{
 			errno=0;
-			in=::gzdopen(fileno(stdin),"r");
+			in=::bgzf_fdopen(fileno(stdin),"r");
 			if(in==NULL)
 			    {
 			    THROW("Cannot open gz file (stdin) " << strerror(errno));
 			    }
 			setg( &this->buffer[0],
-				&this->buffer[GZBUFSIZ],
-				&this->buffer[GZBUFSIZ]
+				&this->buffer[BGZBUFSIZ],
+				&this->buffer[BGZBUFSIZ]
 				);
 			}	
 		
 		
-		igzstreambuf(const char* f):in(NULL),buffer_size(0),owner(true)
+		ibgzstreambuf(const char* f):in(NULL),buffer_size(0),owner(true)
 			{
 			errno=0;
-			in=::gzopen(f,"rb");
+			in=::bgzf_open(f,"r");
 			if(in==NULL)
 			    {
 			    THROW("Cannot open gz file \""<< f << "\" " << strerror(errno));
 			    }
 			setg( &this->buffer[0],
-				&this->buffer[GZBUFSIZ],
-				&this->buffer[GZBUFSIZ]
+				&this->buffer[BGZBUFSIZ],
+				&this->buffer[BGZBUFSIZ]
 				);
 			}	
 		
@@ -59,30 +59,30 @@ class igzstreambuf:public std::streambuf
 			{
 			if(in!=NULL && owner)
 				{
-				::gzclose(in);
+				::bgzf_close(in);
 				}
 			in=NULL;
 			}
 		
-		virtual ~igzstreambuf()
+		virtual ~ibgzstreambuf()
 			{
 			if(in!=NULL && owner)
 				{
-				::gzclose(in);
+				::bgzf_close(in);
 				}
 			}
 	
 	    virtual int underflow ( )
 			{
 			if(in==NULL) return EOF;
-			int nRead= ::gzread(this->in,(void*)this->buffer,GZBUFSIZ);
+			int nRead= ::bgzf_read(this->in,(void*)this->buffer,BGZBUFSIZ);
 			if(nRead<0)
 				{
 				THROW("I/O error");
 				}
 			else if(nRead==0)
 				{
-				if(owner) ::gzclose(in);
+				if(owner) ::bgzf_close(in);
 				in=NULL;
 				return EOF;
 				}
@@ -95,6 +95,6 @@ class igzstreambuf:public std::streambuf
 			}
 	};
 	
-#undef GZBUFSIZ
+#undef BGZBUFSIZ
 
 #endif
