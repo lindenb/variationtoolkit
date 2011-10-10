@@ -2,6 +2,7 @@ BINDIR=../bin
 CPP=g++
 CFLAGS=-O3 -Wall
 SAMDIR=../ext/samtools
+TABIXDIR=../ext/tabix
 all:$(BINDIR)/scanvcf \
 	$(BINDIR)/groupbygene \
 	$(BINDIR)/numericsplit \
@@ -32,7 +33,9 @@ bin.o:bin.cpp bin.h
 knowngene.o: knowngene.cpp knowngene.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 xfaidx.o: xfaidx.cpp xfaidx.h
-	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR) 
+	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR)
+xtabix.o: xtabix.cpp xtabix.h
+	$(CPP) -c -o $@ $< $(CFLAGS) -I $(TABIXDIR) 
 geneticcode.o: geneticcode.cpp geneticcode.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 	
