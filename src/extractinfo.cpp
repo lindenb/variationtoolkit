@@ -43,8 +43,9 @@ class ExtractInfo
 		int column;
 		string tag;
 		string notFound;
+		bool ignore_if_not_found;
 		
-		ExtractInfo():column(7),notFound("N/A")
+		ExtractInfo():column(7),notFound("N/A"),ignore_if_not_found(false)
 			{
 			semicolon.delim=';';
 			}
@@ -68,11 +69,8 @@ class ExtractInfo
 						cerr << "Column out of range in " << line << endl;
 						continue;
 						}
-				for(size_t i=0;i< tokens.size();++i)
-					{
-					if(i>0) cout << tokenizer.delim;
-					cout << tokens[i];
-					}
+				
+				bool found=false;
 				string content(notFound);
 				semicolon.split(tokens[column],hash);
 				for(size_t i=0;i< hash.size();++i)
@@ -82,15 +80,23 @@ class ExtractInfo
 						{
 						if(hash[i].compare(tag)==0)
 							{
+							found=true;
 							content.assign("true");
 							break;
 							}
 						}
 					else if(hash[i].substr(0,n).compare(tag)==0)
 						{
+						found=true;
 						content.assign(hash[i].substr(n+1));
 						break;
 						}
+					}
+				if(!found && ignore_if_not_found) continue;
+				for(size_t i=0;i< tokens.size();++i)
+					{
+					if(i>0) cout << tokenizer.delim;
+					cout << tokens[i];
 					}
 				cout << tokenizer.delim << content << endl;
 				}
@@ -105,6 +111,7 @@ class ExtractInfo
 			cerr << "  --delim <column-delimiter> (default:tab)" << endl;
 			cerr << "  -t <tag> (required)" << endl;
 			cerr << "  -N <string> symbol for NOT-FOUND. default:"<< notFound << endl;
+			cerr << "  -i ignore line if tag was not found" << endl;
 			}
 	};
 
@@ -149,6 +156,10 @@ int main(int argc,char** argv)
 			    return EXIT_FAILURE;
 			    }
 			app.column--;/* to 0-based */
+			}
+		else if(strcmp(argv[optind],"-i")==0)
+			{
+			app.ignore_if_not_found=true;
 			}
 	    else if(strcmp(argv[optind],"--")==0)
 			{
