@@ -1,6 +1,6 @@
 BINDIR=../bin
 CPP=g++
-CFLAGS=-g #-O3 -Wall
+CFLAGS=-O3 -Wall
 SAMDIR=../ext/samtools
 TABIXDIR=../ext/tabix
 all:$(BINDIR)/scanvcf \
@@ -63,7 +63,8 @@ xbam.o: xbam.cpp xbam.h
 	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR) 
 geneticcode.o: geneticcode.cpp geneticcode.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
-	
+netstreambuf.o: netstreambuf.cpp netstreambuf.cpp
+	$(CPP) -c -o $@ $< $(CFLAGS) `curl-config --cflags`
 man:
 	mkdir -p ../man
 	for S in groupbygene ; do  awk '/^__BEGIN_DOC__/ {i=1;next;} /^__END_DOC__/ {i=0;next} {if(i==1) print;}' $${S}.cpp > ../man/$${S}.1 ; done
