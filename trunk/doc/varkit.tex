@@ -19,4 +19,38 @@ Your web proxy should allow an access to sourceforge.net .
 \item[libxml2]: the C library for xml \url{http://xmlsoft.org/}.
 \item[libcurl]: the C library for downloading some URLs.
 \end{description}
+
+\section{Tools}
+\subsection{vcfttview}
+\begin{quote}
+\begin{verbatim}
+$ echo -e "ref\t3\nref2\t2" |\
+vcfttview -x 3 -B toy.bam -R toy.fa
+
+>ref:3
+
+1         11              21        31         41        51        61           
+AGCATGTTAGATAA****GATA**GCTGTGCTAGTAGGCAG*TCAGCGCCATNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+      ........    ....  ......K.K......K. ..........                            
+      ........AGAG....***...      ,,,,,    ,,,,,,,,,                            
+        ......GG**....AA                                                        
+        ..C...**** ...**...>>>>>>>>>>>>>>T.....                                 
+
+
+
+>ref2:2
+
+1         11            21        31        41        51        61              
+aggttttataaaac****aattaagtctacagagcaactacgcgNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+.............Y    ..W...................                                        
+..............****..A...                                                        
+ .............****..A...T.                                                      
+     .........AAAT.............                                                 
+         C...T****....................                                          
+           ..T****.....................                                         
+             T****......................                                        
+                                                               
+\end{verbatim}
+\end{quote}
+
 \end{document}
