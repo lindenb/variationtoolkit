@@ -66,6 +66,7 @@ __END_DOC__
 #include <stdint.h>
 #include "zstreambuf.h"
 #include "tokenizer.h"
+#include "smartcmp.h"
 
 using namespace std;
 
@@ -129,6 +130,8 @@ operator << (std::ostream& out,const Mutation& o)
 	return out;
 	}
 
+
+
 class GroupByGene
     {
     public:
@@ -162,8 +165,10 @@ class GroupByGene
 	column_t refcol;
 	column_t altcol;
 	column_t samplecol;
-	map<string,GeneInfo*> gene2info;
-	map<string,SampleInfo*> sample2info;
+	typedef map<string,GeneInfo*,SmartComparator> gene2info_map;
+	gene2info_map gene2info;
+	typedef map<string,SampleInfo*,SmartComparator> sample2info_map;
+	sample2info_map sample2info;
 	bool use_ref_alt;
 
 
@@ -186,48 +191,37 @@ class GroupByGene
 
 	~GroupByGene()
 	    {
-	    for(map<string,SampleInfo*>::iterator r1=sample2info.begin();
+	    for(sample2info_map::iterator r1=sample2info.begin();
 		r1!=sample2info.end();
 		++r1
 		)
-		{
-		delete r1->second;
-		}
-	    for(map<string,GeneInfo*>::iterator r2=gene2info.begin();
+			{
+			delete r1->second;
+			}
+	    for(gene2info_map::iterator r2=gene2info.begin();
 		r2!=gene2info.end();
 		++r2
 		)
-		{
-		delete r2->second;
-		}
+			{
+			delete r2->second;
+			}
 	    }
 
-	bool readline(gzFile in,std::string& line)
-	    {
-	    line.clear();
-	    int c;
-	    if(gzeof(in)) return false;
-	    while((c=gzgetc(in))!=EOF && c!='\n')
-		    {
-		    line+=(char)c;
-		    }
-	    return true;
-	    }
 	
 
 	void print()
 	    {
 	    cout << "GENE\tCHROM\tSTART\tEND\tcount(SAMPLES)\tcount(distinct_MUTATION)";
-	    for(map<string,SampleInfo*>::iterator r2=sample2info.begin();
-		r2!=sample2info.end();
-		++r2
-		)
-		{
-		cout << "\tcount(" << r2->first<< ")";
-		}
+	    for(sample2info_map::iterator r2=sample2info.begin();
+			r2!=sample2info.end();
+			++r2
+			)
+			{
+			cout << "\tcount(" << r2->first<< ")";
+			}
 	    cout << endl;
 
-	    for(map<string,GeneInfo*>::iterator r1=gene2info.begin();
+	    for(gene2info_map::iterator r1=gene2info.begin();
 		r1!=gene2info.end();
 		++r1
 		)
@@ -253,7 +247,7 @@ class GroupByGene
 			cout <<":" << (*r2);
 			}*/
 
-		for(map<string,SampleInfo*>::iterator r2=sample2info.begin();
+		for(sample2info_map::iterator r2=sample2info.begin();
 		    r2!=sample2info.end();
 		    ++r2
 		    )
@@ -280,90 +274,90 @@ class GroupByGene
 	    tokenizer.delim=delim;
 	    
 	    while(getline(in,line,'\n'))
-		{
-		if(line.empty()) continue;
-		if(line[0]=='#') continue;
-		vector<string> tokens;
-		tokenizer.split(line,tokens);
-		CHECK_COL_INDEX(chromcol,tokens);
-		CHECK_COL_INDEX(poscol,tokens);
-		if(use_ref_alt) CHECK_COL_INDEX(refcol,tokens);
-		if(use_ref_alt) CHECK_COL_INDEX(altcol,tokens);
-		CHECK_COL_INDEX(genecol,tokens);
-		CHECK_COL_INDEX(samplecol,tokens);
-
-		string sampleName=tokens[samplecol];
-		if(sampleName.empty())
-		    {
-		    cerr << "Sample name empty in "<< line << endl;
-		    continue;
-		    }
-		SampleInfo* sampleInfo;
-		map<string,SampleInfo*>::iterator r2=sample2info.find(sampleName);
-		if(r2==sample2info.end())
-		    {
-		    sampleInfo=new SampleInfo;
-		    sampleInfo->index=sample2info.size();
-		    sampleInfo->sampleName=sampleName;
-		    sample2info.insert(make_pair<string,SampleInfo*>(sampleName,sampleInfo));
-		    }
-		else
-		    {
-		    sampleInfo=r2->second;
-		    }
-
-		char* p2;
-		int pos=(int)strtol(tokens[poscol].c_str(),&p2,10);
-		if(pos<0 || *p2!=0)
-		    {
-		    THROW("Bad position in "<< line);
-		    }
-
-		string geneName=tokens[genecol];
-		if(geneName.empty())
-		    {
-		    cerr << "Gene name empty in "<< line << endl;
-		    continue;
-		    }
-		GeneInfo* geneInfo=NULL;
-		map<string,GeneInfo*>::iterator r1=gene2info.find(geneName);
-		if(r1==gene2info.end())
-		    {
-		    geneInfo=new GeneInfo;
-		    geneInfo->geneName=geneName;
-		    geneInfo->chrom=tokens[chromcol];
-		    geneInfo->chromStart=pos;
-		    geneInfo->chromEnd=pos;
-		    gene2info.insert(make_pair<string,GeneInfo*>(geneName,geneInfo));
-		    }
-		else
-		    {
-		    geneInfo=(*r1).second;
-		    if(geneInfo->chrom.compare(tokens[chromcol])!=0)
 			{
-			THROW("Gene "<< geneName << " defined on two chromosome "<<
-			    geneInfo->chrom << " and " << tokens[chromcol]
-			    );
-			}
-		    geneInfo->chromStart=min(geneInfo->chromStart,pos);
-		    geneInfo->chromEnd=max(geneInfo->chromEnd,pos);
-		    geneInfo=r1->second;
-		    }
-		if(sampleInfo->index >= (int)geneInfo->sample2count.size())
-			{
-			geneInfo->sample2count.resize(sampleInfo->index+1,0);
-			}
-		int count=1+geneInfo->sample2count.at(sampleInfo->index);
-		geneInfo->sample2count.at(sampleInfo->index)=count;
+			if(line.empty()) continue;
+			if(line[0]=='#') continue;
+			vector<string> tokens;
+			tokenizer.split(line,tokens);
+			CHECK_COL_INDEX(chromcol,tokens);
+			CHECK_COL_INDEX(poscol,tokens);
+			if(use_ref_alt) CHECK_COL_INDEX(refcol,tokens);
+			if(use_ref_alt) CHECK_COL_INDEX(altcol,tokens);
+			CHECK_COL_INDEX(genecol,tokens);
+			CHECK_COL_INDEX(samplecol,tokens);
 
-		Mutation mut(pos,"","");
-		if(use_ref_alt)
-		    {
-		    mut.ref.assign(tokens[refcol]);
-		    mut.alt.assign(tokens[altcol]);
-		    }
-		geneInfo->mutations.insert(mut);
-		}
+			string sampleName=tokens[samplecol];
+			if(sampleName.empty())
+				{
+				cerr << "Sample name empty in "<< line << endl;
+				continue;
+				}
+			SampleInfo* sampleInfo;
+			map<string,SampleInfo*>::iterator r2=sample2info.find(sampleName);
+			if(r2==sample2info.end())
+				{
+				sampleInfo=new SampleInfo;
+				sampleInfo->index=sample2info.size();
+				sampleInfo->sampleName=sampleName;
+				sample2info.insert(make_pair<string,SampleInfo*>(sampleName,sampleInfo));
+				}
+			else
+				{
+				sampleInfo=r2->second;
+				}
+
+			char* p2;
+			int pos=(int)strtol(tokens[poscol].c_str(),&p2,10);
+			if(pos<0 || *p2!=0)
+				{
+				THROW("Bad position in "<< line);
+				}
+
+			string geneName=tokens[genecol];
+			if(geneName.empty())
+				{
+				cerr << "Gene name empty in "<< line << endl;
+				continue;
+				}
+			GeneInfo* geneInfo=NULL;
+			gene2info_map::iterator r1=gene2info.find(geneName);
+			if(r1==gene2info.end())
+				{
+				geneInfo=new GeneInfo;
+				geneInfo->geneName=geneName;
+				geneInfo->chrom=tokens[chromcol];
+				geneInfo->chromStart=pos;
+				geneInfo->chromEnd=pos;
+				gene2info.insert(make_pair<string,GeneInfo*>(geneName,geneInfo));
+				}
+			else
+				{
+				geneInfo=(*r1).second;
+				if(geneInfo->chrom.compare(tokens[chromcol])!=0)
+				{
+				THROW("Gene "<< geneName << " defined on two chromosome "<<
+					geneInfo->chrom << " and " << tokens[chromcol]
+					);
+				}
+				geneInfo->chromStart=min(geneInfo->chromStart,pos);
+				geneInfo->chromEnd=max(geneInfo->chromEnd,pos);
+				geneInfo=r1->second;
+				}
+			if(sampleInfo->index >= (int)geneInfo->sample2count.size())
+				{
+				geneInfo->sample2count.resize(sampleInfo->index+1,0);
+				}
+			int count=1+geneInfo->sample2count.at(sampleInfo->index);
+			geneInfo->sample2count.at(sampleInfo->index)=count;
+
+			Mutation mut(pos,"","");
+			if(use_ref_alt)
+				{
+				mut.ref.assign(tokens[refcol]);
+				mut.alt.assign(tokens[altcol]);
+				}
+			geneInfo->mutations.insert(mut);
+			}
 	    }
 
     void usage(int argc,char** argv)

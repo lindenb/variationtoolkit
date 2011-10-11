@@ -1,10 +1,11 @@
-TABIXVERSION=0.2.3
+TABIXVERSION=0.2.5
 SAMTOOLSVERSION=0.1.18
-all:ext/tabix ext/samtools
+all:ext
 	(cd src;make)
 manual:
 	(cd src;make man)
 
+ext:ext/tabix ext/samtools
 ext/tabix:
 	mkdir -p ext
 	wget -O ext/tabix-$(TABIXVERSION).tar.bz2 "http://ignum.dl.sourceforge.net/project/samtools/tabix/tabix-$(TABIXVERSION).tar.bz2"
