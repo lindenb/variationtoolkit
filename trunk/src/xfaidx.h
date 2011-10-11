@@ -19,7 +19,6 @@ class IndexedFasta
 	IndexedFasta(const char* fasta);
 	virtual ~IndexedFasta();
 	std::auto_ptr<std::string> fetch(const char* chrom,int32_t start0,int32_t end0);
-	std::auto_ptr<std::string> fetch(int32_t tid,int32_t start0,int32_t end0);
 	int32_t size();
 
     };

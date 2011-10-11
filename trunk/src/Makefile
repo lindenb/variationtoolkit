@@ -15,7 +15,7 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/samplespersnp \
 	$(BINDIR)/dnacontext \
 	$(BINDIR)/ranges \
-	$(BINDIR)/ttview 
+	$(BINDIR)/vcfttview 
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -37,12 +37,17 @@ $(BINDIR)/manhattan: manhattan.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o 
 	$(CPP) -o $@ $< $(CFLAGS) knowngene.o xfaidx.o geneticcode.o  -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
-$(BINDIR)/ttview: ttview.cpp
-	$(CPP) -o $@ $< $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR) -lz -lbam
 $(BINDIR)/dnacontext: dnacontext.cpp xfaidx.o
 	$(CPP) -o $@ $< $(CFLAGS) xfaidx.o  -L $(SAMDIR) -lz -lbam
 $(BINDIR)/vcftabix: vcftabix.cpp  xtabix.o 
 	$(CPP) -o $@ $< $(CFLAGS) xtabix.o  -L $(TABIXDIR)  `mysql_config --cflags  --libs` -lz -ltabix
+$(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
+	$(CPP) -o $@ $< $(CFLAGS) ttview.o xbam.o xfaidx.o \
+		$(SAMDIR)/bam_color.o \
+		$(SAMDIR)/bam2bcf.o \
+		$(SAMDIR)/errmod.o \
+		-L $(SAMDIR) -L $(SAMDIR)/bcftools  -lz -lbam -lbcf
+
 
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
@@ -51,7 +56,11 @@ knowngene.o: knowngene.cpp knowngene.h
 xfaidx.o: xfaidx.cpp xfaidx.h
 	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR)
 xtabix.o: xtabix.cpp xtabix.h
-	$(CPP) -c -o $@ $< $(CFLAGS) -I $(TABIXDIR) 
+	$(CPP) -c -o $@ $< $(CFLAGS) -I $(TABIXDIR)
+ttview.o: ttview.cpp ttview.h xbam.h xfaidx.h
+	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR)
+xbam.o: xbam.cpp xbam.h
+	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR) 
 geneticcode.o: geneticcode.cpp geneticcode.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 	

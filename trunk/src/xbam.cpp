@@ -47,7 +47,7 @@ BamFile::~BamFile()
 const char* BamFile::findNameByTid(int32_t tid)
     {
     if(tid<0 || tid>= CASTHEAD(header)->n_targets) return NULL;
-    return CASTHEAD(header)->target_name[this->tid];
+    return CASTHEAD(header)->target_name[tid];
     }
 int32_t BamFile::findTidByName(const char* seq_name)
     {
