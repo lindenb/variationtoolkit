@@ -12,7 +12,9 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/manhattan \
 	$(BINDIR)/vcftabix \
 	$(BINDIR)/prediction \
-	$(BINDIR)/samplespersnp 
+	$(BINDIR)/samplespersnp \
+	$(BINDIR)/dnacontext \
+	$(BINDIR)/ranges
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -28,10 +30,14 @@ $(BINDIR)/extractformat: extractformat.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/samplespersnp: samplespersnp.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/ranges: ranges.cpp tokenizer.h throw.h zstreambuf.h
+	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/manhattan: manhattan.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o 
 	$(CPP) -o $@ $< $(CFLAGS) knowngene.o xfaidx.o geneticcode.o  -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
+$(BINDIR)/dnacontext: dnacontext.cpp xfaidx.o
+	$(CPP) -o $@ $< $(CFLAGS) xfaidx.o  -L $(SAMDIR) -lz -lbam
 $(BINDIR)/vcftabix: vcftabix.cpp  xtabix.o 
 	$(CPP) -o $@ $< $(CFLAGS) xtabix.o  -L $(TABIXDIR)  `mysql_config --cflags  --libs` -lz -ltabix
 
