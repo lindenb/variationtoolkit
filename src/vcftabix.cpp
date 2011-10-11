@@ -92,7 +92,7 @@ class JoinTabix
 				cerr << "BAD POS  in " << line << endl;
 				continue;
 				}
-			int chromEnd=chromStart;
+			int chromEnd=chromStart+1;
 			auto_ptr<Tabix::Cursor>c= tabix->cursor(tokens[chromCol].c_str(),chromStart,chromEnd);
 			for(;;)
 				{
@@ -102,6 +102,10 @@ class JoinTabix
 				if(mode!=PRINT_UMATCHING)
 					{
 					cout << line << tokenizer.delim << s << endl;
+					}
+				else
+					{
+					break;
 					}
 				}
 			c.reset();
@@ -120,10 +124,12 @@ class JoinTabix
 		cout << "  -d <char> column delimiter. default: TAB\n";
 		cout << "  -c <int> chromosome column ("<< (chromCol+1) << ").\n";
 		cout << "  -p <int> pos column ("<< (posCol+1) << ").\n";
-		cout << "  -t <filename> tabix file (required).\n";
+		cout << "  -f <filename> tabix file (required).\n";
 		cout << "  -1 remove 1 to the VCF coodinates.\n";
 		cout << "  -S <NOT-FOUND-String> default:"<< notFound << ".\n";
 		cout << "  -m  <int=mode> 0=all 1:only-matching 2:only-non-matching default:"<< mode << ".\n";
+		cout << endl;
+		cout << endl;
 		}
     };
 
