@@ -36,3 +36,10 @@ IndexedFasta::fetch(const char* chrom,int32_t start0,int32_t end0)
     if(s==NULL) return std::auto_ptr<std::string>();
     return auto_ptr<std::string>(new string(s,len));
     }
+
+std::auto_ptr<std::string>
+IndexedFasta::fetch(int32_t idx,int32_t start0,int32_t end0)
+    {
+    if(idx<0 || idx>= ::faidx_fetch_nseq(CASTPTR)) THROW("idx out of range");
+    return fetch(CASTPTR->names[idx],start0,end0);
+    }

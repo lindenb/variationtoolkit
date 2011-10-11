@@ -14,7 +14,8 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/prediction \
 	$(BINDIR)/samplespersnp \
 	$(BINDIR)/dnacontext \
-	$(BINDIR)/ranges
+	$(BINDIR)/ranges \
+	$(BINDIR)/ttview 
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -36,6 +37,8 @@ $(BINDIR)/manhattan: manhattan.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o 
 	$(CPP) -o $@ $< $(CFLAGS) knowngene.o xfaidx.o geneticcode.o  -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
+$(BINDIR)/ttview: ttview.cpp
+	$(CPP) -o $@ $< $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR) -lz -lbam
 $(BINDIR)/dnacontext: dnacontext.cpp xfaidx.o
 	$(CPP) -o $@ $< $(CFLAGS) xfaidx.o  -L $(SAMDIR) -lz -lbam
 $(BINDIR)/vcftabix: vcftabix.cpp  xtabix.o 
