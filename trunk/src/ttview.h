@@ -26,7 +26,7 @@ class TTView
 	void print(
 		std::ostream& out,
 		const char* chrom,
-		int32_t pos,
+		int32_t pos0,
 		BamFile* bam,
 		IndexedFasta* faidx
 		);

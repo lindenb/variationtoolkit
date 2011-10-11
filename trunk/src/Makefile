@@ -1,6 +1,6 @@
 BINDIR=../bin
 CPP=g++
-CFLAGS=-O3 -Wall
+CFLAGS=-g #-O3 -Wall
 SAMDIR=../ext/samtools
 TABIXDIR=../ext/tabix
 all:$(BINDIR)/scanvcf \
