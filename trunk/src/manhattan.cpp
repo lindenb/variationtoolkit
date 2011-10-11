@@ -38,12 +38,12 @@ typedef float pixel_t;
 typedef double value_t;
 struct Data
     {
-	pos_t pos;
-	value_t value;
-	bool operator < (const Data& cp) const
-	    {
-	    return pos < cp.pos;
-	    }
+    pos_t pos;
+    value_t value;
+    bool operator < (const Data& cp) const
+	{
+	return pos < cp.pos;
+	}
     };
 
 
@@ -77,7 +77,7 @@ class Manhattan
 		
 	    };
 	typedef std::map<string,ChromInfo*,SmartComparator> chrom2info_t;
-	char delim;
+	Tokenizer tokenizer;
 	chrom2info_t chrom2info;
 	value_t minValue;
 	value_t maxValue;
@@ -88,10 +88,11 @@ class Manhattan
 	pixel_t margin_right;
 	pixel_t margin_top;
 	pixel_t margin_bottom;
-	Manhattan():delim('\t'),
+	Manhattan():
 		chrom2info(),
 		output(&cout)
 	    {
+	    tokenizer.delim='\t';
 	    minValue=DBL_MAX;
 	    maxValue=-DBL_MAX;
 	    margin_left=100;
@@ -120,43 +121,44 @@ class Manhattan
 
 	void readData(std::istream& in)
 	    {
+	    vector<string> tokens;
 	    string line;
 	    while(getline(in,line,'\n'))
 		{
 
 		if(line.empty() || line[0]=='#') continue;
-		string::size_type n1=line.find(delim);
-		if(n1==string::npos) THROW("delimiter 'chrom' missing in "<< line);
-		string str=line.substr(0,n1);
-
+		tokenizer.split(line,tokens);
+		if(tokens.size()<3)
+		    {
+		    cerr << "Expected 3 tokens in "<< line << endl;
+		    continue;
+		    }
 		ChromInfo* chromInfo;
-		chrom2info_t::iterator r= chrom2info.find(str);
+		chrom2info_t::iterator r= chrom2info.find(tokens[0]);
 		if(r==chrom2info.end())
 		    {
 		    chromInfo=new ChromInfo;
-		    chromInfo->chrom=str;
-		    chrom2info.insert(make_pair<string,ChromInfo*>(str,chromInfo));
+		    chromInfo->chrom=tokens[0];
+		    chrom2info.insert(make_pair<string,ChromInfo*>(tokens[0],chromInfo));
 		    }
 		else
 		    {
 		    chromInfo=r->second;
 		    }
-		string::size_type n2=line.find(delim,++n1);
-		if(n2==string::npos) THROW("delimiter 'pos' missing in "<< line);
-		str=line.substr(n1,n2-n1);
+
+
 
 		char* p2;
 		Data newdata;
-		newdata.pos= strtol(str.c_str(),&p2,10);
+		newdata.pos= strtol(tokens[1].c_str(),&p2,10);
 		if(!(*p2==0) || newdata.pos<0)
 		    {
 		    THROW("Bad position in "<< line);
 		    }
 		chromInfo->chromStart=min(chromInfo->chromStart,newdata.pos);
 		chromInfo->chromEnd=max(chromInfo->chromEnd,newdata.pos);
-		string::size_type n3=line.find(delim,++n2);
-		str=line.substr(n2,n3==string::npos?line.size()-n2:n3-n2);
-		newdata.value= strtod(str.c_str(),&p2);
+
+		newdata.value= strtod(tokens[2].c_str(),&p2);
 		if(!(*p2==0) || isnan(newdata.value))
 		    {
 		    THROW("Bad value in "<< line);
