@@ -29,6 +29,30 @@ Tabix::~Tabix()
     if(ptr!=NULL) ::ti_close(CASTPTR);
     }
 
+std::auto_ptr<std::string> Tabix::header()
+	{
+	int len=0;
+	const char* s=NULL;
+	string* str=NULL;
+	const ti_conf_t *idxconf = ti_get_conf(CASTPTR->idx);
+	ti_iter_t  iter = ti_query(CASTPTR, 0, 0, 0);
+    while ((s = ::ti_read(CASTPTR, iter, &len)) != 0)
+    	{
+        if ((int)(*s) != idxconf->meta_char) break;
+        if(str!=NULL)
+        	{
+        	str->append("\n");
+        	str->append(s);
+        	}
+        else
+        	{
+        	str=new string(s);
+        	}
+        }
+    ::ti_iter_destroy(iter);
+    return std::auto_ptr<std::string>(str);
+	}
+
 std::auto_ptr<Tabix::Cursor> Tabix::cursor(const char* chrom,int32_t chromStart,int32_t chromEnd)
     {
     int tid=::ti_get_tid(CASTPTR->idx,chrom);

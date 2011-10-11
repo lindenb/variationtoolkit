@@ -26,6 +26,7 @@ class Tabix
 	    };
 	Tabix(const char* filename,bool loadIndex=true);
 	virtual ~Tabix();
+	std::auto_ptr<std::string> header();
 	std::auto_ptr<Tabix::Cursor> cursor(const char* chrom,int32_t chromStart,int32_t chromEnd);
     };
 

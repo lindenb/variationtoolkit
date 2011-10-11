@@ -9,6 +9,9 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/extractinfo \
 	$(BINDIR)/extractformat \
 	$(BINDIR)/normalizechrom \
+	$(BINDIR)/manhattan \
+	$(BINDIR)/vcftabix \
+	$(BINDIR)/prediction \
 	$(BINDIR)/samplespersnp 
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
@@ -29,6 +32,8 @@ $(BINDIR)/manhattan: manhattan.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o 
 	$(CPP) -o $@ $< $(CFLAGS) knowngene.o xfaidx.o geneticcode.o  -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
+$(BINDIR)/vcftabix: vcftabix.cpp  xtabix.o 
+	$(CPP) -o $@ $< $(CFLAGS) xtabix.o  -L $(TABIXDIR)  `mysql_config --cflags  --libs` -lz -ltabix
 
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)

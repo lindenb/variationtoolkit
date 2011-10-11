@@ -27,14 +27,27 @@ API:
 
 using namespace std;
 
+enum {
+	PRINT_ALL=0,
+	PRINT_MATCHING=1,
+	PRINT_UMATCHING=2
+	};
+
 class JoinTabix
     {
     public:
 	Tokenizer tokenizer;
 	Tabix* tabix;
-	JoinTabix():tabix(NULL)
+	int chromCol;
+	int posCol;
+	int shift;
+	string notFound;
+	int mode;
+	JoinTabix():tabix(NULL),notFound("!N/A"),mode(PRINT_ALL)
 	    {
-
+		chromCol=0;
+		posCol=1;
+		shift=0;
 	    }
 	~JoinTabix()
 	    {
@@ -46,42 +59,78 @@ class JoinTabix
 	    {
 	    vector<string> tokens;
 	    string line;
-	    while(getlin(in,line,'\n'))
-		{
-		if(line.empty()) continue;
-		tokenizer.split(line,tokens);
-		if(line[0]=='#')
-		    {
-		    continue;
-		    }
+	    while(getline(in,line,'\n'))
+			{
+			if(line.empty()) continue;
+			tokenizer.split(line,tokens);
+			if(line[0]=='#')
+				{
+				cout << line ;
+				auto_ptr<string> head=tabix->header();
+				if(head.get()!=NULL && mode!=PRINT_UMATCHING)
+					{
+					cout << tokenizer.delim << (*head);
+					}
+				cout << endl;
+				continue;
+				}
+			if(chromCol>=(int)tokens.size())
+				{
+				cerr << "CHROM out of range in " << line << endl;
+				continue;
+				}
+			if(posCol>=(int)tokens.size())
+				{
+				cerr << "POS out of range in " << line << endl;
+				continue;
+				}
+			char* p2;
+			bool found=false;
+			int chromStart=(int)strtol(tokens[posCol].c_str(),&p2,10);
+			if(*p2!=0)
+				{
+				cerr << "BAD POS  in " << line << endl;
+				continue;
+				}
+			int chromEnd=chromStart;
+			auto_ptr<Tabix::Cursor>c= tabix->cursor(tokens[chromCol].c_str(),chromStart,chromEnd);
+			for(;;)
+				{
+				const char* s= c->next();
+				if(s==NULL) break;
+				found=true;
+				if(mode!=PRINT_UMATCHING)
+					{
+					cout << line << tokenizer.delim << s << endl;
+					}
+				}
+			c.reset();
 
-		bool found=false;
-		int chromStart=0;
-		int chromEnd=0;
-		auto_ptr<Tabix::Cursor>c= tabix->cursor(tokens[0].c_str(),chromStart,chromEnd);
-		for(;;)
-		    {
-		    const char* s= c->next();
-		    if(s==NULL) break;
-		    found=true;
-		    cout << line << tokenizer.delim << s << endl;
-		    }
-		c.reset();
-
-
-
-
-
-		if(!found)
-		    {
-		    cout << line << tokenizer.delim << "N/A" << endl;
-		    }
-		}
+			if(!found && mode!=PRINT_MATCHING)
+				{
+				cout << line << tokenizer.delim << notFound << endl;
+				}
+			}
 	    }
+	void usage(int argc,char** argv)
+		{
+		cout << argv[0] <<" Author: Pierre Lindenbaum PHD. 2011.\n";
+		cout << "Last compilation:"<<__DATE__<<" " << __TIME__ << "\n";
+		cout << "Usage: "<<argv[0]<<" (options) {stdin|file|gzfiles}:\n";
+		cout << "  -d <char> column delimiter. default: TAB\n";
+		cout << "  -c <int> chromosome column ("<< (chromCol+1) << ").\n";
+		cout << "  -p <int> pos column ("<< (posCol+1) << ").\n";
+		cout << "  -t <filename> tabix file (required).\n";
+		cout << "  -1 remove 1 to the VCF coodinates.\n";
+		cout << "  -S <NOT-FOUND-String> default:"<< notFound << ".\n";
+		cout << "  -m  <int=mode> 0=all 1:only-matching 2:only-non-matching default:"<< mode << ".\n";
+		}
     };
 
 int main(int argc, char *argv[])
   {
+
+  char* tabixfile=NULL;
   JoinTabix app;
   int optind=1;
   /* loop over the arguments */
@@ -89,17 +138,7 @@ int main(int argc, char *argv[])
 	    {
 	    if(strcmp(argv[optind],"-h")==0)
 		    {
-		    fprintf(stdout, "Author: Pierre Lindenbaum PHD. 2011.\n");
-		    fprintf(stdout, "Last compilation:%s %s\n",__DATE__,__TIME__);
-		    fprintf(stdout, "Usage: %s (options) {stdin|file|gzfiles}:\n",argv[0]);
-		    fprintf(stdout, "  -d <char> column delimiter. default: TAB\n");
-		    fprintf(stdout, "  -c <int> chromosome column (%d).\n",param.chromCol+1);
-		    fprintf(stdout, "  -s <int> start column (%d).\n",param.startCol+1);
-		    fprintf(stdout, "  -e <int> end column (%d).\n",param.endCol+1);
-		    fprintf(stdout, "  -i <char> ignore lines starting with (\'%c\').\n",param.ignore);
-		    fprintf(stdout, "  -t <filename> tabix file (required).\n");
-		    fprintf(stdout, "  +1 add 1 to the genomic coodinates.\n");
-		    fprintf(stdout, "  -1 remove 1 to the genomic coodinates.\n");
+	    	app.usage(argc,argv);
 		    return EXIT_SUCCESS;
 		    }
 	    else if(strcmp(argv[optind],"-f")==0 && optind+1< argc)
@@ -108,11 +147,7 @@ int main(int argc, char *argv[])
 	    	}
 	    else if(strcmp(argv[optind],"-1")==0)
 	    	{
-	    	param.shift=-1;
-	    	}
-	    else if(strcmp(argv[optind],"+1")==0)
-	    	{
-	    	param.shift=1;
+	    	app.shift=-1;
 	    	}
 	    else if(strcmp(argv[optind],"-d")==0 && optind+1< argc)
 		    {
@@ -121,28 +156,41 @@ int main(int argc, char *argv[])
 		    	fprintf(stderr,"Expected only one char for the delimiter.\n");
 		    	return EXIT_FAILURE;
 		    	}
-		    param.delim=argv[++optind][0];
+		    app.tokenizer.delim=argv[++optind][0];
 		    }
 	    else if(strcmp(argv[optind],"-c")==0 && optind+1< argc)
 	    	{
-	    	param.chromCol=parseInt1(argv[++optind]);
+	    	char* p2=NULL;
+	    	app.chromCol=strtol(argv[++optind],&p2,10)-1;
+	    	if(app.chromCol<0 ||  *p2!=0)
+	    		{
+	    		cerr << "Bad column for CHROM: "<< argv[optind] << endl;
+	    		return EXIT_FAILURE;
+	    		}
 	    	}
-	    else if(strcmp(argv[optind],"-s")==0 && optind+1< argc)
+	    else if(strcmp(argv[optind],"-p")==0 && optind+1< argc)
 	    	{
-	    	param.startCol=parseInt1(argv[++optind]);
+	    	char* p2=NULL;
+			app.posCol=strtol(argv[++optind],&p2,10)-1;
+			if(app.posCol<0 ||  *p2!=0)
+				{
+				cerr << "Bad column for POS: "<< argv[optind] << endl;
+				return EXIT_FAILURE;
+				}
 	    	}
-	    else if(strcmp(argv[optind],"-e")==0 && optind+1< argc)
+	    else if(strcmp(argv[optind],"-m")==0 && optind+1< argc)
+			{
+			char* p2=NULL;
+			app.mode=strtol(argv[++optind],&p2,10)-1;
+			if(app.mode<PRINT_ALL ||  app.mode>PRINT_UMATCHING)
+				{
+				cerr << "Bad mode: "<< argv[optind] << endl;
+				return EXIT_FAILURE;
+				}
+			}
+	    else if(strcmp(argv[optind],"-N")==0 && optind+1< argc)
 	    	{
-	    	param.endCol=parseInt1(argv[++optind]);
-	    	}
-	    else if(strcmp(argv[optind],"-i")==0 && optind+1< argc)
-	    	{
-	    	if(strlen(argv[optind+1])!=1)
-		    	{
-		    	fprintf(stderr,"Expected only one char for the delimiter.\n");
-		    	return EXIT_FAILURE;
-		    	}
-	    	param.ignore=argv[++optind][0];
+	    	app.notFound.assign(argv[++optind]);
 	    	}
 	    else if(strcmp(argv[optind],"--")==0)
 		    {
@@ -151,7 +199,7 @@ int main(int argc, char *argv[])
 		    }
 	    else if(argv[optind][0]=='-')
 		    {
-		    fprintf(stderr,"Unnown option: %s\n",argv[optind]);
+		    cerr << "Unknown option: "<< argv[optind]<< "\n";
 		    return EXIT_FAILURE;
 		    }
 	    else
@@ -162,19 +210,15 @@ int main(int argc, char *argv[])
 	    }
   if(tabixfile==NULL)
 	{
-	fprintf(stderr,"Error: undefined tabix file.\n");
+	cerr << "Error: undefined tabix file.\n" << endl;
+	app.usage(argc,argv);
 	return EXIT_FAILURE;
 	}
 	    
-  if(param.chromCol==param.startCol)
+  if(app.chromCol==app.posCol)
 	{
-	fprintf(stderr,"Error: col(chrom)==col(start).\n");
-	return EXIT_FAILURE;
-	}
-
-  if(param.chromCol==param.endCol)
-	{
-	fprintf(stderr,"Error: col(chrom)==col(end).\n");
+	cerr << "Error: col(chrom)==col(pos)" << endl;
+	app.usage(argc,argv);
 	return EXIT_FAILURE;
 	}
 

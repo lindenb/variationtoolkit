@@ -118,10 +118,10 @@ class Manhattan
 		}
 	
 
-	void readData(gzFile in)
+	void readData(std::istream& in)
 	    {
 	    string line;
-	    while(readline(in,line))
+	    while(getline(in,line,'\n'))
 		{
 
 		if(line.empty() || line[0]=='#') continue;
@@ -337,7 +337,11 @@ class Manhattan
 	    out << "showpage\n";
 	    out.flush();
 	    }
-
+    void usage(int argc,char** argv)
+	{
+	cerr << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
+   	cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+	}
     };
 
 int main(int argc,char** argv)
@@ -348,20 +352,14 @@ int main(int argc,char** argv)
    		{
    		if(std::strcmp(argv[optind],"-h")==0)
    			{
-   			cerr << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
-   			cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-   			exit(EXIT_FAILURE);
-   			}
-   		else if(std::strcmp(argv[optind],"-h")==0)
-   			{
-   			cerr << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
-   			cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-   			exit(EXIT_FAILURE);
+			app.usage(argc,argv);
+   			return (EXIT_FAILURE);
    			}
    		else if(argv[optind][0]=='-')
    			{
-   			fprintf(stderr,"unknown option '%s'\n",argv[optind]);
-   			exit(EXIT_FAILURE);
+   			cerr << "unknown option '"<< argv[optind] << "'\n";
+			app.usage(argc,argv);
+   			return (EXIT_FAILURE);
    			}
    		else
    			{
@@ -371,12 +369,8 @@ int main(int argc,char** argv)
                 }
     if(optind==argc)
 	    {
-	    gzFile in=gzdopen(fileno(stdin),"r");
-	    if(in==NULL)
-		{
-		cerr << "Cannot open stdin" << endl;
-		return EXIT_FAILURE;
-		}
+	    igzstreambuf buf;
+	    istream in(&buf);
 	    app.readData(in);
 	    }
     else
@@ -384,14 +378,10 @@ int main(int argc,char** argv)
 	    while(optind< argc)
 		{
 		char* filename=argv[optind++];
-		gzFile in=gzopen(filename,"r");
-		if(in==NULL)
-		    {
-		    cerr << "Cannot open "<< filename << " " << strerror(errno) << endl;
-		    return EXIT_FAILURE;
-		    }
+		igzstreambuf buf(filename);
+		istream in(&buf);
 		app.readData(in);
-		gzclose(in);
+		buf.close();
 		}
 	    }
     app.print();
