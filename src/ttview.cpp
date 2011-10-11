@@ -55,6 +55,12 @@ TTView::TTView():nLines(0),screen(NULL),lplbuf(NULL),bca(NULL)
     this->ins = 1;
     this->mcol = 80;
     this->color_for = TV_COLOR_MAPQ;
+    char* env=::getenv("COLUMNS");
+    if(env!=NULL)
+	{
+	int c=atoi(env);
+	if(c>10) this->mcol=c;
+	}
     }
 
 
@@ -330,12 +336,12 @@ int TTView::ttv_fetch_func(const void *b1, void *data)
 	return 0;
 	}
 
-int TTView::ttv_draw_aln(int tid, int pos)
+int TTView::ttv_draw_aln(int tid, int pos0)
 	{
 	// reset
 	clear();
 	this->curr_tid = tid;
-	this->left_pos = pos;
+	this->left_pos = pos0;
 	this->last_pos = this->left_pos - 1;
 	this->ccol = 0;
 	// print ref and consensus
@@ -344,7 +350,7 @@ int TTView::ttv_draw_aln(int tid, int pos)
 		this->ref.reset();
 		this->ref = this->fai->fetch(
 			this->mybam->findNameByTid(this->curr_tid),
-			this->left_pos + 1,
+			this->left_pos ,
 			this->left_pos + this->mcol
 			);
 		}
@@ -379,7 +385,7 @@ int TTView::ttv_draw_aln(int tid, int pos)
 void TTView::print(
 	std::ostream& out,
 	const char* chrom,
-	int32_t pos,
+	int32_t pos0,
 	BamFile* bam,
 	IndexedFasta* faidx
 	)
@@ -389,7 +395,7 @@ void TTView::print(
     int32_t idx=mybam->findTidByName(chrom);
     if(idx!=-1)
 	{
-	this->ttv_draw_aln(idx,pos);
+	this->ttv_draw_aln(idx,pos0);
 	}
     dump(out);
     clear();
