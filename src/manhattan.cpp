@@ -1,8 +1,14 @@
 /*
- * manhattan.cpp
- *
- *  Created on: Sep 28, 2011
- *      Author: lindenb
+ * Author:
+ *	Pierre Lindenbaum PhD.
+ * Contact:
+ *	plindenbaum@yahoo.fr
+ * WWW:
+ *	http://plindenbaum.blogspot.com
+ * Motivation:
+ *	Generates a Postscript Manhattan Plot 
+ * Date:
+ *	2011
  */
 #include <cstdlib>
 #include <vector>
@@ -21,12 +27,11 @@
 #include <algorithm>
 #include <cassert>
 #include <stdint.h>
+#include "tokenizer.h"
+#include "smartcmp.h"
+#include "zstreambuf.h"
 using namespace std;
 
-#define THROW(a) do{ostringstream _os;\
-	_os << __FILE__ << ":"<< __LINE__ << ":"<< a << endl;\
-	throw runtime_error(_os.str());\
-	}while(0);
 
 typedef int32_t pos_t;
 typedef float pixel_t;
@@ -41,51 +46,9 @@ struct Data
 	    }
     };
 
-struct smart_cmp
-    {
-    bool operator() (const string& a, const string& b) const
-	  {
-	  char* p1=(char*)a.c_str();
-	  char* p2=(char*)b.c_str();
-	  for(;;)
-	      {
-	      if(*p1==0 && *p2==0) return false;
-	      if(*p1==0 && *p2!=0) return true;
-	      if(*p1!=0 && *p2==0) return false;
-	      if(isdigit(*p1) && isdigit(*p2))
-		  {
-		  char* pp1;
-		  char* pp2;
-		  long n1=strtol(p1,&pp1,10);
-		  long n2=strtol(p2,&pp2,10);
-		  if(n1!=n2) return (n1<n2?true:false);
-		  p1=pp1;
-		  p2=pp2;
-		  continue;
-		  }
-	      int i=toupper(*p1)-toupper(*p2);
-	      if(i!=0) return (i<0?true:false);
-	      ++p1;
-	      ++p2;
-	      }
-
-	  }
-    };
 
 class Manhattan
     {
-    private:
-	bool readline(gzFile in,std::string& line)
-	    {
-	    line.clear();
-	    int c;
-	    if(gzeof(in)) return false;
-	    while((c=gzgetc(in))!=EOF && c!='\n')
-		{
-		line+=(char)c;
-		}
-	    return true;
-	    }
     public:
 
 	class ChromInfo
@@ -97,13 +60,23 @@ class Manhattan
 		pixel_t x;
 		pixel_t width;
 		size_t index_data;
+		ChromInfo():chromStart(INT_MAX),chromEnd(INT_MIN)
+			{
+			
+			}
 		pos_t length()
 		    {
 		    return chromEnd-chromStart;
 		    }
 		vector<Data> data;
+		
+		pixel_t convertToX(const Data* d)
+			{
+			return x+ ((d->pos-chromStart)/(double)length())*width;
+			}
+		
 	    };
-	typedef std::map<string,ChromInfo*,smart_cmp> chrom2info_t;
+	typedef std::map<string,ChromInfo*,SmartComparator> chrom2info_t;
 	char delim;
 	chrom2info_t chrom2info;
 	value_t minValue;
@@ -117,9 +90,7 @@ class Manhattan
 	pixel_t margin_bottom;
 	Manhattan():delim('\t'),
 		chrom2info(),
-		output(&cout),
-		x_axis_width(1000),
-		y_axis_height(1000)
+		output(&cout)
 	    {
 	    minValue=DBL_MAX;
 	    maxValue=-DBL_MAX;
@@ -127,6 +98,8 @@ class Manhattan
 	    margin_bottom=100;
 	    margin_top=100;
 	    margin_right=100;
+	    x_axis_width=841.89 -(margin_left+margin_right);
+	    y_axis_height=595.28-(margin_top+margin_bottom);
 	    }
 
 	~Manhattan()
@@ -139,6 +112,11 @@ class Manhattan
 		}
 	    }
 
+	pixel_t convertToY(const Data* d)
+		{
+		return margin_bottom+ ((d->value-minValue)/(double)(maxValue-minValue))*y_axis_height;
+		}
+	
 
 	void readData(gzFile in)
 	    {
@@ -216,7 +194,7 @@ class Manhattan
 		if(c->chromStart==c->chromEnd) c->chromEnd++;
 		double length5=1+(c->length()/100.0)*5.0;
 		c->chromStart=max(0,(pos_t)(c->chromStart-length5));
-		c->chromEnd=c->chromEnd+length5;
+		c->chromEnd=(pos_t)(c->chromEnd+length5);
 
 		std::sort(c->data.begin(),c->data.end());
 
@@ -271,7 +249,7 @@ class Manhattan
 		    "/convertValue2Y {\n"
 		    " minValue sub maxValue minValue sub div yAxis mul marginBottom add"
 		    "} bind def\n"
-		    "/diams { 2 dict begin\n"
+		    "/dd { 2 dict begin\n"
 			"  /y exch def\n"
 			"  /x exch def\n"
 			" newpath "
@@ -292,91 +270,67 @@ class Manhattan
 		    "   width -1 mul 0 rlineto\n"
 		    "   0 height -1 mul rlineto\n"
 		    "   end } bind def\n"
-		    "/paintChrom { 2 dict begin\n"
-		    " /chrom exch def\n"
-		    " /i 0 def\n"
-		    " 0.8 setgray newpath chrom getChromX marginBottom chrom getChromWidth yAxis box closepath stroke "
-		    " chrom getChromX chrom getChromWidth 0.5 mul add marginBottom yAxis add moveto "
-		    " 0 setgray 90 rotate chrom getChromName show -90 rotate "
-		    " i chrom getChromDataIndex 2 mul /i exch def\n"
-		    " chrom getChromDataCount {"
-		    " chrom expData i get convertPos2X "
-		    " expData i 1 add get convertValue2Y "
-		    " diams"
-		    " i 2 add /i exch def\n"
-		    " } repeat "
-		    "i 0 /i exch def\n"
-		    " chrom getChromWidth 200 gt { 10 {"
-		    "  newpath "
-		    "  i 10.0 div chrom getChromWidth mul chrom getChromX add marginBottom moveto\n"
-		    "  0 -10 rlineto\n"
-		    " closepath stroke "
-		    "  i 10.0 div chrom getChromWidth mul chrom getChromX add marginBottom 10 sub moveto\n"
-		    " -90 rotate "
-		    "  i 10.0 div chrom getChromLength mul chrom getChromStart add toString show "
-		    "  90 rotate "
-		    "  i 1 add /i exch def\n"
-		    "} repeat } if \n"
-		    "end} bind def\n"
-
-		    "/paintGenome { 2 dict begin "
-		    " /chroms exch def\n"
-		    " /i 0 def\n"
-		    " chroms length {"
-		    " chroms i get paintChrom "
-		    " i 1 add /i exch def\n"
-		    " } repeat"
-		    " i 0 /i exch def\n"
-		    " 10 {\n"
-		    " 0.1 setgray\n"
-		    " newpath\n"
-		    " marginLeft i 10.0 div yAxis mul marginBottom add moveto\n"
-		    " -10 0 rlineto\n"
-		    " stroke\n"
-		    " i 1 add /i exch def\n"
-		    " 1 i 10.0 div yAxis mul marginBottom add moveto\n"
-		    " i 10.0 div maxValue minValue sub mul minValue add toString show\n"
-		    " } repeat\n"
-		    " end} bind def "
 		    ;
-	    size_t index_data=0UL;
-	    out << "/expData [\n";
+	    int index_data=-1;
 	    for(chrom2info_t::iterator r=chrom2info.begin();
 		    r!=chrom2info.end();
 		    ++r)
 		    {
-		    r->second->index_data=index_data;
-		    out << "% "<< r->second->chrom<< " 2x(" << r->second->index_data << ")\n";
+		    index_data++;
+		    ChromInfo* chromInfo=r->second;
+		    
+		    out << " "<< (index_data%2==0?1:0.7)<< " setgray newpath "<< chromInfo->x << " "<< margin_bottom << " "<< chromInfo->width << " " << y_axis_height <<  " closepath box fill ";
+		    
+		    out << " 0.4 setgray newpath "<< chromInfo->x << " "<< margin_bottom << " "<< chromInfo->width << " " << y_axis_height <<  " closepath box stroke ";
+		    }
+		    
+		    
+		for(chrom2info_t::iterator r=chrom2info.begin();
+		    r!=chrom2info.end();
+		    ++r)
+		    {
+		    ChromInfo* chromInfo=r->second;
 		    for(vector<Data>::iterator r2=r->second->data.begin();
 			    r2!=r->second->data.end();
 			    ++r2)
 			    {
-			    out << r2->pos  << " " << r2->value << "\n";
+			    out << chromInfo->convertToX(&*(r2))  << " " << convertToY(&(*r2)) << " dd\n";
 			    index_data++;
 			    }
+		    if(chromInfo->width>200)
+		    	{
+		    for(int i=0;i<=10.0;++i)
+	   		{
+	   		double x=chromInfo->x + ((chromInfo->width)/10.0)*i;
+	   		out << " 0 setgray newpath "
+	   		    << " " << x << " "  << (margin_bottom) << " moveto "
+	   		    << " 0 -10 rlineto closepath stroke " 
+	   		    << " " << x << " "  << (margin_bottom-20) << " moveto "
+	   		    << " -90 rotate (" << (int)(chromInfo->chromStart+((chromInfo->length()/10.0)*i)) << ") show 90 rotate"
+	   		    << endl
+	   		    ;
+	   		}
+	   		}
+	   	    
+	   	    out 	<< " 0 setgray "
+	   	    		<< " " << (chromInfo->x + (chromInfo->width/2.0))
+	   	    		<< " "  << (margin_bottom+10+y_axis_height) << " moveto "
+	   		    	<< "  90 rotate (" << chromInfo->chrom << ") show -90 rotate "
+	   		    	<< endl;
 		    }
-	    out << "] def\n";
 
-	    out << "/genome [";
-	    for(chrom2info_t::iterator r=chrom2info.begin();
-	   	   		    r!=chrom2info.end();
-	   	   		    ++r)
-		{
-		ChromInfo* c=r->second;
-		out << "[";
-		out	<< "(" << c->chrom << ") "
-			<< c->chromStart << " "
-			<< c->chromEnd <<" "
-			<< c->x<< " "
-			<< c->width << " "
-			<< c->index_data << " "
-			<< c->data.size()
-			;
-		out << "]\n";
-		}
-	    out << "] def\n";
-	    out << "genome paintGenome\n"
-		"0 setgray\n0 0 "<< pageWidth()<<" " << pageHeight() << " box\n"
+	
+	   for(int i=0;i<=10;++i)
+	   	{
+	   	out << " 0 setgray newpath ";
+	   	out << " " << margin_left << " " << (margin_bottom+(i/10.0)*y_axis_height) << " moveto -15 0 rlineto ";
+	   	out << " closepath stroke ";
+	   	out << " 1 " << (margin_bottom+(i/10.0)*y_axis_height) << " moveto";
+	   	out << " (" << (minValue+ (i/10.0)*(maxValue-minValue)) << ") show "; 
+	   	}
+	  
+	   
+	    out << "0 setgray\n0 0 "<< pageWidth()<<" " << pageHeight() << " box\n"
 		"0 setgray\n"
 		"stroke\n"
 		;
@@ -393,6 +347,12 @@ int main(int argc,char** argv)
     while(optind < argc)
    		{
    		if(std::strcmp(argv[optind],"-h")==0)
+   			{
+   			cerr << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
+   			cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+   			exit(EXIT_FAILURE);
+   			}
+   		else if(std::strcmp(argv[optind],"-h")==0)
    			{
    			cerr << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
    			cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
