@@ -38,6 +38,10 @@ class NcbiEFetch
 				if(stylesheet!=NULL) ::xsltFreeStylesheet(stylesheet);
 				//NO ??!! (exception) if(doc!=NULL) ::xmlFreeDoc(doc);
 				}
+			virtual std::string urlparams()
+				{
+				return "";
+				}
 			virtual void fillHeader(vector<string>& header)=0;
 			virtual std::string xsldoc()=0;
 			virtual std::string database()=0;
@@ -81,6 +85,59 @@ class NcbiEFetch
 					header.push_back("pubmed.abstract");
 					}
 			};
+
+	class SeqHandler:public DatabaseHandler
+				{
+				public:
+					SeqHandler() {}
+					virtual ~SeqHandler() {}
+					virtual std::string xsldoc()
+						{
+						extern char _binary_nuccore_xsl_start;
+						extern char _binary_nuccore_xsl_end;
+						string s=string(&_binary_nuccore_xsl_start,
+							&(_binary_nuccore_xsl_end)-&(_binary_nuccore_xsl_start)
+							);
+						return s;
+						}
+					virtual std::string urlparams()
+						{
+						return "&rettype=fasta";
+						}
+					virtual std::string database()=0;
+					virtual void fillHeader(vector<string>& header)
+						{
+						header.clear();
+						header.push_back(database()+".type");
+						header.push_back(database()+".accver");
+						header.push_back(database()+".taxid");
+						header.push_back(database()+".orgname");
+						header.push_back(database()+".defline");
+						header.push_back(database()+".length");
+						header.push_back(database()+".sequence");
+						}
+				};
+		class ProteinHandler:public SeqHandler
+				{
+				public:
+					ProteinHandler() {}
+					virtual ~ProteinHandler() {}
+					virtual std::string database()
+						{
+						return string("protein");
+						}
+				};
+		class NucleotideHandler:public SeqHandler
+				{
+				public:
+					NucleotideHandler() {}
+					virtual ~NucleotideHandler() {}
+					virtual std::string database()
+						{
+						return string("nucleotide");
+						}
+				};
+
 	Tokenizer tokenizer;
 	int column;
 	vector<DatabaseHandler*> handlers;
@@ -92,6 +149,8 @@ class NcbiEFetch
 	    LIBXML_TEST_VERSION
 	    handlers.push_back(new PubmedHandler);
 	    handler=handlers.back();
+	    handlers.push_back(new NucleotideHandler);
+	    handlers.push_back(new ProteinHandler);
 	    }
 	~NcbiEFetch()
 	    {
@@ -148,7 +207,8 @@ class NcbiEFetch
 
 	    ostringstream baseos;
 		baseos << "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=";
-		baseos << escape(handler->database()) << "&retmode=xml&id=";
+		baseos << escape(handler->database()) <<
+				handler->urlparams()<< "&retmode=xml&id=";
 		string urlbase(baseos.str());
 
 	    while(getline(in,line,'\n'))

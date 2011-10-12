@@ -58,10 +58,12 @@ $(BINDIR)/mysqlucsc: mysqlucsc.cpp  tokenizer.h throw.h zstreambuf.h
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
-$(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o
-	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
+$(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o
+	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
 
 pubmedxsl.o:pubmed.xsl
+	$(OBJCPY) $< $@
+nuccorexsl.o:nuccore.xsl
 	$(OBJCPY) $< $@
 
 bin.o:bin.cpp bin.h
