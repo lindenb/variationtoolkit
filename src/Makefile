@@ -18,7 +18,8 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/ranges \
 	$(BINDIR)/vcfttview \
 	$(BINDIR)/ncbiesearch \
-	$(BINDIR)/ncbiefetch
+	$(BINDIR)/ncbiefetch \
+	$(BINDIR)/mysqlucsc
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -50,6 +51,10 @@ $(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
 		$(SAMDIR)/bam2bcf.o \
 		$(SAMDIR)/errmod.o \
 		-L $(SAMDIR) -L $(SAMDIR)/bcftools  -lz -lbam -lbcf
+$(BINDIR)/mysqlucsc: mysqlucsc.cpp  tokenizer.h throw.h zstreambuf.h
+	$(CPP) -o $@ $< $(CFLAGS) `mysql_config --cflags  --libs` -lz 
+
+
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
