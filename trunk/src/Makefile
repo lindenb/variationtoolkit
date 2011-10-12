@@ -16,7 +16,8 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/dnacontext \
 	$(BINDIR)/ranges \
 	$(BINDIR)/vcfttview \
-	$(BINDIR)/ncbiesearch
+	$(BINDIR)/ncbiesearch \
+	$(BINDIR)/ncbiefetch
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -50,7 +51,9 @@ $(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
 		-L $(SAMDIR) -L $(SAMDIR)/bcftools  -lz -lbam -lbcf
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
-	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs`
+	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
+$(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o
+	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
 
 
 bin.o:bin.cpp bin.h
