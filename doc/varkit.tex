@@ -26,12 +26,15 @@ Your web proxy should allow an access to sourceforge.net .
 \subsection{ncbiefetch}
 Fetch a record from NCBI database.
 
+Currently supported databases: pubmed.
+
 The following example generates a sequences of 6 pubmed ID and we call ncbiefetch to download the records.
 \begin{quote}
 \begin{verbatim}
 $  (echo "#GI"; seq 1000 2 1010)   |\
       ncbiefetch -c 1 |\
       cut -c 1-100
+
 #GI	pubmed.year	pubmed.title	pubmed.journal	pubmed.abstract
 1000	1976	The amino acid sequence of Neurospora NADP-specific glutamate dehydrogenase. The tryptic p
 1002	1976	The amino acid sequence of Neurospora NADP-specific glutamate dehydrogenase. Peptic and ch

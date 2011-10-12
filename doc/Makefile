@@ -2,6 +2,6 @@ all: varkit.pdf
 varkit.pdf:varkit.dvi
 	dvipdf $<
 varkit.dvi:varkit.tex
-	latex $<
+	latex --batchmode $<
 clean:
 	rm -f varkit.dvi varkit.pdf
