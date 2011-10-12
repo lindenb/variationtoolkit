@@ -79,7 +79,7 @@ class NormalizeChrom
 						    {
 						    if(strcmp(p,"x")==0)
 								{
-								cout << "chrY";
+								cout << "chrX";
 								}
 						    else if(strcmp(p,"y")==0)
 								{
