@@ -3,6 +3,7 @@ CPP=g++
 CFLAGS=-O3 -Wall
 SAMDIR=../ext/samtools
 TABIXDIR=../ext/tabix
+OBJCPY= objcopy --input binary --output elf64-x86-64 --binary-architecture i386
 all:$(BINDIR)/scanvcf \
 	$(BINDIR)/groupbygene \
 	$(BINDIR)/numericsplit \
@@ -52,9 +53,11 @@ $(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
-$(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o
-	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
+$(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o
+	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
 
+pubmedxsl.o:pubmed.xsl
+	$(OBJCPY) $< $@
 
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)

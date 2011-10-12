@@ -61,7 +61,12 @@ class NcbiEFetch
 				virtual ~PubmedHandler() {}
 				virtual std::string xsldoc()
 					{
-					return "<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'/>";
+					extern char _binary_pubmed_xsl_start;
+					extern char _binary_pubmed_xsl_end;
+					string s=string(&_binary_pubmed_xsl_start,
+						&(_binary_pubmed_xsl_end)-&(_binary_pubmed_xsl_start)
+						);
+					return s;
 					}
 				virtual std::string database()
 					{
@@ -70,6 +75,10 @@ class NcbiEFetch
 				virtual void fillHeader(vector<string>& header)
 					{
 					header.clear();
+					header.push_back("pubmed.year");
+					header.push_back("pubmed.title");
+					header.push_back("pubmed.journal");
+					header.push_back("pubmed.abstract");
 					}
 			};
 	Tokenizer tokenizer;
