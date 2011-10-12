@@ -226,6 +226,69 @@ MT	30
 \end{verbatim}
 \end{quote}
 
+\subsection{ranges}
+Chromosomes region below/above a given values:
+
+The following command lines prints the ranges of QUAL (column 6) below/abouve "50.0".
+
+\begin{quote}
+\begin{verbatim}
+$ gunzip -c data.vcf.gz |\
+  sort -t ' ' -k1,1 -k2,2n |\
+  ranges -v 6 -L 50 
+
+
+#CHROM	chromStart	chromEnd	length	In/Out	Mean	Count
+1	0	883624	883625	+	80	4
+1	881628	887559	5932	-	39	1
+1	883626	889158	5533	+	89.4	5
+1	889159	892459	3301	-	48	1
+1	889160	914332	25173	+	90.7143	7
+1	912050	915226	3177	-	40.5	2
+1	914941	985265	70325	+	82.875	8
+1	982995	986442	3448	-	36	1
+1	985267	1225611	240345	+	82.1667	6
+(...)
+\end{verbatim}
+\end{quote}
+
+\subsection{dnacontext}
+Print the DNA context of a variation using a genome indexed with samtools.
+\begin{quote}
+\begin{verbatim}
+$ gunzip -c data.vcf.gz |\
+  grep -v "##" | normalizechrom |\
+  dnacontext -f hg19.fa  |\
+  awk '($8=".")'
+
+#CHROM POS ID REF ALT QUAL FILTER . FORMAT CALL LEFT(DNA) CONTEXT(DNA) RIGHT(DNA)
+chr1 879317 rs7523549 C T 71 0 . GT:GQ:DP:FLT 0/1:34:8:0 GAGTTTTCTA C GTGGCCAGCT
+chr1 880238 rs3748592 A G 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 AGCCAGCCTT A GAGGTTACTC
+chr1 880390 rs3748593 C A 99 0 . GT:GQ:DP:FLT 1/0:99:30:0 TGCCCTCCCG C CAGATGGGCT
+chr1 881627 rs2272757 G A 99 0 . GT:GQ:DP:FLT 1/0:59:20:0 TACAAGGTCA G GGGTGTCCCC
+chr1 883625 rs4970378 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 GAAGAGCAGG A GAGAGGGCCG
+chr1 887560 rs3748595 A C 99 0 . GT:GQ:DP:FLT 1/1:99:40:0 CCAGGCTGAC A AGTCAGGCTG
+(...)
+\end{verbatim}
+\end{quote}
+
+\subsection{prediction}
+variation prediction
+
+TODO
+\subsection{manhattan}
+plots a manhattan plot as postscript.
+
+the following command lines creates a Manhattan plot for the QUALities of a VCF file.
+\begin{quote}
+\begin{verbatim}
+$ gunzip -c data.vcf.gz | grep -v "##" | \
+   normalizechrom | cut -d '     ' -f 1,2,6 |\
+   manhattan > result.ps
+$ evince result.ps
+\end{verbatim}
+\end{quote}
+ \includegraphics{manhattan.eps}
 \subsection{ncbiesearch}
 Search NCBI/Entrez:
 
