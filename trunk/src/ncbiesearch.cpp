@@ -102,85 +102,85 @@ class NcbiEsearch
 	    string baseurl(baseos.str());
 
 	    while(getline(in,line,'\n'))
-		{
-		if(line.empty()) continue;
-		if(line.at(0)=='#')
-		    {
-		    if(line.size()>1 && line[1]=='#') continue;
-		    cout << line << tokenizer.delim << database<< ".id"<<endl;
-		    continue;
-		    }
-		bool found=false;
-		tokenizer.split(line,tokens);
-		ostringstream os;
-		bool ok=true;
-		char* p=(char*)query.c_str();
-		char* prev=p;
-		while((p=strchr(prev,'$'))!=NULL)
-		    {
-		    if(!isdigit(*(p+1)))
 			{
-			prev=p+1;
-			continue;
-			}
-		    os.write(prev,prev-p);
-		    ++p;
-		    char *p2;
-		    int col=(int)strtol(p,&p2,10);
-		    if(col<1)
-			{
-			THROW("Bad query near \""<< p<< "\"");
-			}
-		    col--;//0-based
-		    if(col>=(int)tokens.size())
-			{
-			ok=false;
-			cerr << "Index out of bound for "<< query << " and "<< line << endl;
-			break;
-			}
-		    os << tokens[col];
-		    prev=p2;
-		    }
-		os << prev;
-		if(!ok) continue;
-		string url(baseurl);
-		url.append(escape(os.str()));
-
-		xmlTextReaderPtr reader=parse(url.c_str());
-		for(;;)
-		    {
-		    int ret = ::xmlTextReaderRead(reader);
-		    if(ret==-1) THROW("I/O XML error");
-		    if(ret!=1) return;
-		    switch(xmlTextReaderNodeType(reader))
-			{
-			case XML_READER_TYPE_ELEMENT:
-			    {
-			    const xmlChar* tag=xmlTextReaderConstName(reader);
-			    if(tag!=NULL &&
-				    !::xmlTextReaderIsEmptyElement(reader) &&
-				    ::xmlStrEqual(tag,BAD_CAST"Id")
-				    )
+			if(line.empty()) continue;
+			if(line.at(0)=='#')
 				{
-				xmlChar *content=xmlTextReaderReadString(reader);
-				cout << line << tokenizer.delim << content << endl;//xmlTextReaderConstValue(reader)<< endl;
-				xmlFree(content);
-				found=true;
+				if(line.size()>1 && line[1]=='#') continue;
+				cout << line << tokenizer.delim << database<< ".id"<<endl;
+				continue;
 				}
-			    break;
-			    }
-			default:
-			    {
-			    break;
-			    }
+			bool found=false;
+			tokenizer.split(line,tokens);
+			ostringstream os;
+			bool ok=true;
+			char* p=(char*)query.c_str();
+			char* prev=p;
+			while((p=strchr(prev,'$'))!=NULL)
+				{
+				if(!isdigit(*(p+1)))
+					{
+					prev=p+1;
+					continue;
+					}
+				os.write(prev,prev-p);
+				++p;
+				char *p2;
+				int col=(int)strtol(p,&p2,10);
+				if(col<1)
+					{
+					THROW("Bad query near \""<< p<< "\"");
+					}
+				col--;//0-based
+				if(col>=(int)tokens.size())
+					{
+					ok=false;
+					cerr << "Index out of bound for "<< query << " and "<< line << endl;
+					break;
+					}
+				os << tokens[col];
+				prev=p2;
+				}
+			os << prev;
+			if(!ok) continue;
+			string url(baseurl);
+			url.append(escape(os.str()));
+
+			xmlTextReaderPtr reader=parse(url.c_str());
+			for(;;)
+				{
+				int ret = ::xmlTextReaderRead(reader);
+				if(ret==-1) THROW("I/O XML error");
+				if(ret!=1) break;
+				switch(xmlTextReaderNodeType(reader))
+					{
+					case XML_READER_TYPE_ELEMENT:
+						{
+						const xmlChar* tag=xmlTextReaderConstName(reader);
+						if(tag!=NULL &&
+							!::xmlTextReaderIsEmptyElement(reader) &&
+							::xmlStrEqual(tag,BAD_CAST"Id")
+							)
+							{
+							xmlChar *content=xmlTextReaderReadString(reader);
+							cout << line << tokenizer.delim << content << endl;//xmlTextReaderConstValue(reader)<< endl;
+							xmlFree(content);
+							found=true;
+							}
+						break;
+						}
+					default:
+						{
+						break;
+						}
+					}
+				}
+			::xmlFreeTextReader(reader);
+			if(!found)
+				{
+				cout << line << tokenizer.delim << "!N/A" << endl;
+				}
 			}
-		    }
-		xmlFreeTextReader(reader);
-		if(!found)
-		    {
-		    cout << line << tokenizer.delim << "!N/A" << endl;
-		    }
-		}
 	    }
 	void usage(int argc,char** argv)
 	    {

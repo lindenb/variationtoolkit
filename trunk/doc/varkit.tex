@@ -17,10 +17,53 @@ but here, the bioinformaticians are the preliminary audience for this toolkit.
 Your web proxy should allow an access to sourceforge.net .
 \item[mysql-dev]: the files and libraries for mysql.
 \item[libxml2]: the C library for xml \url{http://xmlsoft.org/}.
+\item[libxslt]: the C library for xslt \url{http://xmlsoft.org/XSLT/}.
 \item[libcurl]: the C library for downloading some URLs.
 \end{description}
 
 \section{Tools}
+
+\subsection{ncbiefetch}
+Fetch a record from NCBI database.
+
+The following example generates a sequences of 6 pubmed ID and we call ncbiefetch to download the records.
+\begin{quote}
+\begin{verbatim}
+$  (echo "#GI"; seq 1000 2 1010)   |\
+      ncbiefetch -c 1 |\
+      cut -c 1-100
+#GI	pubmed.year	pubmed.title	pubmed.journal	pubmed.abstract
+1000	1976	The amino acid sequence of Neurospora NADP-specific glutamate dehydrogenase. The tryptic p
+1002	1976	The amino acid sequence of Neurospora NADP-specific glutamate dehydrogenase. Peptic and ch
+1004	1976	Properties of 5-aminolaevulinate synthetase and its relationship to microsomal mixed-funct
+1006	1976	The attachment of glutamine synthetase to brain membranes.	Biochemical medicine	...
+1008	1976	Nature and possible origin of human serum ribonuclease.	Biochemical and biophysical resear
+1010	1976	Formation of non-amidine products in the chemical modification of horse liver alcohol dehy
+\end{verbatim}
+\end{quote}
+
+\subsection{ncbiesearch}
+Search NCBI/Entrez:
+
+The following example creates a sequence of 3 names, we search the NCBi for each name and the word "Rotavirus" in the title, limit to 2 record, we fetch each record (the PMID is in the 2nd column) and we cut the result down to 80 characters.
+ 
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#subject\nPiron\nLindenbaum\nPoncet" |\
+   ncbiesearch -q '$1 "Rotavirus"[TITL]' -L 2  |\
+   ncbiefetch -c 2 |\
+   cut -c 1-80
+#subject	pubmed.id	pubmed.year	pubmed.title	pubmed.journal	pubmed.abstract
+Piron	10888646	2000	Efficient translation of rotavirus mRNA requires simultaneou
+Piron	10364288	1999	Identification of the RNA-binding, dimerization, and eIF4GI-
+Lindenbaum	15047801	2004	RoXaN, a novel cellular protein containing TPR, LD, and
+Lindenbaum	8985320	1997	In vivo and in vitro phosphorylation of rotavirus NSP5 c
+Poncet	21864538	2011	Structural Organisation of the Rotavirus Nonstructural Prot
+Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
+\end{verbatim}
+\end{quote}
+
+
 \subsection{vcfttview}
 \begin{quote}
 \begin{verbatim}
