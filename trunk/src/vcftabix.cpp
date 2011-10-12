@@ -10,21 +10,20 @@ Contact:
 	plindenbaum@yahoo.fr
 Reference:
 	http://plindenbaum.blogspot.com/2011/09/joining-genomic-annotations-files-with.html
-Compilation:
-	gcc -o jointabix -Wall -O2 -I${TABIXDIR} -L${TABIXDIR} jointabix.c  -ltabix -lz
 API:
 	http://samtools.sourceforge.net/tabix.shtml
 
 */
 #include <cstring>
 #include <cstdlib>
+#include <cassert>
 #include <cstdio>
 #include <zlib.h>
 #include <cerrno>
 #include "tokenizer.h"
 #include "xtabix.h"
 #include "zstreambuf.h"
-
+#include "where.h"
 using namespace std;
 
 enum {
@@ -65,6 +64,11 @@ class JoinTabix
 			tokenizer.split(line,tokens);
 			if(line[0]=='#')
 				{
+				if(line.size()>1 && line[1]=='#')
+					{
+					cout << line << endl;
+					continue;
+					}
 				cout << line ;
 				auto_ptr<string> head=tabix->header();
 				if(head.get()!=NULL && mode!=PRINT_UMATCHING)
@@ -92,12 +96,16 @@ class JoinTabix
 				cerr << "BAD POS  in " << line << endl;
 				continue;
 				}
+			chromStart--;
 			int chromEnd=chromStart+1;
 			auto_ptr<Tabix::Cursor>c= tabix->cursor(tokens[chromCol].c_str(),chromStart,chromEnd);
 			for(;;)
 				{
 				const char* s= c->next();
-				if(s==NULL) break;
+				if(s==NULL)
+					{
+					break;
+					}
 				found=true;
 				if(mode!=PRINT_UMATCHING)
 					{
@@ -127,7 +135,8 @@ class JoinTabix
 		cout << "  -f <filename> tabix file (required).\n";
 		cout << "  -1 remove 1 to the VCF coodinates.\n";
 		cout << "  -S <NOT-FOUND-String> default:"<< notFound << ".\n";
-		cout << "  -m  <int=mode> 0=all 1:only-matching 2:only-non-matching default:"<< mode << ".\n";
+		cout << "  -m  <int=mode> "<< PRINT_ALL <<">=all "<< PRINT_MATCHING<<
+					":only-matching  "<< PRINT_UMATCHING <<":only-non-matching default:"<< mode << ".\n";
 		cout << endl;
 		cout << endl;
 		}
@@ -186,11 +195,13 @@ int main(int argc, char *argv[])
 	    	}
 	    else if(strcmp(argv[optind],"-m")==0 && optind+1< argc)
 			{
+
 			char* p2=NULL;
-			app.mode=strtol(argv[++optind],&p2,10)-1;
-			if(app.mode<PRINT_ALL ||  app.mode>PRINT_UMATCHING)
+			app.mode=(int)strtol(argv[++optind],&p2,10);
+			if(app.mode<0 ||  app.mode>2)
 				{
 				cerr << "Bad mode: "<< argv[optind] << endl;
+				app.usage(argc,argv);
 				return EXIT_FAILURE;
 				}
 			}
