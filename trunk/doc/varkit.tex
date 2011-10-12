@@ -1,8 +1,9 @@
 \documentclass[12pt]{article}
 \usepackage{hyperref}
 \usepackage{graphics}
+\usepackage{color}
 \title{The Variation Toolkit}
-\author{Pierre Lindenbaum PhD.}
+\author{Pierre Lindenbaum PhD.\\plindenbaum@yahoo.fr}
 \date{October 11, 2011}
 
 \begin{document}
@@ -29,6 +30,7 @@ All the tools have the option "-h" that provides some help.
 
 \subsection{scanvcf}
 Reads a list of pairs Sample-Name/Path to VCF and prints the VCF, adding an extra column with the sample name to the output.
+
 \begin{quote}
 \begin{verbatim}
 $ head -n3 input.txt
@@ -62,7 +64,10 @@ Extract a field from the INFO column of a VCF file.
 The following script extract the GN(gene name) field from the column INFO. We keep the lines for the gene NOTCH2 and we display the associated SNP.
 \begin{quote}
 \begin{verbatim}
-$ gunzip -c data.vcf.gz | extractinfo -t GN -i | awk -F '       ' '($11 =="NOTCH2")' | cut -d ' ' -f 3 | grep rs
+$ gunzip -c data.vcf.gz |\
+  extractinfo -t GN -i | \
+  awk -F '       ' '($11 =="NOTCH2")' |\
+  cut -d ' ' -f 3 | grep rs
 
 rs6685892
 rs2493392
@@ -284,6 +289,7 @@ TODO
 plots a manhattan plot as postscript.
 
 the following command lines creates a Manhattan plot for the QUALities of a VCF file.
+
 \begin{quote}
 \begin{verbatim}
 $ gunzip -c data.vcf.gz | grep -v "##" | \
@@ -292,6 +298,7 @@ $ gunzip -c data.vcf.gz | grep -v "##" | \
 $ evince result.ps
 \end{verbatim}
 \end{quote}
+
 \begin{figure}
 \includegraphics{manhattan.eps}
 \caption{An Example Manhattan}
@@ -323,12 +330,31 @@ Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
 
 
 \subsection{vcfttview}
-Prints the BAM context around indels.
+Prints the BAM context around variations.
+Original code from samtools ttview : Heng Li, Bob Handsaker, Jue Ruan, Colin Hercus, Petr Danecek
 
 \begin{quote}
 \begin{verbatim}
+Options:
+  -c <chrom Column> (1)
+  -p <pos Column> (2)
+  -s <sample Column> (0) [optional]
+  -d <column-delimiter> (default:tab)
+  -B <bam-file> [defines one main bam for all data]
+  -f <file> loads a file tab delimited with SAMPLE-NAME\tPATH-TO-BAM
+  -F <SAMPLE> <FILE>  push a SAMPLE-NAME/PATH-TO-BAM in the current list
+  -a for one position, print all BAM
+  -x <int> shift x bases to the right: default:10
+  -w <int> screen width default:80
+  -R <fasta> reference file indexed with samtools faidx 
+\end{verbatim}
+\end{quote}
+Example:
+\begin{quote}
+\begin{verbatim}
+
 $ echo -e "ref\t3\nref2\t2" |\
-vcfttview -x 3 -B toy.bam -R toy.fa
+  vcfttview -x 3 -B toy.bam -R toy.fa
 
 >ref:3
 
