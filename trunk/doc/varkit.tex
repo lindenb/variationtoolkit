@@ -124,6 +124,17 @@ $  (echo "#GI"; seq 1000 2 1010)   |\
 \end{verbatim}
 \end{quote}
 
+The following example creates a sequence of 3 gi, we fetch each record (the gi is in the 1st column) and we cut the result down to 80 characters.
+
+\begin{quote}
+\begin{verbatim}
+$ (echo "#GI"; seq 5 2 10)  | ../bin/ncbiefetch -c 1 -D nucleotide | cut -c 1-80
+#GI	nucleotide.type	nucleotide.accver	nucleotide.taxid	nucleotide.orgname	nucleo
+5	nucleotide	X60065.1	9913	Bos taurus	B.bovis beta-2-gpI mRNA for beta-2-glycopr
+7	nucleotide	X51700.1	9913	Bos taurus	Bos taurus mRNA for bone Gla protein	437	G
+9	nucleotide	X68321.1	9913	Bos taurus	B.taurus mRNA for cyclin A	1512	GAATTCCAGG
+\end{verbatim}
+\end{quote}
 
 \subsection{samplepersnp}
 Appends a column with the number of Samples per Variation.
@@ -324,8 +335,6 @@ Poncet	21864538	2011	Structural Organisation of the Rotavirus Nonstructural Prot
 Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
 \end{verbatim}
 \end{quote}
-
-
 
 
 
