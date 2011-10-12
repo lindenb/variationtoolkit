@@ -4,4 +4,4 @@ varkit.pdf:varkit.dvi
 varkit.dvi:varkit.tex
 	latex --batchmode $<
 clean:
-	rm -f varkit.dvi varkit.pdf
+	rm -f varkit.dvi varkit.pdf varkit.aux varkit.log varkit.out
