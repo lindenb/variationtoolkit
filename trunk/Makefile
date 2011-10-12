@@ -1,6 +1,6 @@
 TABIXVERSION=0.2.5
 SAMTOOLSVERSION=0.1.18
-.PHONY: all  ext manual doc
+.PHONY: all  ext manual doc clean
 all:ext
 	(cd src;make)
 manual:
@@ -20,3 +20,7 @@ ext/samtools:
 	mkdir -p ext
 	wget -O ext/samtools-$(SAMTOOLSVERSION).tar.bz2 "http://ignum.dl.sourceforge.net/project/samtools/samtools/$(SAMTOOLSVERSION)/samtools-$(SAMTOOLSVERSION).tar.bz2"
 	(cd ext; bunzip2 samtools-$(SAMTOOLSVERSION).tar.bz2 ; tar xvf samtools-$(SAMTOOLSVERSION).tar; rm samtools-$(SAMTOOLSVERSION).tar ; mv samtools-$(SAMTOOLSVERSION) samtools; cd samtools; make)
+
+clean:
+	(cd src; make clean)
+	(cd doc; make clean)

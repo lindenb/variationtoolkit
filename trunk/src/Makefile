@@ -15,7 +15,8 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/samplespersnp \
 	$(BINDIR)/dnacontext \
 	$(BINDIR)/ranges \
-	$(BINDIR)/vcfttview 
+	$(BINDIR)/vcfttview \
+	$(BINDIR)/ncbiesearch
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -47,6 +48,9 @@ $(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
 		$(SAMDIR)/bam2bcf.o \
 		$(SAMDIR)/errmod.o \
 		-L $(SAMDIR) -L $(SAMDIR)/bcftools  -lz -lbam -lbcf
+
+$(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
+	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs`
 
 
 bin.o:bin.cpp bin.h

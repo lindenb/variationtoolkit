@@ -207,7 +207,7 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 					} else {
 						if (this->show_name) {
 							char *name = bam1_qname(p->b);
-							c = (p->qpos + 1 >= p->b->core.l_qname)? ' ' : name[p->qpos];
+							c = (p->qpos + 1 >= (int32_t)p->b->core.l_qname)? ' ' : name[p->qpos];
 						} else {
 							c = bam_nt16_rev_table[bam1_seqi(bam1_seq(p->b), p->qpos)];
 							if (this->is_dot && toupper(c) == toupper(rb)) c = bam1_strand(p->b)? ',' : '.';
@@ -220,7 +220,7 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 					if (this->base_for ==  TV_BASE_NUCL) {
 						if (this->show_name) {
 							char *name = bam1_qname(p->b);
-							c = (p->qpos + j + 1 >= p->b->core.l_qname)? ' ' : name[p->qpos + j];
+							c = (p->qpos + j + 1 >= (int32_t)p->b->core.l_qname)? ' ' : name[p->qpos + j];
 						} else {
 							c = bam_nt16_rev_table[bam1_seqi(bam1_seq(p->b), p->qpos + j)];
 							if (j == 0 && this->is_dot && toupper(c) == toupper(rb)) c = bam1_strand(p->b)? ',' : '.';
@@ -327,7 +327,7 @@ int TTView::ttv_fetch_func(const void *b1, void *data)
 		{
 		uint32_t *cigar = bam1_cigar(b); // this is cheating...
 		int i;
-		for (i = 0; i <b->core.n_cigar; ++i) {
+		for (i = 0; i < (int32_t)b->core.n_cigar; ++i) {
 			if ((cigar[i]&0xf) == BAM_CREF_SKIP)
 				cigar[i] = cigar[i]>>4<<4 | BAM_CDEL;
 		}
