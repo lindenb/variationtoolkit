@@ -23,6 +23,76 @@ Your web proxy should allow an access to sourceforge.net .
 
 \section{Tools}
 
+\subsection{scanvcf}
+Reads a list of pairs Sample-Name/Path to VCF and prints the VCF, adding an extra column with the sample name to the output.
+\begin{quote}
+\begin{verbatim}
+$ head -n3 input.txt
+
+#Sample	VCF
+Sample1	data/sample1.vcf.gz
+Sample2	data/sample1.vcf.gz
+Sample2	data/sample1.vcf.gz
+
+
+$ cat input.txt |scanvcf 
+
+#CHROM POS ID REF ALT QUAL FILTER . FORMAT Call SAMPLE
+1 879317 rs7523549 C T 71 0 . GT:GQ:DP:FLT 0/1:34:8:0 Sample1
+1 880238 rs3748592 A G 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample1
+1 880390 rs3748593 C A 99 0 . GT:GQ:DP:FLT 1/0:99:30:0 Sample1
+1 881627 rs2272757 G A 99 0 . GT:GQ:DP:FLT 1/0:59:20:0 Sample1
+(...)
+Y 13524507 . C T 99 0 . GT:GQ:DP:FLT 1/1:99:233:0 Sample20
+Y 21154323 rs10465459 G A 99 0 . GT:GQ:DP:FLT 1/1:99:215:0 Sample20
+Y 21154426 rs52812045 G A 99 0 . GT:GQ:DP:FLT 1/0:99:143:0 Sample20
+Y 21154466 rs10465460 T A 99 0 . GT:GQ:DP:FLT 1/1:99:134:0 Sample20
+Y 21154529 . G A 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample20
+\end{verbatim}
+\end{quote}
+
+
+\subsection{extractinfo}
+Extract a field from the INFO column of a VCF file.
+
+The following script extract the GN(gene name) field from the column INFO. We keep the lines for the gene NOTCH2 and we display the associated SNP.
+\begin{quote}
+\begin{verbatim}
+$ gunzip -c data.vcf.gz | extractinfo -t GN -i | awk -F '       ' '($11 =="NOTCH2")' | cut -d ' ' -f 3 | grep rs
+
+rs6685892
+rs2493392
+rs2493420
+rs7534585
+rs7534586
+rs2493409
+rs2453040
+rs2124109
+
+\end{verbatim}
+\end{quote}
+
+\subsection{extractformat}
+Extract a field from the FORMAT column of a VCF file.
+
+The following command line extract the field 'GT' from the VCF and we count the occurence of the values.
+
+\begin{quote}
+\begin{verbatim}
+$ gunzip -c data.vcf.gz |\
+   extractformat -t GT |\
+   cut -d '        ' -f 11 |\
+   sort |\
+    uniq -c
+
+     29 
+  10729 0/1
+  10800 1/0
+  13518 1/1
+     11 1/2
+\end{verbatim}
+\end{quote}
+
 \subsection{ncbiefetch}
 Fetch a record from NCBI database.
 
@@ -42,6 +112,117 @@ $  (echo "#GI"; seq 1000 2 1010)   |\
 1006	1976	The attachment of glutamine synthetase to brain membranes.	Biochemical medicine	...
 1008	1976	Nature and possible origin of human serum ribonuclease.	Biochemical and biophysical resear
 1010	1976	Formation of non-amidine products in the chemical modification of horse liver alcohol dehy
+\end{verbatim}
+\end{quote}
+
+
+\subsection{samplepersnp}
+Appends a column with the number of Samples per Variation.
+
+The following command line scans the VCF, sort the variations by CHROM/POS/REF/ALT/SAMPLE, counts the number of samples/variation 
+
+\begin{quote}
+\begin{verbatim}
+$ cat list.tsv | scanvcf  |\
+  sort -t'  ' -k1,1 -k2,2n -k4,4 -k5,5 -k11,11 |\
+  samplespersnp --sample 11 | awk '($8=".")'
+
+1 753269 rs61770172 C G 99 0 . GT:GQ:DP:FLT 1/1:99:116:0 Sample16 1
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:63:31:0 Sample10 7
+1 753405 rs61770173 C A 81 0 . GT:GQ:DP:FLT 1/1:51:19:0 Sample12 7
+1 753405 rs61770173 C A 35 0 . GT:GQ:DP:FLT 1/0:35:66:0 Sample19 7
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:99:35:0 Sample3 7
+1 753405 rs61770173 C A 90 0 . GT:GQ:DP:FLT 1/1:90:21:0 Sample5 7
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:99:36:0 Sample6 7
+1 753405 rs61770173 C A 90 0 . GT:GQ:DP:FLT 1/1:90:21:0 Sample9 7
+1 876499 rs4372192 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample12 6
+1 876499 rs4372192 A G 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample16 6
+1 876499 rs4372192 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample17 6
+1 876499 rs4372192 A G 45 0 . GT:GQ:DP:FLT 1/1:45:6:0 Sample18 6
+1 876499 rs4372192 A G 45 0 . GT:GQ:DP:FLT 1/1:45:6:0 Sample4 6
+1 876499 rs4372192 A G 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample6 6
+1 877831 rs6672356 T C 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample14 2
+1 877831 rs6672356 T C 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample4 2
+1 878601 . C T 98 0 . GT:GQ:DP:FLT 0/1:50:11:0 Sample14 1
+\end{verbatim}
+\end{quote}
+
+\subsection{numericsplit}
+A simple numeric splitter.
+
+The following command line extracts the number of samples/variation and only keep the variation carried by 5 to 9 samples.
+\begin{quote}
+\begin{verbatim}
+$ cat list.tsv | scanvcf  |\
+ sort -t'  ' -k1,1 -k2,2n -k4,4 -k5,5 -k11,11 |\
+ samplespersnp --sample 11 |\
+ numericsplit -c 12 -m 5 -M 9 | awk '($8=".")' | head
+
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:63:31:0 Sample10 7
+1 753405 rs61770173 C A 81 0 . GT:GQ:DP:FLT 1/1:51:19:0 Sample12 7
+1 753405 rs61770173 C A 35 0 . GT:GQ:DP:FLT 1/0:35:66:0 Sample19 7
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:99:35:0 Sample3 7
+1 753405 rs61770173 C A 90 0 . GT:GQ:DP:FLT 1/1:90:21:0 Sample5 7
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:99:36:0 Sample6 7
+1 753405 rs61770173 C A 90 0 . GT:GQ:DP:FLT 1/1:90:21:0 Sample9 7
+1 876499 rs4372192 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample12 6
+1 876499 rs4372192 A G 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample16 6
+1 876499 rs4372192 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample17 6
+1 876499 rs4372192 A G 45 0 . GT:GQ:DP:FLT 1/1:45:6:0 Sample18 6
+1 876499 rs4372192 A G 45 0 . GT:GQ:DP:FLT 1/1:45:6:0 Sample4 6
+1 876499 rs4372192 A G 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample6 6
+1 900285 rs4970435 C T 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample11 9
+1 900285 rs4970435 C T 42 0 . GT:GQ:DP:FLT 1/1:32:6:0 Sample12 9
+1 900285 rs4970435 C T 66 0 . GT:GQ:DP:FLT 1/1:66:13:0 Sample13 9
+1 900285 rs4970435 C T 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample14 9
+1 900285 rs4970435 C T 48 0 . GT:GQ:DP:FLT 1/1:48:7:0 Sample15 9
+1 900285 rs4970435 C T 66 0 . GT:GQ:DP:FLT 1/1:66:13:0 Sample16 9
+1 900285 rs4970435 C T 51 0 . GT:GQ:DP:FLT 1/1:51:9:0 Sample17 9
+
+
+\end{verbatim}
+\end{quote}
+
+\subsection{groupbygene}
+transposes a VCF table with a "GENE" and a "SAMPLE" column and ouput a new table: count(Gene)=f(SAMPLE)
+
+The following command line extracts the name of the GENE, sort the data on CHROM/POS/REF/ALT/SAMPLE and group the data by gene.
+
+\begin{quote}
+\begin{verbatim}
+$  cat list.tsv | scanvcf  |\
+   extractinfo -t GN | awk '($12!="N/A")' |\
+   sort -t '       ' -k1,1 -k2,2n -k4,4 -k5,5 -k11,11 |\
+   bin/groupbygene --gene 12 --sample 11
+
+
+GENE	CHROM	START	END	count(SAMPLES)	count(distinct_MUTATION)	count(Sample1)	count(Sample2)	count(Sample3)	count(Sample4)	count(Sample5)
+A1	19	58862835	58864479	5	2	2	2	2	2	2
+A1CF	10	52569637	52576068	5	3	1	3	1	1	1
+A2M	12	9230038	9264946	5	8	2	2	2	7	3
+A2ML1	12	8990937	9020912	5	17	12	7	12	13	10
+A4GALT	22	43088971	43089849	5	3	3	3	3	3	1
+A4GNT	3	137843106	137850003	4	3	3	3	3	3	0
+(...)
+\end{verbatim}
+\end{quote}
+
+\subsection{normalizechrom}
+Normalizes the name of a chromosome to/from UCSC/ENSEMBL.
+
+\begin{quote}
+\begin{verbatim}
+$ echo -e "1\t10\nX\t20\nMT\t30" | normalizechrom 
+
+chr1	10
+chrY	20
+chrM	30
+
+$ echo -e "chr1\t10\nX\t20\nchrM\t30" | normalizechrom -E
+
+1	10
+X	20
+MT	30
 \end{verbatim}
 \end{quote}
 
@@ -65,6 +246,9 @@ Poncet	21864538	2011	Structural Organisation of the Rotavirus Nonstructural Prot
 Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
 \end{verbatim}
 \end{quote}
+
+
+
 
 
 \subsection{vcfttview}
