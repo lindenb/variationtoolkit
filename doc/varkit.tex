@@ -1,5 +1,6 @@
 \documentclass[12pt]{article}
 \usepackage{hyperref}
+\usepackage{graphics}
 \title{The Variation Toolkit}
 \author{Pierre Lindenbaum PhD.}
 \date{October 11, 2011}
@@ -21,7 +22,10 @@ Your web proxy should allow an access to sourceforge.net .
 \item[libcurl]: the C library for downloading some URLs.
 \end{description}
 
+
 \section{Tools}
+All the tools have the option "-h" that provides some help.
+
 
 \subsection{scanvcf}
 Reads a list of pairs Sample-Name/Path to VCF and prints the VCF, adding an extra column with the sample name to the output.
@@ -288,7 +292,11 @@ $ gunzip -c data.vcf.gz | grep -v "##" | \
 $ evince result.ps
 \end{verbatim}
 \end{quote}
- \includegraphics{manhattan.eps}
+\begin{figure}
+\includegraphics{manhattan.eps}
+\caption{An Example Manhattan}
+\end{figure}
+ 
 \subsection{ncbiesearch}
 Search NCBI/Entrez:
 
@@ -315,6 +323,8 @@ Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
 
 
 \subsection{vcfttview}
+Prints the BAM context around indels.
+
 \begin{quote}
 \begin{verbatim}
 $ echo -e "ref\t3\nref2\t2" |\
