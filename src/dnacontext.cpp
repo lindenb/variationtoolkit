@@ -136,93 +136,93 @@ int main(int argc,char** argv)
     int optind=1;
     const char* faidxfile=NULL;
     while(optind < argc)
-	{
-	if(std::strcmp(argv[optind],"-h")==0)
-	    {
-	    app.usage(argc,argv);
-	    return (EXIT_FAILURE);
-	    }
-	else if(std::strcmp(argv[optind],"-c")==0)
-	    {
-	    char* p2;
-	    app.chromColumn=(int)strtol(argv[++optind],&p2,10)-1;
-	    if(app.chromColumn<0 || *p2!=0)
 		{
-		cerr << "Illegal number for CHROM" << endl;
-		return EXIT_FAILURE;
+		if(std::strcmp(argv[optind],"-h")==0)
+			{
+			app.usage(argc,argv);
+			return (EXIT_FAILURE);
+			}
+		else if(std::strcmp(argv[optind],"-c")==0)
+			{
+			char* p2;
+			app.chromColumn=(int)strtol(argv[++optind],&p2,10)-1;
+			if(app.chromColumn<0 || *p2!=0)
+				{
+				cerr << "Illegal number for CHROM" << endl;
+				return EXIT_FAILURE;
+				}
+			}
+		else if(std::strcmp(argv[optind],"-p")==0)
+			{
+			char* p2;
+			app.posColumn=(int)strtol(argv[++optind],&p2,10)-1;
+			if(app.posColumn<0 || *p2!=0)
+			{
+			cerr << "Illegal number for POS" << endl;
+			return EXIT_FAILURE;
+			}
+			}
+		else if(std::strcmp(argv[optind],"-f")==0 && optind+1<argc)
+			{
+			faidxfile=argv[++optind];
+			}
+		else if(std::strcmp(argv[optind],"-x")==0 && optind+1<argc)
+			{
+			char* p2;
+			app.extend=(int)strtol(argv[++optind],&p2,10);
+			if(*p2!=0 || app.extend <0)
+				{
+				cerr << "Illegal number for 'extend'" << endl;
+				return EXIT_FAILURE;
+				}
+			}
+		else if(std::strcmp(argv[optind],"--delim")==0 && optind+1< argc)
+			{
+			char* p=argv[++optind];
+			if(strlen(p)!=1)
+				{
+				cerr << "Bad delimiter \""<< p << "\"\n";
+				app.usage(argc,argv);
+				return(EXIT_FAILURE);
+				}
+			app.tokenizer.delim=p[0];
+			}
+		else if(argv[optind][0]=='-')
+			{
+			cerr << "unknown option '"<< argv[optind]<< "'"<< endl;
+			app.usage(argc,argv);
+			return (EXIT_FAILURE);
+			}
+		else
+			{
+			break;
+			}
+		++optind;
 		}
-	    }
-	else if(std::strcmp(argv[optind],"-p")==0)
-	    {
-	    char* p2;
-	    app.posColumn=(int)strtol(argv[++optind],&p2,10)-1;
-	    if(app.posColumn<0 || *p2!=0)
-		{
-		cerr << "Illegal number for POS" << endl;
-		return EXIT_FAILURE;
-		}
-	    }
-	else if(std::strcmp(argv[optind],"-f")==0 && optind+1<argc)
-	    {
-	    faidxfile=argv[++optind];
-	    }
-	else if(std::strcmp(argv[optind],"-x")==0 && optind+1<argc)
-	    {
-	    char* p2;
-	    app.extend=(double)strtol(argv[++optind],&p2,10);
-	    if(*p2!=0 || app.extend <0)
-		{
-		cerr << "Illegal number for 'extend'" << endl;
-		return EXIT_FAILURE;
-		}
-	    }
-	else if(std::strcmp(argv[optind],"--delim")==0 && optind+1< argc)
-	    {
-	    char* p=argv[++optind];
-	    if(strlen(p)!=1)
-		{
-		cerr << "Bad delimiter \""<< p << "\"\n";
-		app.usage(argc,argv);
-		return(EXIT_FAILURE);
-		}
-	    app.tokenizer.delim=p[0];
-	    }
-	else if(argv[optind][0]=='-')
-	    {
-	    cerr << "unknown option '"<< argv[optind]<< "'"<< endl;
-	    app.usage(argc,argv);
-	    return (EXIT_FAILURE);
-	    }
-	else
-	    {
-	    break;
-	    }
-	++optind;
-	}
 
     if(faidxfile==NULL)
-	{
-	cerr << "Undefined genome file."<< endl;
-	app.usage(argc,argv);
-	return (EXIT_FAILURE);
-	}
+		{
+		cerr << "Undefined genome file."<< endl;
+		app.usage(argc,argv);
+		return (EXIT_FAILURE);
+		}
     app.faidx=new IndexedFasta(faidxfile);
 
     if(optind==argc)
-	{
-	igzstreambuf buf;
-	istream in(&buf);
-	app.run(in);
-	}
+		{
+		igzstreambuf buf;
+		istream in(&buf);
+		app.run(in);
+		}
     else
-	{
-	while(optind<argc)
-	    {
-	    igzstreambuf buf(argv[optind++]);
-	    istream in(&buf);
-	    app.run(in);
-	    buf.close();
-	    }
-	}
+		{
+		while(optind<argc)
+			{
+			igzstreambuf buf(argv[optind++]);
+			istream in(&buf);
+			app.run(in);
+			buf.close();
+			}
+		}
     return EXIT_SUCCESS;
     }

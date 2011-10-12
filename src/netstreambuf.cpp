@@ -162,6 +162,8 @@ std::string netstreambuf::content()
     return page;
     }
 
+
+#ifdef TEST_THIS_CODE
 int main(int argc,char** argv)
     {
     netstreambuf buf;
@@ -170,3 +172,4 @@ int main(int argc,char** argv)
     cout << buf.content();
     return 0;
     }
+#endif
