@@ -67,11 +67,11 @@ std::string Intron::name() const
     ostringstream os;
     if(gene->isForward())
 	    {
-	    os << "Intron "+(index+1);
+	    os << "Intron "<<(index+1);
 	    }
     else
 	    {
-	    os << "Intron "+(gene->countExons()-index);
+	    os << "Intron "<<(gene->countExons()-index);
 	    }
     return os.str();
     }
@@ -142,11 +142,11 @@ std::string Exon::name() const
     ostringstream os;
     if(gene->isForward())
 	    {
-	    os << "Exon "+(index+1);
+	    os << "Exon "<<(index+1);
 	    }
     else
 	    {
-	    os <<  "Exon "+(gene->countExons()-index);
+	    os <<  "Exon "<<(gene->countExons()-index);
 	    }
     return os.str();
     }

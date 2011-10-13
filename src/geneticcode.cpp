@@ -7,9 +7,14 @@
 #include <cctype>
 #include "geneticcode.h"
 
-static const GeneticCode STANDARD("FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG");
+static const GeneticCode STANDARD(     "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG");
 static const GeneticCode MITOCHONDRIAL("FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSS**VVVVAAAADDEEGGGG");
 
+
+bool GeneticCode::isStop(char c) const
+    {
+    return c=='*';
+    }
 
 int GeneticCode::base2index(char c) const
     {
@@ -38,7 +43,7 @@ char GeneticCode::translate(char b1,char b2,char b3) const
 	    }
     }
 
-GeneticCode::GeneticCode(const char* ncbi):ncbi(ncbi)
+GeneticCode::GeneticCode(const char* ncbic):ncbi(ncbic)
     {
 
     }

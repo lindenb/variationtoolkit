@@ -3,7 +3,9 @@ CPP=g++
 CFLAGS=-O3 -Wall
 SAMDIR=../ext/samtools
 TABIXDIR=../ext/tabix
-OBJCPY= objcopy --input binary --output elf64-x86-64 --binary-architecture i386
+#elf32-i386
+#elf64-x86-64
+OBJCPY= objcopy --input binary --output elf32-i386 --binary-architecture i386
 all:$(BINDIR)/scanvcf \
 	$(BINDIR)/groupbygene \
 	$(BINDIR)/numericsplit \
