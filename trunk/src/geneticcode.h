@@ -19,6 +19,7 @@ class GeneticCode
     public:
 	GeneticCode(const char* ncbi);
 	~GeneticCode();
+	bool isStop(char c) const;
 	char translate(char b1,char b2,char b3) const;
 	static const GeneticCode* standard();
 	static const GeneticCode* mitochondrial();
