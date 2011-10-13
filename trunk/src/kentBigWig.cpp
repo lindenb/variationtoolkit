@@ -25,8 +25,10 @@ extern "C" {
 #include "throw.h"
 
 using namespace std;
-#define CASTPTR ((struct bbiFile *)bbFile)
 
+#ifndef NOKENTSRC
+#define CASTPTR ((struct bbiFile *)bbFile)
+#endif
 
 BigWig::BigWig(const char* filename):bbFile(NULL)
 	{

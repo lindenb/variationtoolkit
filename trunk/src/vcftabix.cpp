@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 				return EXIT_FAILURE;
 				}
 			}
-	    else if(strcmp(argv[optind],"-N")==0 && optind+1< argc)
+	    else if(strcmp(argv[optind],"-S")==0 && optind+1< argc)
 	    	{
 	    	app.notFound.assign(argv[++optind]);
 	    	}

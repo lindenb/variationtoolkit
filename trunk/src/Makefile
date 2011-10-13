@@ -20,6 +20,7 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/ncbiesearch \
 	$(BINDIR)/ncbiefetch \
 	$(BINDIR)/mysqlucsc \
+	$(BINDIR)/vcfbigbed \
 	$(BINDIR)/vcfbigwig
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
@@ -95,8 +96,12 @@ netstreambuf.o: netstreambuf.cpp netstreambuf.cpp
 #UCSC
 $(BINDIR)/vcfbigwig: vcfbigwig.cpp kentBigWig.o
 	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigWig.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigWig.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl; fi
+$(BINDIR)/vcfbigbed: vcfbigbed.cpp kentBigBed.o
+	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigBed.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigBed.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl; fi
 
 kentBigWig.o: kentBigWig.cpp kentBigWig.h
+	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
+kentBigBed.o: kentBigBed.cpp kentBigBed.h
 	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
 	
 	
