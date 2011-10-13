@@ -105,7 +105,7 @@ $ gunzip -c data.vcf.gz |\
 \subsection{ncbiefetch}
 Fetch a record from NCBI database.
 
-Currently supported databases: pubmed.
+Currently supported databases: pubmed , nucleotide, proteine, snp , gene and taxonomy.
 
 The following example generates a sequences of 6 pubmed ID and we call ncbiefetch to download the records.
 \begin{quote}
@@ -128,11 +128,46 @@ The following example creates a sequence of 3 gi, we fetch each record (the gi i
 
 \begin{quote}
 \begin{verbatim}
-$ (echo "#GI"; seq 5 2 10)  | ../bin/ncbiefetch -c 1 -D nucleotide | cut -c 1-80
+$ (echo "#GI"; seq 5 2 10)  | ncbiefetch -c 1 -D nucleotide | cut -c 1-80
 #GI	nucleotide.type	nucleotide.accver	nucleotide.taxid	nucleotide.orgname	nucleo
 5	nucleotide	X60065.1	9913	Bos taurus	B.bovis beta-2-gpI mRNA for beta-2-glycopr
 7	nucleotide	X51700.1	9913	Bos taurus	Bos taurus mRNA for bone Gla protein	437	G
 9	nucleotide	X68321.1	9913	Bos taurus	B.taurus mRNA for cyclin A	1512	GAATTCCAGG
+\end{verbatim}
+\end{quote}
+
+Let's download some data for 3 rs\#\# from dbsnp.
+\begin{quote}
+\begin{verbatim}
+echo -e "#RS\nrs25\nrs26\nrs27"  | ncbiefetch -c 1 -D snp
+
+#RS	snp.het	snp.bitField	snp.seq5	snp.obs	snp.seq3	snp.map
+rs25	0	050100080001030500120101	AGTAAGAGGAATCAATGTCATAGGCTTTAGATAGCATTTATGACTGTGTGCTCGTGTGTGTGAAAACT..
+rs26	0	050100080011000100000700	AAATGTGTGACCAAGAAAATGACtttttttttttccgactgtgtctcgctctgttgccaggctggagt..
+rs27	0	050100080001030100100100	TCTATGTCCAGAACTATGGATATATATTGACCTTAACTGTCAAGTATATACAAAAGAGCCAAACTGCA..
+\end{verbatim}
+\end{quote}
+
+Taxonomy
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#Taxon-id\n9606\n9605"  | ncbiefetch -c 1 -D taxonomy
+
+#Taxon-id	taxon.name	taxon.lineage
+9606	Homo sapiens	cellular organisms; Eukaryota; Opisthokonta; Metazoa; Eumetazo...
+9605	Homo	cellular organisms; Eukaryota; Opisthokonta; Metazoa; Eumetazoa; Bilat...
+\end{verbatim}
+\end{quote}
+
+Gene:
+\begin{quote}
+\begin{verbatim}
+$ (echo "#Gene-Id"; seq 105 2 110)  | ncbiefetch -c 1 -D gene
+
+#Gene-Id	gene.locus	gene.desc	gene.maploc	gene.ids	gene.summary
+105	ADARB2	adenosine deaminase, RNA-specific, B2		HGNC=227|Ensembl=ENSG000001857
+107	ADCY1	adenylate cyclase 1 (brain)		HGNC=232|Ensembl=ENSG00000164742|HPRD=000
+109	ADCY3	adenylate cyclase 3		HGNC=234|Ensembl=ENSG00000138031|HPRD=02620|MIM=6
 \end{verbatim}
 \end{quote}
 
