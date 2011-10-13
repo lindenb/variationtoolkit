@@ -58,8 +58,8 @@ $(BINDIR)/mysqlucsc: mysqlucsc.cpp  tokenizer.h throw.h zstreambuf.h
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
-$(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o dbsnpxsl.o
-	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o dbsnpxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
+$(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o dbsnpxsl.o genexsl.o taxonomyxsl.o
+	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o dbsnpxsl.o  genexsl.o taxonomyxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
 
 pubmedxsl.o:pubmed.xsl
 	$(OBJCPY) $< $@
@@ -67,8 +67,10 @@ nuccorexsl.o:nuccore.xsl
 	$(OBJCPY) $< $@
 dbsnpxsl.o:dbsnp.xsl
 	$(OBJCPY) $< $@
-
-
+genexsl.o:gene.xsl
+	$(OBJCPY) $< $@
+taxonomyxsl.o:taxonomy.xsl
+	$(OBJCPY) $< $@
 
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
