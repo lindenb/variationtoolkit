@@ -30,6 +30,7 @@
 #include "xfaidx.h"
 #include "tokenizer.h"
 #include "knowngene.h"
+#include "where.h"
 
 using namespace std;
 
@@ -239,6 +240,7 @@ class Prediction
 		    << " and txEnd >= "<< pos0
 		    ;
 	    string query=os.str();
+	    WHERE(query);
 	    MYSQL_ROW row;
 	    if(mysql_real_query( mysql, query.c_str(),query.size())!=0)
 		 {
@@ -247,31 +249,34 @@ class Prediction
 	    MYSQL_RES* res=mysql_use_result( mysql );
 	    //int ncols=mysql_field_count(mysql);
 	    while(( row = mysql_fetch_row( res ))!=NULL )
-		{
-		KnownGene* g=new KnownGene;
-		genes.push_back(g);
-		g->chrom.assign(chrom);
+			{
+	    	WHERE("reading row");
+			KnownGene* g=new KnownGene;
+			genes.push_back(g);
+			g->chrom.assign(chrom);
 
-		g->name.assign(row[0]);
-		g->strand=row[1][0];
-		g->txStart=atoi(row[2]);
-		g->txEnd=atoi(row[3]);
-		g->cdsStart=atoi(row[4]);
-		g->cdsEnd=atoi(row[5]);
-		int exonCount=atoi(row[6]);
-		comma.split(row[7],exonStarts);
-		comma.split(row[8],exonEnds);
-		for(int i=0;i< exonCount;++i)
-		    {
-		    Exon exon;
-		    exon.index=i;
-		    exon.gene=g;
-		    exon.start=atoi(exonStarts[i].c_str());
-		    exon.end=atoi(exonEnds[i].c_str());
-		    g->exons.push_back(exon);
-		    }
-		}
+			g->name.assign(row[0]);
+			g->strand=row[1][0];
+			g->txStart=atoi(row[2]);
+			g->txEnd=atoi(row[3]);
+			g->cdsStart=atoi(row[4]);
+			g->cdsEnd=atoi(row[5]);
+			int exonCount=atoi(row[6]);
+			comma.split(row[7],exonStarts);
+			comma.split(row[8],exonEnds);
+			for(int i=0;i< exonCount;++i)
+				{
+				WHERE("exons");
+				Exon exon;
+				exon.index=i;
+				exon.gene=g;
+				exon.start=atoi(exonStarts[i].c_str());
+				exon.end=atoi(exonEnds[i].c_str());
+				g->exons.push_back(exon);
+				}
+			}
 	    ::mysql_free_result( res );
+	    WHERE("returning " << genes.size() << " genes");
 	    return genes;
 	    }
 
@@ -298,473 +303,489 @@ class Prediction
 	    string line;
 	    GenomicSeq* genomicSeq=NULL;
 	    while(getline(in,line,'\n'))
-		{
-		if(line.empty()) continue;
-		if(line[0]=='#')
-		    {
-		    cout << line;
-
-		    cout << endl;
-		    continue;
-		    }
-		tokenizer.split(line,tokens);
-		char *p2;
-
-		int pos1= strtol(tokens[1].c_str(),&p2,10);
-		int position0=pos1-1;
-		vector<KnownGene*> genes=getGenes(tokens[0],position0);
-		bool found=false;
-		const GeneticCode* geneticCode=GeneticCode::standard();
-		if(tokens[0].compare("chrM")==0)
-		    {
-		    geneticCode=GeneticCode::mitochondrial();
-		    }
-		std::string refBase=tokens[3];
-		std::string alt=tokens[4];
-		for(size_t i=0;i< genes.size();++i)
 			{
-			KnownGene* gene=genes.at(i);
-
-			if(position0 >= gene->txEnd) continue;
-			if(position0 < gene->txStart) continue;
-			found=true;
-			Consequence* consequence=new Consequence;
-			consequence->gene=gene;
-			if( (refBase.empty() || refBase.compare("A")==0 || refBase.compare("T")==0 || refBase.compare("G")==0 || refBase.compare("C")==0) &&
-				(alt.compare("A")==0 || alt.compare("T")==0 || alt.compare("G")==0 || alt.compare("C")==0)
-			)
-			    {
-			    if(genomicSeq==NULL ||
-			      !(genomicSeq->getChromStart()<=gene->txStart && gene->txEnd <= genomicSeq->getChromEnd())
-				)
+			if(line.empty()) continue;
+			if(line[0]=='#')
 				{
-				int start=std::max(gene->txStart-100,0);
-				if(genomicSeq!=NULL) delete genomicSeq;
-				genomicSeq=new GenomicSeq(indexedFasta,gene->chrom.c_str(),start,gene->txEnd+100);
-				}
-			    std::string genomicAtpos0;
-			    genomicAtpos0+=genomicSeq->at(position0);
-			    if(!refBase.empty() && genomicAtpos0.compare(refBase)!=0)
-				{
-				cerr << "WARNING REF!=GENOMIC SEQ!!! at "<< tokens[0]<< ":"<<(position0+1)<< ":"<< genomicSeq->at(position0)<<"/"<<refBase << endl;
-				}
-
-			    if(gene->isForward())
-				{
-				if(position0 < gene->cdsStart)
-				    {
-				    consequence->type.insert("UTR5");
-				    }
-				else if( gene->cdsEnd <= position0 )
-				    {
-				    consequence->type.insert("UTR3");
-				    }
-				else
-				    {
-				    int32_t exon_index=0;
-				    while(exon_index< gene->countExons())
+				if(line.size()>1 && line[1]=='#')
 					{
-					const Exon* exon= gene->exon(exon_index);
-					for(int32_t i= exon->start;
-						i< exon->end;
-						++i)
-					    {
-					    if(i==position0)
-						{
-						consequence->exonName.assign(exon->name());
-						}
-					    if(i< gene->cdsStart) continue;
-					    if(i>=gene->cdsEnd) break;
-
-					    if(consequence->wildRNA==NULL)
-						{
-						consequence->wildRNA=new StringSequence;
-						consequence->mutRNA=new MutedSequence(consequence->wildRNA);
-						}
-
-					    if(i==position0)
-						{
-						consequence->type.insert("EXON");
-						consequence->exonName.assign(exon->name());
-						consequence->position_in_cdna=consequence->wildRNA->size();
-
-						//in splicing ?
-						if(exon->isSplicing(position0))
-						    {
-						    consequence->splicing.insert("SPLICING");
-
-						    if(exon->isSplicingAcceptor(position0))
-							{
-							consequence->splicing.insert("SPLICING_ACCEPTOR");
-							}
-						    else  if(exon->isSplicingDonor(position0))
-							{
-							consequence->splicing.insert( "SPLICING_DONOR");
-							}
-						    }
-						}
-
-					    consequence->wildRNA->content+=(genomicSeq->at(i));
-
-					    if(i==position0)
-						{
-						consequence->mutRNA->mutations.insert(make_pair<int32_t,char>(
-							consequence->position_in_cdna,
-							alt.at(0)
-						    ));
-						}
-
-					    if(	consequence->wildRNA->size()%3==0 &&
-						    consequence->wildRNA->size()>0 &&
-						    consequence->wildProt==NULL)
-						{
-						consequence->wildProt=new ProteinCharSequence(geneticCode,consequence->wildRNA);
-						consequence->mutProt=new ProteinCharSequence(geneticCode,consequence->mutRNA);
-						}
-					    }
-					auto_ptr<Intron> intron= exon->getNextIntron();
-					if(intron.get()!=NULL && intron->contains(position0))
-					    {
-					    consequence->intronName=intron->name();
-					    consequence->type.insert("INTRON");
-
-					    if(intron->isSplicing(position0))
-						{
-						consequence->splicing.insert("INTRON_SPLICING");
-						if(intron->isSplicingAcceptor(position0))
-						    {
-						    consequence->splicing.insert("INTRON_SPLICING_ACCEPTOR");
-						    }
-						else if(intron->isSplicingDonor(position0))
-						    {
-						    consequence->splicing.insert("INTRON_SPLICING_DONOR");
-						    }
-						}
-					    }
-					++exon_index;
+					cout << line << endl;
+					continue;
 					}
-				    }
+				cout << line;
 
-
+				cout << endl;
+				continue;
 				}
-			    else // reverse orientation
+			WHERE(tokens.size());
+			tokenizer.split(line,tokens);
+			char *p2;
+			WHERE(line);
+			int pos1= strtol(tokens[1].c_str(),&p2,10);
+			int position0=pos1-1;
+			WHERE("loading genes");
+			vector<KnownGene*> genes=getGenes(tokens[0],position0);
+			WHERE("done");
+			bool found=false;
+			WHERE("");
+			const GeneticCode* geneticCode=GeneticCode::standard();
+			WHERE((geneticCode!=NULL));
+			if(tokens[0].compare("chrM")==0)
 				{
+				geneticCode=GeneticCode::mitochondrial();
+				}
+			WHERE(tokens.size());
+			std::string refBase=tokens[2];
+			WHERE(tokens.size());
+			std::string alt=tokens[3];
+			WHERE(tokens.size());
+			for(size_t i=0;i< genes.size();++i)
+				{
+				WHERE(i);
+				KnownGene* gene=genes.at(i);
 
-				if(position0 < gene->cdsStart)
-				    {
-				    consequence->type.insert("UTR3");
-				    }
-				else if( gene->cdsEnd <=position0 )
-				    {
-				    consequence->type.insert("UTR5");
-				    }
-				else
-				    {
-				    int32_t exon_index = gene->countExons()-1;
-				    while(exon_index >=0)
+				if(position0 >= gene->txEnd) continue;
+				if(position0 < gene->txStart) continue;
+				found=true;
+				Consequence* consequence=new Consequence;
+				consequence->gene=gene;
+				if( (refBase.empty() || refBase.compare("A")==0 || refBase.compare("T")==0 || refBase.compare("G")==0 || refBase.compare("C")==0) &&
+					(alt.compare("A")==0 || alt.compare("T")==0 || alt.compare("G")==0 || alt.compare("C")==0)
+				)
 					{
-					const Exon* exon= gene->exon(exon_index);
-					for(int i= exon->end-1;
-						i>= exon->start;
-						--i)
-					    {
-					    if(i==position0)
+					if(genomicSeq==NULL ||
+					  !(genomicSeq->getChromStart()<=gene->txStart && gene->txEnd <= genomicSeq->getChromEnd())
+					)
 						{
-						consequence->exonName= exon->name();
+						int start=std::max(gene->txStart-100,0);
+						if(genomicSeq!=NULL) delete genomicSeq;
+						WHERE("getseq");
+						genomicSeq=new GenomicSeq(indexedFasta,gene->chrom.c_str(),start,gene->txEnd+100);
 						}
-					    if(i>= gene->cdsEnd) continue;
-					    if(i<  gene->cdsStart) break;
-
-					    if(consequence->wildRNA==NULL)
+					WHERE("");
+					std::string genomicAtpos0;
+					genomicAtpos0+=genomicSeq->at(position0);
+					if(!refBase.empty() && genomicAtpos0.compare(refBase)!=0)
 						{
-						consequence->wildRNA=new StringSequence;
-						consequence->mutRNA=new MutedSequence(consequence->wildRNA);
+						cerr << "WARNING REF!=GENOMIC SEQ!!! at "<< tokens[0]<< ":"<<(position0+1)<< ":"<< genomicSeq->at(position0)<<"/"<<refBase << endl;
 						}
 
-					    if(i==position0)
+					if(gene->isForward())
 						{
-						consequence->type.insert("EXON");
-						consequence->position_in_cdna=consequence->wildRNA->size();
+						if(position0 < gene->cdsStart)
+							{
+							consequence->type.insert("UTR5");
+							}
+						else if( gene->cdsEnd <= position0 )
+							{
+							consequence->type.insert("UTR3");
+							}
+						else
+							{
+							int32_t exon_index=0;
+							while(exon_index< gene->countExons())
+							{
+							const Exon* exon= gene->exon(exon_index);
+							for(int32_t i= exon->start;
+								i< exon->end;
+								++i)
+								{
+								if(i==position0)
+								{
+								consequence->exonName.assign(exon->name());
+								}
+								if(i< gene->cdsStart) continue;
+								if(i>=gene->cdsEnd) break;
 
-						//in splicing ?
-							if(exon->isSplicing(position0))
-							    {
-							    consequence->splicing.insert( "INTRON_SPLICING");
+								if(consequence->wildRNA==NULL)
+								{
+								consequence->wildRNA=new StringSequence;
+								consequence->mutRNA=new MutedSequence(consequence->wildRNA);
+								}
 
-							    if(exon->isSplicingAcceptor(position0))
+								if(i==position0)
+								{
+								consequence->type.insert("EXON");
+								consequence->exonName.assign(exon->name());
+								consequence->position_in_cdna=consequence->wildRNA->size();
+
+								//in splicing ?
+								if(exon->isSplicing(position0))
+									{
+									consequence->splicing.insert("SPLICING");
+
+									if(exon->isSplicingAcceptor(position0))
+									{
+									consequence->splicing.insert("SPLICING_ACCEPTOR");
+									}
+									else  if(exon->isSplicingDonor(position0))
+									{
+									consequence->splicing.insert( "SPLICING_DONOR");
+									}
+									}
+								}
+
+								consequence->wildRNA->content+=(genomicSeq->at(i));
+
+								if(i==position0)
+								{
+								consequence->mutRNA->mutations.insert(make_pair<int32_t,char>(
+									consequence->position_in_cdna,
+									alt.at(0)
+									));
+								}
+
+								if(	consequence->wildRNA->size()%3==0 &&
+									consequence->wildRNA->size()>0 &&
+									consequence->wildProt==NULL)
+								{
+								consequence->wildProt=new ProteinCharSequence(geneticCode,consequence->wildRNA);
+								consequence->mutProt=new ProteinCharSequence(geneticCode,consequence->mutRNA);
+								}
+								}
+							auto_ptr<Intron> intron= exon->getNextIntron();
+							if(intron.get()!=NULL && intron->contains(position0))
+								{
+								consequence->intronName=intron->name();
+								consequence->type.insert("INTRON");
+
+								if(intron->isSplicing(position0))
+								{
+								consequence->splicing.insert("INTRON_SPLICING");
+								if(intron->isSplicingAcceptor(position0))
+									{
+									consequence->splicing.insert("INTRON_SPLICING_ACCEPTOR");
+									}
+								else if(intron->isSplicingDonor(position0))
+									{
+									consequence->splicing.insert("INTRON_SPLICING_DONOR");
+									}
+								}
+								}
+							++exon_index;
+							}
+							}
+
+
+						}
+					else // reverse orientation
+					{
+
+					if(position0 < gene->cdsStart)
+						{
+						consequence->type.insert("UTR3");
+						}
+					else if( gene->cdsEnd <=position0 )
+						{
+						consequence->type.insert("UTR5");
+						}
+					else
+						{
+						int32_t exon_index = gene->countExons()-1;
+						while(exon_index >=0)
+						{
+						const Exon* exon= gene->exon(exon_index);
+						for(int i= exon->end-1;
+							i>= exon->start;
+							--i)
+							{
+							if(i==position0)
+							{
+							consequence->exonName= exon->name();
+							}
+							if(i>= gene->cdsEnd) continue;
+							if(i<  gene->cdsStart) break;
+
+							if(consequence->wildRNA==NULL)
+							{
+							consequence->wildRNA=new StringSequence;
+							consequence->mutRNA=new MutedSequence(consequence->wildRNA);
+							}
+
+							if(i==position0)
+							{
+							consequence->type.insert("EXON");
+							consequence->position_in_cdna=consequence->wildRNA->size();
+
+							//in splicing ?
+								if(exon->isSplicing(position0))
+									{
+									consequence->splicing.insert( "INTRON_SPLICING");
+
+									if(exon->isSplicingAcceptor(position0))
+									{
+									consequence->splicing.insert("INTRON_SPLICING_ACCEPTOR");
+									}
+									else  if(exon->isSplicingDonor(position0))
+									{
+									consequence->splicing.insert("INTRON_SPLICING_DONOR");
+									}
+									}
+
+
+								consequence->mutRNA->mutations.insert(make_pair<int32_t,char>(
+									consequence->position_in_cdna,
+									complement(alt.at(0))
+								));
+							}
+
+							consequence->wildRNA->content+=(complement(genomicSeq->at(i)));
+							if( consequence->wildRNA->size()%3==0 &&
+								consequence->wildRNA->size()>0 &&
+								consequence->wildProt==NULL)
+							{
+							consequence->wildProt=new ProteinCharSequence(geneticCode,consequence->wildRNA);
+							consequence->mutProt=new ProteinCharSequence(geneticCode,consequence->mutRNA);
+							}
+
+							}
+
+						auto_ptr<Intron> intron= exon->getPrevIntron();
+						if(intron.get()!=NULL &&
+							intron->contains(position0))
+							{
+							consequence->intronName=intron->name();
+							consequence->type.insert("INTRON");
+
+							if(intron->isSplicing(position0))
+							{
+							consequence->splicing.insert("INTRON_SPLICING");
+							if(intron->isSplicingAcceptor(position0))
 								{
 								consequence->splicing.insert("INTRON_SPLICING_ACCEPTOR");
 								}
-							    else  if(exon->isSplicingDonor(position0))
+							else if(intron->isSplicingDonor(position0))
 								{
 								consequence->splicing.insert("INTRON_SPLICING_DONOR");
 								}
-							    }
-
-
-							consequence->mutRNA->mutations.insert(make_pair<int32_t,char>(
-								consequence->position_in_cdna,
-								complement(alt.at(0))
-							));
+							}
+							}
+						--exon_index;
 						}
-
-					    consequence->wildRNA->content+=(complement(genomicSeq->at(i)));
-					    if( consequence->wildRNA->size()%3==0 &&
-						    consequence->wildRNA->size()>0 &&
-						    consequence->wildProt==NULL)
-						{
-						consequence->wildProt=new ProteinCharSequence(geneticCode,consequence->wildRNA);
-						consequence->mutProt=new ProteinCharSequence(geneticCode,consequence->mutRNA);
 						}
-
-					    }
-
-					auto_ptr<Intron> intron= exon->getPrevIntron();
-					if(intron.get()!=NULL &&
-					    intron->contains(position0))
-					    {
-					    consequence->intronName=intron->name();
-					    consequence->type.insert("INTRON");
-
-					    if(intron->isSplicing(position0))
-						{
-						consequence->splicing.insert("INTRON_SPLICING");
-						if(intron->isSplicingAcceptor(position0))
-						    {
-						    consequence->splicing.insert("INTRON_SPLICING_ACCEPTOR");
-						    }
-						else if(intron->isSplicingDonor(position0))
-						    {
-						    consequence->splicing.insert("INTRON_SPLICING_DONOR");
-						    }
-						}
-					    }
-					--exon_index;
-					}
-				    }
-				}//end of if reverse
-			    if( consequence->wildProt!=NULL &&
-				    consequence->mutProt!=NULL &&
-				    consequence->position_in_cdna>=0)
-				{
-				int pos_aa=consequence->position_in_cdna/3;
-				int mod= consequence->position_in_cdna%3;
-				consequence->wildCodon=""+
-					consequence->wildRNA->at(consequence->position_in_cdna-mod+0)+
-					consequence->wildRNA->at(consequence->position_in_cdna-mod+1)+
-					consequence->wildRNA->at(consequence->position_in_cdna-mod+2)
-					;
-				consequence->mutCodon=""+
-					consequence->mutRNA->at(consequence->position_in_cdna-mod+0)+
-					consequence->mutRNA->at(consequence->position_in_cdna-mod+1)+
-					consequence->mutRNA->at(consequence->position_in_cdna-mod+2)
-					;
-				consequence->position_protein=pos_aa+1;
-				consequence->wildAA=consequence->wildProt->at(pos_aa);
-				consequence->mutAA=consequence->mutProt->at(pos_aa);
-				if(isStop(consequence->wildProt->at(pos_aa)) &&
-					!isStop(consequence->mutProt->at(pos_aa)))
-				    {
-				    consequence->type.insert("EXON_STOP_LOST");
-				    }
-				else if( !isStop(consequence->wildProt->at(pos_aa)) &&
-					isStop(consequence->mutProt->at(pos_aa)))
-				    {
-				    consequence->type.insert( "EXON_STOP_GAINED");
-				    }
-				else if(consequence->wildProt->at(pos_aa)==consequence->mutProt->at(pos_aa))
-				    {
-				    consequence->type.insert("EXON_CODING_SYNONYMOUS");
-				    }
-				else
-				    {
-				    consequence->type.insert("EXON_CODING_NON_SYNONYMOUS");
-				    }
-				}
-			    }//end of simpe ATCG
-			else
-			    {
-			    int32_t wildrna=-1;
-
-			    if(gene->isForward())
-				{
-				if(position0 < gene->cdsStart)
-				    {
-				    consequence->type.insert("UTR5");
-				    }
-				else if( gene->cdsEnd <= position0 )
-				    {
-				    consequence->type.insert("UTR3");
-				    }
-				else
-				    {
-				    int32_t exon_index=0;
-				    while(exon_index< gene->countExons())
+					}//end of if reverse
+					if( consequence->wildProt!=NULL &&
+						consequence->mutProt!=NULL &&
+						consequence->position_in_cdna>=0)
 					{
-					const Exon* exon= gene->exon(exon_index);
-					for(int i= exon->start;
-						i< exon->end;
-						++i)
-					    {
-					    if(i==position0)
+					int pos_aa=consequence->position_in_cdna/3;
+					int mod= consequence->position_in_cdna%3;
+					consequence->wildCodon=""+
+						consequence->wildRNA->at(consequence->position_in_cdna-mod+0)+
+						consequence->wildRNA->at(consequence->position_in_cdna-mod+1)+
+						consequence->wildRNA->at(consequence->position_in_cdna-mod+2)
+						;
+					consequence->mutCodon=""+
+						consequence->mutRNA->at(consequence->position_in_cdna-mod+0)+
+						consequence->mutRNA->at(consequence->position_in_cdna-mod+1)+
+						consequence->mutRNA->at(consequence->position_in_cdna-mod+2)
+						;
+					consequence->position_protein=pos_aa+1;
+					consequence->wildAA=consequence->wildProt->at(pos_aa);
+					consequence->mutAA=consequence->mutProt->at(pos_aa);
+					if(isStop(consequence->wildProt->at(pos_aa)) &&
+						!isStop(consequence->mutProt->at(pos_aa)))
 						{
-						consequence->exonName=exon->name();
+						consequence->type.insert("EXON_STOP_LOST");
 						}
-					    if(i< gene->cdsStart) continue;
-					    if(i>= gene->cdsEnd ) break;
-
-					    if(wildrna==-1)
+					else if( !isStop(consequence->wildProt->at(pos_aa)) &&
+						isStop(consequence->mutProt->at(pos_aa)))
 						{
-						wildrna=0;
+						consequence->type.insert( "EXON_STOP_GAINED");
 						}
-
-					    if(i==position0)
+					else if(consequence->wildProt->at(pos_aa)==consequence->mutProt->at(pos_aa))
 						{
-						consequence->type.insert("EXON");
-						consequence->exonName=exon->name();
-						consequence->position_in_cdna=wildrna;
-
-						//in splicing ?
-						if(exon->isSplicing(position0))
-						    {
-						    consequence->splicing.insert("SPLICING");
-
-						    if(exon->isSplicingAcceptor(position0))
-							{
-							consequence->splicing.insert("SPLICING_ACCEPTOR");
-							}
-						    else  if(exon->isSplicingDonor(position0))
-							{
-							consequence->splicing.insert("SPLICING_DONOR");
-							}
-						    }
+						consequence->type.insert("EXON_CODING_SYNONYMOUS");
 						}
-
-					    wildrna++;
-					    }
-					auto_ptr<Intron> intron= exon->getNextIntron();
-					if(intron.get()!=NULL && intron->contains(position0))
-					    {
-					    consequence->intronName=intron->name();
-					    consequence->type.insert("INTRON");
-
-					    if(intron->isSplicing(position0))
+					else
 						{
-						consequence->splicing.insert("INTRON_SPLICING");
-						if(intron->isSplicingAcceptor(position0))
-						    {
-						    consequence->splicing.insert( "INTRON_SPLICING_ACCEPTOR");
-						    }
-						else if(intron->isSplicingDonor(position0))
-						    {
-						    consequence->splicing.insert("INTRON_SPLICING_DONOR");
-						    }
+						consequence->type.insert("EXON_CODING_NON_SYNONYMOUS");
 						}
-					    }
-					++exon_index;
 					}
-				    }
-				}
-			    else // reverse orientation
-				{
-
-				if(position0 < gene->cdsStart)
-				    {
-				    consequence->type.insert("UTR3");
-				    }
-				else if( gene->cdsEnd <=position0 )
-				    {
-				    consequence->type.insert("UTR5");
-				    }
+					}//end of simpe ATCG
 				else
-				    {
-
-				    int exon_index = gene->countExons()-1;
-				    while(exon_index >=0)
 					{
-					const Exon* exon= gene->exon(exon_index);
-					for(int32_t i= exon->end-1;
-						i>= exon->start;
-						--i)
-					    {
-					    if(i==position0)
+					int32_t wildrna=-1;
+
+					if(gene->isForward())
+					{
+					if(position0 < gene->cdsStart)
 						{
-						consequence->exonName= exon->name();
+						consequence->type.insert("UTR5");
 						}
-					    if(i>= gene->cdsEnd) continue;
-					    if(i<  gene->cdsStart) break;
-
-					    if(wildrna!=-1)
+					else if( gene->cdsEnd <= position0 )
 						{
-						wildrna=0;
+						consequence->type.insert("UTR3");
 						}
-
-					    if(i==position0)
+					else
 						{
-						consequence->type.insert("EXON");
-						consequence->position_in_cdna=wildrna;
-
-						//in splicing ?
-						if(exon->isSplicing(position0))
-						    {
-						    consequence->splicing.insert("INTRON_SPLICING");
-
-						    if(exon->isSplicingAcceptor(position0))
+						int32_t exon_index=0;
+						while(exon_index< gene->countExons())
+						{
+						const Exon* exon= gene->exon(exon_index);
+						for(int i= exon->start;
+							i< exon->end;
+							++i)
 							{
-							consequence->splicing.insert("INTRON_SPLICING_ACCEPTOR");
-							}
-						    else  if(exon->isSplicingDonor(position0))
+							if(i==position0)
 							{
-							consequence->splicing.insert("INTRON_SPLICING_DONOR");
+							consequence->exonName=exon->name();
 							}
-						    }
+							if(i< gene->cdsStart) continue;
+							if(i>= gene->cdsEnd ) break;
+
+							if(wildrna==-1)
+							{
+							wildrna=0;
+							}
+
+							if(i==position0)
+							{
+							consequence->type.insert("EXON");
+							consequence->exonName=exon->name();
+							consequence->position_in_cdna=wildrna;
+
+							//in splicing ?
+							if(exon->isSplicing(position0))
+								{
+								consequence->splicing.insert("SPLICING");
+
+								if(exon->isSplicingAcceptor(position0))
+								{
+								consequence->splicing.insert("SPLICING_ACCEPTOR");
+								}
+								else  if(exon->isSplicingDonor(position0))
+								{
+								consequence->splicing.insert("SPLICING_DONOR");
+								}
+								}
+							}
+
+							wildrna++;
+							}
+						auto_ptr<Intron> intron= exon->getNextIntron();
+						if(intron.get()!=NULL && intron->contains(position0))
+							{
+							consequence->intronName=intron->name();
+							consequence->type.insert("INTRON");
+
+							if(intron->isSplicing(position0))
+							{
+							consequence->splicing.insert("INTRON_SPLICING");
+							if(intron->isSplicingAcceptor(position0))
+								{
+								consequence->splicing.insert( "INTRON_SPLICING_ACCEPTOR");
+								}
+							else if(intron->isSplicingDonor(position0))
+								{
+								consequence->splicing.insert("INTRON_SPLICING_DONOR");
+								}
+							}
+							}
+						++exon_index;
 						}
-
-					    wildrna++;
-					    }
-
-					auto_ptr<Intron> intron= exon->getPrevIntron();
-					if(intron.get()!=NULL &&
-						intron->contains(position0))
-					    {
-					    consequence->intronName.assign(intron->name());
-					    consequence->type.insert("INTRON");
-
-					    if(intron->isSplicing(position0))
-						{
-						consequence->splicing.insert("INTRON_SPLICING");
-						if(intron->isSplicingAcceptor(position0))
-						    {
-						    consequence->splicing.insert( "INTRON_SPLICING_ACCEPTOR");
-						    }
-						else if(intron->isSplicingDonor(position0))
-						    {
-						    consequence->splicing.insert("INTRON_SPLICING_DONOR");
-						    }
 						}
-					    }
-					--exon_index;
 					}
-				    }
-				}//end of if reverse
-			    if( wildrna!=-1 &&
-				    consequence->position_in_cdna>=0)
-				{
-				consequence->position_protein=consequence->position_in_cdna/3;
+					else // reverse orientation
+					{
+
+					if(position0 < gene->cdsStart)
+						{
+						consequence->type.insert("UTR3");
+						}
+					else if( gene->cdsEnd <=position0 )
+						{
+						consequence->type.insert("UTR5");
+						}
+					else
+						{
+
+						int exon_index = gene->countExons()-1;
+						while(exon_index >=0)
+						{
+						const Exon* exon= gene->exon(exon_index);
+						for(int32_t i= exon->end-1;
+							i>= exon->start;
+							--i)
+							{
+							if(i==position0)
+							{
+							consequence->exonName= exon->name();
+							}
+							if(i>= gene->cdsEnd) continue;
+							if(i<  gene->cdsStart) break;
+
+							if(wildrna!=-1)
+							{
+							wildrna=0;
+							}
+
+							if(i==position0)
+							{
+							consequence->type.insert("EXON");
+							consequence->position_in_cdna=wildrna;
+
+							//in splicing ?
+							if(exon->isSplicing(position0))
+								{
+								consequence->splicing.insert("INTRON_SPLICING");
+
+								if(exon->isSplicingAcceptor(position0))
+								{
+								consequence->splicing.insert("INTRON_SPLICING_ACCEPTOR");
+								}
+								else  if(exon->isSplicingDonor(position0))
+								{
+								consequence->splicing.insert("INTRON_SPLICING_DONOR");
+								}
+								}
+							}
+
+							wildrna++;
+							}
+
+						auto_ptr<Intron> intron= exon->getPrevIntron();
+						if(intron.get()!=NULL &&
+							intron->contains(position0))
+							{
+							consequence->intronName.assign(intron->name());
+							consequence->type.insert("INTRON");
+
+							if(intron->isSplicing(position0))
+							{
+							consequence->splicing.insert("INTRON_SPLICING");
+							if(intron->isSplicingAcceptor(position0))
+								{
+								consequence->splicing.insert( "INTRON_SPLICING_ACCEPTOR");
+								}
+							else if(intron->isSplicingDonor(position0))
+								{
+								consequence->splicing.insert("INTRON_SPLICING_DONOR");
+								}
+							}
+							}
+						--exon_index;
+						}
+						}
+					}//end of if reverse
+					if( wildrna!=-1 &&
+						consequence->position_in_cdna>=0)
+					{
+					consequence->position_protein=consequence->position_in_cdna/3;
+					}
+					}//end of not simple ATGC
+
+				found=true;
+				delete consequence;
 				}
-			    }//end of not simple ATGC
-
-			found=true;
-			delete consequence;
-			}
 
 
-		    while(!genes.empty())
-			{
-			delete genes.back();
-			genes.pop_back();
-			}
-		    }
+				while(!genes.empty())
+					{
+					delete genes.back();
+					genes.pop_back();
+					}
+				}
 		if(genomicSeq!=NULL) delete genomicSeq;
 		}
 
@@ -790,65 +811,68 @@ int main(int argc,char** argv)
     int port=0;
     int optind=1;
     while(optind < argc)
-	{
-	if(strcmp(argv[optind],"-h")==0)
-	    {
-	    app.usage(argc,argv);
-	    return(EXIT_FAILURE);
-	    }
-	else if(std::strcmp(argv[optind],"--host")==0 && optind+1<argc)
-	    {
-	    host.assign(argv[++optind]);
-	    }
-	else if(std::strcmp(argv[optind],"--user")==0 && optind+1<argc)
-	    {
-	    username.assign(argv[++optind]);
-	    }
-	else if(std::strcmp(argv[optind],"--password")==0 && optind+1<argc)
-	    {
-	    password.assign(argv[++optind]);
-	    }
-	else if(std::strcmp(argv[optind],"--port")==0 && optind+1<argc)
-	    {
-	    port=atoi(argv[++optind]);
-	    }
-	else if(strcmp(argv[optind],"-d")==0 && optind+1< argc)
-	    {
-	    char* p=argv[++optind];
-	    if(strlen(p)!=1)
 		{
-		fprintf(stderr,"Bad delimiter \"%s\"\n",p);
-		return (EXIT_FAILURE);
+		if(strcmp(argv[optind],"-h")==0)
+			{
+			app.usage(argc,argv);
+			return(EXIT_FAILURE);
+			}
+		else if(std::strcmp(argv[optind],"--host")==0 && optind+1<argc)
+			{
+			host.assign(argv[++optind]);
+			}
+		else if(std::strcmp(argv[optind],"--user")==0 && optind+1<argc)
+			{
+			username.assign(argv[++optind]);
+			}
+		else if(std::strcmp(argv[optind],"--password")==0 && optind+1<argc)
+			{
+			password.assign(argv[++optind]);
+			}
+		else if(std::strcmp(argv[optind],"--port")==0 && optind+1<argc)
+			{
+			port=atoi(argv[++optind]);
+			}
+		else if(strcmp(argv[optind],"-d")==0 && optind+1< argc)
+			{
+			char* p=argv[++optind];
+			if(strlen(p)!=1)
+			{
+			fprintf(stderr,"Bad delimiter \"%s\"\n",p);
+			return (EXIT_FAILURE);
+			}
+			app.tokenizer.delim=p[0];
+			}
+		else if(strcmp(argv[optind],"-f")==0 && optind+1<argc)
+			{
+			app.fasta=argv[++optind];
+			}
+		else if(strcmp(argv[optind],"--")==0)
+			{
+			++optind;
+			break;
+			}
+		else if(argv[optind][0]=='-')
+			{
+
+			cerr << "unknown option '" << argv[optind]<< "'" << endl;
+			app.usage(argc,argv);
+			return EXIT_FAILURE;
+			}
+		else
+			{
+			break;
+			}
+		++optind;
 		}
-	    app.tokenizer.delim=p[0];
-	    }
-	else if(strcmp(argv[optind],"-f")==0 && optind+1<argc)
-	    {
-	    app.fasta=argv[++optind];
-	    }
-	else if(strcmp(argv[optind],"--")==0)
-	    {
-	    ++optind;
-	    break;
-	    }
-	else if(argv[optind][0]=='-')
-	    {
-	    cerr << "unknown option '" << argv[optind]<< "'" << endl;
-	    return EXIT_FAILURE;
-	    }
-	else
-	    {
-	    break;
-	    }
-	++optind;
-	}
 
     if( app.fasta==NULL)
-	{
-	cerr << "genome fasta file undefined." << endl;
-	return EXIT_FAILURE;
-	}
-
+		{
+		cerr << "genome fasta file undefined." << endl;
+		 app.usage(argc,argv);
+		return EXIT_FAILURE;
+		}
+    WHERE("connect");
     if(::mysql_real_connect(
     	    app. mysql,
     	    host.c_str(),
@@ -859,25 +883,25 @@ int main(int argc,char** argv)
     	THROW("mysql_real_connect failed "<< mysql_error(app.mysql));
     	}
 
-
+    WHERE("fasta");
     app.indexedFasta=new IndexedFasta(app.fasta);
-
+    WHERE("reading");
     if(optind==argc)
-	{
-	igzstreambuf buf;
-	istream in(&buf);
-	app.run(in);
-	}
+		{
+		igzstreambuf buf;
+		istream in(&buf);
+		app.run(in);
+		}
     else
-	{
-	while(optind< argc)
-	    {
-	    igzstreambuf buf(argv[optind++]);
-	    istream in(&buf);
-	    app.run(in);
-	    buf.close();
-	    ++optind;
-	    }
-	}
+		{
+		while(optind< argc)
+			{
+			igzstreambuf buf(argv[optind++]);
+			istream in(&buf);
+			app.run(in);
+			buf.close();
+			++optind;
+			}
+		}
     return EXIT_SUCCESS;
     }
