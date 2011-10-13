@@ -490,4 +490,46 @@ chr1 110709719 rs7527375 T C 99 0 . GT:GQ:DP:FLT 1/0:99:31:0 1429 chr1 110709719
 \end{verbatim}
 \end{quote}
 
+\subsection{mysqlucsc}
+Intersection VCF/BigWig
+
+\begin{quote}
+\begin{verbatim}
+What's in the Big wig ?
+$ kent/src/hg/encode/validateFiles/tests/test4.bw file.wig
+$ cat file.wig
+
+#bedGraph section chr1:1-1099
+chr1    1       1000    54
+chr1    1000    1099    53
+\end{verbatim}
+\end{quote}
+
+let's get the intersection of a VCF file with this BIGWIG file.
+
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#CHROM\tPOS\nchr1\t500\nchr1\t1001"  |\
+  vcfbigwig -f  kent/src/hg/encode/validateFiles/tests/test4.bw
+  
+#CHROM	POS	bigwig:min	bigwig:max	bigwig:mean	bigwig:coverage	bigwig:stddev
+chr1	500	54	54	54	1	0
+chr1	1001	53	53	53	1	0
+
+$ echo -e "#CHROM\tPOS\nchr1\t500\nchr1\t1001"  |\
+  vcfbigwig -x 100 -f  kent/src/hg/encode/validateFiles/tests/test4.bw
+  
+#CHROM	POS	bigwig:min	bigwig:max	bigwig:mean	bigwig:coverage	bigwig:stddev
+chr1	500	54	54	54	1	0
+chr1	1001	53	54	53.5025	0.99005	0.501255
+
+$ echo -e "#CHROM\tPOS\nchrX\t500\nchrX\t1001"  |\
+  vcfbigwig  -f  kent/src/hg/encode/validateFiles/tests/test4.bw
+  
+#CHROM	POS	bigwig:min	bigwig:max	bigwig:mean	bigwig:coverage	bigwig:stddev
+chrX	500	nan	nan	nan	nan	nan
+chrX	1001	nan	nan	nan	nan	nan
+\end{verbatim}
+\end{quote}
+
 \end{document}
