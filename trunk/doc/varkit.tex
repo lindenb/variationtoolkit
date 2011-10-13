@@ -490,12 +490,12 @@ chr1 110709719 rs7527375 T C 99 0 . GT:GQ:DP:FLT 1/0:99:31:0 1429 chr1 110709719
 \end{verbatim}
 \end{quote}
 
-\subsection{mysqlucsc}
+\subsection{vcfbigbed}
 Intersection VCF/BigWig
 
+What's in the Big wig ?
 \begin{quote}
 \begin{verbatim}
-What's in the Big wig ?
 $ kent/src/hg/encode/validateFiles/tests/test4.bw file.wig
 $ cat file.wig
 
@@ -531,5 +531,54 @@ chrX	500	nan	nan	nan	nan	nan
 chrX	1001	nan	nan	nan	nan	nan
 \end{verbatim}
 \end{quote}
+
+\subsection{vcfbigbed}
+Intersection VCF/BigBed
+
+What's in the Big BED ?
+\begin{quote}
+\begin{verbatim}
+$ cat test.bed 
+chr7    115000000       116000000       100.0
+chr7    115500000       116500000       200.0
+chr7    116000000       117000000       100.0
+chr8    1000000         2000000         1000
+chr8    1100000         1200000         1000
+chr8    1100000         1200000         1000
+chr9    100     200     10
+chr9    100     300     10
+chr9    100     400     10
+chr9    1000    2000    10
+chr9    1200    2000    10
+chr9    1300    2000    10
+\end{verbatim}
+\end{quote}
+
+let's get the intersection of a VCF file with this BigBed file.
+
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#CHROM\tPOS\nchr9\t1250\nchrX\t1"  |\
+  vcfbigbed  -f  test.bb 
+
+#CHROM	POS	BigBed:chromStart	BigBed:chromEnd	BigBed:rest
+chr9	1250	1000	2000	10
+chr9	1250	1200	2000	10
+chrX	1	!N/A	!N/A	!N/A
+
+$ echo -e "#CHROM\tPOS\nchr9\t1250\nchrX\t1"  |\
+  vcfbigbed  -x 1000 -f  test.bb 
+
+#CHROM	POS	BigBed:chromStart	BigBed:chromEnd	BigBed:rest
+chr9	1250	100	300	10
+chr9	1250	100	400	10
+chr9	1250	1000	2000	10
+chr9	1250	1200	2000	10
+chr9	1250	1300	2000	10
+chrX	1	!N/A	!N/A	!N/A
+
+\end{verbatim}
+\end{quote}
+
 
 \end{document}
