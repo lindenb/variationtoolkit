@@ -22,6 +22,16 @@
 #include "where.h"
 using namespace std;
 
+#define XSDLODC(XSLT) virtual std::string xsldoc()\
+	{\
+	extern char _binary_##XSLT##_start;\
+	extern char _binary_##XSLT##_end;\
+	string s=string(&_binary_##XSLT##_start,\
+		&(_binary_##XSLT##_end)-&(_binary_##XSLT##_start)\
+		);\
+	return s;\
+	}
+
 class NcbiEFetch
     {
     public:
@@ -63,15 +73,7 @@ class NcbiEFetch
 			public:
 				PubmedHandler() {}
 				virtual ~PubmedHandler() {}
-				virtual std::string xsldoc()
-					{
-					extern char _binary_pubmed_xsl_start;
-					extern char _binary_pubmed_xsl_end;
-					string s=string(&_binary_pubmed_xsl_start,
-						&(_binary_pubmed_xsl_end)-&(_binary_pubmed_xsl_start)
-						);
-					return s;
-					}
+				XSDLODC(pubmed_xsl)
 				virtual std::string database()
 					{
 					return string("pubmed");
@@ -91,15 +93,7 @@ class NcbiEFetch
 				public:
 					SeqHandler() {}
 					virtual ~SeqHandler() {}
-					virtual std::string xsldoc()
-						{
-						extern char _binary_nuccore_xsl_start;
-						extern char _binary_nuccore_xsl_end;
-						string s=string(&_binary_nuccore_xsl_start,
-							&(_binary_nuccore_xsl_end)-&(_binary_nuccore_xsl_start)
-							);
-						return s;
-						}
+					XSDLODC(nuccore_xsl)
 					virtual std::string urlparams()
 						{
 						return "&rettype=fasta";
@@ -142,15 +136,7 @@ class NcbiEFetch
 			public:
 				DbSNPHandler() {}
 				virtual ~DbSNPHandler() {}
-				virtual std::string xsldoc()
-					{
-					extern char _binary_dbsnp_xsl_start;
-					extern char _binary_dbsnp_xsl_end;
-					string s=string(&_binary_dbsnp_xsl_start,
-						&(_binary_dbsnp_xsl_end)-&(_binary_dbsnp_xsl_start)
-						);
-					return s;
-					}
+				XSDLODC(dbsnp_xsl)
 				virtual std::string database()
 					{
 					return string("snp");
@@ -165,7 +151,48 @@ class NcbiEFetch
 					header.push_back("snp.seq3");
 					header.push_back("snp.map");
 					}
-		};
+			};
+
+		class GeneHandler:public DatabaseHandler
+				{
+				public:
+					GeneHandler() {}
+					virtual ~GeneHandler() {}
+					XSDLODC(gene_xsl)
+					virtual std::string database()
+						{
+						return string("gene");
+						}
+					virtual void fillHeader(vector<string>& header)
+						{
+						header.clear();
+						header.push_back("gene.locus");
+						header.push_back("gene.desc");
+						header.push_back("gene.maploc");
+						header.push_back("gene.ids");
+						header.push_back("gene.summary");
+						}
+				};
+
+		class TaxonomyHandler:public DatabaseHandler
+			{
+			public:
+				TaxonomyHandler() {}
+				virtual ~TaxonomyHandler() {}
+				XSDLODC(taxonomy_xsl)
+				virtual std::string database()
+					{
+					return string("taxonomy");
+					}
+				virtual void fillHeader(vector<string>& header)
+					{
+					header.clear();
+					header.push_back("taxon.name");
+					header.push_back("taxon.lineage");
+					}
+			};
+
+
 	Tokenizer tokenizer;
 	int column;
 	vector<DatabaseHandler*> handlers;
@@ -180,6 +207,8 @@ class NcbiEFetch
 	    handlers.push_back(new NucleotideHandler);
 	    handlers.push_back(new ProteinHandler);
 	    handlers.push_back(new DbSNPHandler);
+	    handlers.push_back(new GeneHandler);
+	    handlers.push_back(new TaxonomyHandler);
 	    }
 	~NcbiEFetch()
 	    {
