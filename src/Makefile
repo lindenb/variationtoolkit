@@ -19,7 +19,8 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfttview \
 	$(BINDIR)/ncbiesearch \
 	$(BINDIR)/ncbiefetch \
-	$(BINDIR)/mysqlucsc
+	$(BINDIR)/mysqlucsc \
+	$(BINDIR)/vcfbigwig
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -61,6 +62,8 @@ $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 $(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o dbsnpxsl.o genexsl.o taxonomyxsl.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o dbsnpxsl.o  genexsl.o taxonomyxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
 
+
+
 pubmedxsl.o:pubmed.xsl
 	$(OBJCPY) $< $@
 nuccorexsl.o:nuccore.xsl
@@ -88,6 +91,16 @@ geneticcode.o: geneticcode.cpp geneticcode.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 netstreambuf.o: netstreambuf.cpp netstreambuf.cpp
 	$(CPP) -c -o $@ $< $(CFLAGS) `curl-config --cflags`
+	
+#UCSC
+$(BINDIR)/vcfbigwig: vcfbigwig.cpp kentBigWig.o
+	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigWig.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigWig.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl; fi
+
+kentBigWig.o: kentBigWig.cpp kentBigWig.h
+	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
+	
+	
+	
 man:
 	mkdir -p ../man
 	for S in groupbygene ; do  awk '/^__BEGIN_DOC__/ {i=1;next;} /^__END_DOC__/ {i=0;next} {if(i==1) print;}' $${S}.cpp > ../man/$${S}.1 ; done
