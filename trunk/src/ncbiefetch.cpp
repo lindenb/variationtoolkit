@@ -137,7 +137,35 @@ class NcbiEFetch
 						return string("nucleotide");
 						}
 				};
-
+		class DbSNPHandler:public DatabaseHandler
+			{
+			public:
+				DbSNPHandler() {}
+				virtual ~DbSNPHandler() {}
+				virtual std::string xsldoc()
+					{
+					extern char _binary_dbsnp_xsl_start;
+					extern char _binary_dbsnp_xsl_end;
+					string s=string(&_binary_dbsnp_xsl_start,
+						&(_binary_dbsnp_xsl_end)-&(_binary_dbsnp_xsl_start)
+						);
+					return s;
+					}
+				virtual std::string database()
+					{
+					return string("snp");
+					}
+				virtual void fillHeader(vector<string>& header)
+					{
+					header.clear();
+					header.push_back("snp.het");
+					header.push_back("snp.bitField");
+					header.push_back("snp.seq5");
+					header.push_back("snp.obs");
+					header.push_back("snp.seq3");
+					header.push_back("snp.map");
+					}
+		};
 	Tokenizer tokenizer;
 	int column;
 	vector<DatabaseHandler*> handlers;
@@ -151,6 +179,7 @@ class NcbiEFetch
 	    handler=handlers.back();
 	    handlers.push_back(new NucleotideHandler);
 	    handlers.push_back(new ProteinHandler);
+	    handlers.push_back(new DbSNPHandler);
 	    }
 	~NcbiEFetch()
 	    {
@@ -232,6 +261,14 @@ class NcbiEFetch
 				cerr << "column out of range in " << line << endl;
 				continue;
 				}
+			if(tokens[column].length()>2 &&
+					handler->database().compare("snp")==0 &&
+					tolower(tokens[column][0])=='r' &&
+					tolower(tokens[column][1])=='s'
+					)
+					{
+					tokens[column]=tokens[column].substr(2);
+					}
 			char* p2;
 			long gi=strtol(tokens[column].c_str(),&p2,10);
 			if(gi<0 || *p2!=0)
