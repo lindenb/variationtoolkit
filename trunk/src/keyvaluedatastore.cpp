@@ -21,6 +21,10 @@
 #include <cstring>
 #include <sstream>
 #include <memory>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <ftw.h>
+
 #ifndef NOLEVELDB
 #include <leveldb/db.h>
 #endif
@@ -57,8 +61,29 @@ class Wrapper
 		    }
 	    };
 
+#ifndef NOLEVELDB
+class KeyComparator : public leveldb::Comparator
+    {
 
-DataStore::DataStore():handler(NULL),db_home(NULL)
+   public:
+	virtual int Compare(const leveldb::Slice& a, const leveldb::Slice& b) const
+	    {
+		DataStore::database_t db1=*((DataStore::database_t*)a.data());
+		DataStore::database_t db2=*((DataStore::database_t*)b.data());
+	    int i=db1-db2;
+	    if(i!=0) return i;
+	    const char* s1=&((char*)a.data)[sizeof(DataStore::database_t)];
+	    const char* s2=&((char*)b.data)[sizeof(DataStore::database_t)];
+	    return strcmp(s1,s2);
+	    }
+	virtual ~KeyComparator() {}
+	virtual const char* Name() const { return "Key#Comparator"; }
+	virtual void FindShortestSeparator(std::string*, const leveldb::Slice&) const { }
+	virtual void FindShortSuccessor(std::string*) const { }
+    };
+#endif
+
+DataStore::DataStore():handler(NULL),db_home(NULL),comparator(NULL)
     {
 
     }
@@ -75,39 +100,83 @@ void DataStore::open()
 
 void DataStore::open(const char* dir)
     {
+	close();
 #ifndef NOLEVELDB
     if(dir==NULL)
         {
-        THROW("DB_HOME undefined.");
+    	temporary_db=true;
+
+		char folder[FILENAME_MAX];
+		strncpy(folder,"_leveldbXXXXXX.tmp");
+		if(::mkdtemp(folder)==NULL)
+			{
+			THROW("cannot generate temporary dir");
+			}
+		if(mkdir(folder, 0755)!=0)
+			{
+			THROW("cannot create temporary "<< folder);
+			}
+		db_home=new string(folder);
         }
+    else
+    	{
+    	temporary_db=false;
+    	db_home=new string(dir);
+    	}
+    comparator=new KeyComparator;
     leveldb::Options options;
     options.create_if_missing = true;
+    options.error_if_exists=temporary_db;
+    options.comparator=(leveldb::Comparator*)comparator;
     leveldb::DB* D=NULL;
     leveldb::Status status = leveldb::DB::Open(options,dir,&D);
     if(!status.ok())
-	{
-	handler=NULL;
-	THROW("Cannot open leveldb file "<< dir <<".\n");
-	}
+		{
+		close();
+		THROW("Cannot open leveldb file "<< dir <<".\n");
+		}
     handler=D;
 #else
     THROW("Compiled without leveldb");
 #endif
     }
 
+static int _recursive_ftw(const char *fpath, const struct stat *sb, int typeflag)
+      {
+      if(S_ISREG(sb->st_mode))
+		  {
+		  remove(fpath);
+		  }
+      else if(S_ISDIR(sb->st_mode))
+		  {
+		  rmdir(fpath);
+		  }
+      return 0;
+      }
+
 void DataStore::close()
     {
 #ifndef NOLEVELDB
+
     if(db_home!=NULL)
-	{
-	delete db_home;
-	db_home=NULL;
-	}
+		{
+    	if(temporary_db)
+    	    	{
+    			::ftw(db_home->c_str(),_recursive_ftw,1);
+    	    	}
+		delete db_home;
+		db_home=NULL;
+		}
     if(handler!=NULL)
-	{
-	delete HANDLER;
-	handler=NULL;
-	}
+		{
+		delete HANDLER;
+		handler=NULL;
+		}
+    if(comparator!=NULL)
+    		 {
+    	    delete ((KeyComparator*)comparator);
+    	    comparator=NULL;
+    		 }
 #endif
     }
 
@@ -119,9 +188,9 @@ bool DataStore::rm(DataStore::database_t db,const char* s)
     leveldb::WriteOptions options;
     leveldb::Status status = HANDLER->Delete(options, key1);
     if(!status.ok())
-	{
-	return false;
-	}
+		{
+		return false;
+		}
     return true;
 #else
     THROW("Compiled without leveldb");
@@ -156,12 +225,13 @@ auto_ptr<string> DataStore::get(DataStore::database_t db,const char* key)
     Wrapper w1(db,key);
     leveldb::Slice key1(w1.ptr,w1.len);
     std::string* value=new string;
-    leveldb::Status status = HANDLER->Get(leveldb::ReadOptions(), key1, value);
+    leveldb::ReadOptions opt;
+    leveldb::Status status = HANDLER->Get(opt, key1, value);
     if(!status.ok())
-	{
-	delete value;
-	value=NULL;
-	}
+		{
+		delete value;
+		value=NULL;
+		}
     return auto_ptr<string>(value);
 #else
     THROW("Compiled without leveldb");
@@ -169,6 +239,15 @@ auto_ptr<string> DataStore::get(DataStore::database_t db,const char* key)
     }
 
 
+bool DataStore::contains(DataStore::database_t db,const char* key)
+    {
+#ifndef NOLEVELDB
+	auto_ptr<string> p=get(db,key);
+	return p.get()!=NULL;
+#else
+    THROW("Compiled without leveldb");
+#endif
+    }
 
 
 

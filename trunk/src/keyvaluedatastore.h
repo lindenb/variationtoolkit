@@ -42,5 +42,7 @@ class DataStore
     private:
         void* handler;
         std::string* db_home;
+        bool temporary_db;
+        void* comparator;
     };
 #endif

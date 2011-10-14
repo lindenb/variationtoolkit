@@ -20,6 +20,7 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/ncbiesearch \
 	$(BINDIR)/ncbiefetch \
 	$(BINDIR)/mysqlucsc \
+	$(BINDIR)/mysqlquery \
 	$(BINDIR)/vcfbigbed \
 	$(BINDIR)/vcfbigwig
 
@@ -57,7 +58,8 @@ $(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
 		-L $(SAMDIR) -L $(SAMDIR)/bcftools  -lz -lbam -lbcf
 $(BINDIR)/mysqlucsc: mysqlucsc.cpp  tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) `mysql_config --cflags  --libs` -lz 
-
+$(BINDIR)/mysqlquery: mysqlquery.cpp  tokenizer.h throw.h zstreambuf.h
+	$(CPP) -o $@ $< $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
