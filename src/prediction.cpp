@@ -256,8 +256,8 @@ class Prediction
 		mysql(NULL),
 		chromColumn(0),
 		posColumn(1),
-		refColumn(2),
-		altColumn(3)
+		refColumn(3),
+		altColumn(4)
 	    {
 	    if((mysql=::mysql_init(NULL))==NULL) THROW("Cannot init mysql");
 	    }
@@ -389,7 +389,7 @@ class Prediction
 		int position0=pos1-1;
 		WHERE("loading genes");
 		vector<KnownGene*> genes=getGenes(tokens[chromColumn],position0);
-		WHERE("done");
+		WHERE("done"<< genes.size());
 		bool found=false;
 		WHERE("");
 		const GeneticCode* geneticCode=GeneticCode::standard();
@@ -406,10 +406,19 @@ class Prediction
 		/** loop over the genes */
 		for(size_t i=0;i< genes.size();++i)
 		    {
+			WHERE("gene is "<< i);
 		    KnownGene* gene=genes.at(i);
 
-		    if(position0 >= gene->txEnd) continue;
-		    if(position0 < gene->txStart) continue;
+		    if(position0 >= gene->txEnd)
+		    	{
+		    	WHERE("");
+		    	continue;
+		    	}
+		    if(position0 < gene->txStart)
+		    	{
+		    	WHERE("");
+		    	continue;
+		    	}
 		    found=true;
 		    Consequence* consequence=new Consequence;
 		    consequence->gene=gene;
@@ -431,7 +440,7 @@ class Prediction
 			genomicAtpos0+=genomicSeq->at(position0);
 			if(!refBase.empty() && genomicAtpos0.compare(refBase)!=0)
 			    {
-			    cerr << "WARNING REF!=GENOMIC SEQ!!! at "<< tokens[0]<< ":"<<(position0+1)<< ":"<< genomicSeq->at(position0)<<"/"<<refBase << endl;
+			    cerr << "WARNING REF!=GENOMIC SEQ!!! at "<< tokens[0]<< ":"<<(position0+1)<< "(+1):"<< genomicSeq->at(position0)<<"/"<<refBase << endl;
 			    }
 
 			if(gene->isForward())
@@ -551,7 +560,7 @@ class Prediction
 			    }
 			else // reverse orientation
 			    {
-
+				WHERE("gene is reverse");
 			    if(position0 < gene->cdsStart)
 				{
 				consequence->type.insert("UTR3");
@@ -644,11 +653,14 @@ class Prediction
 				    --exon_index;
 				    }
 				}
+			    WHERE("en of reverse");
 			    }//end of if reverse
+			WHERE("calc exon");
 			if( consequence->wildProt!=NULL &&
 				consequence->mutProt!=NULL &&
 				consequence->position_in_cdna>=0)
 			    {
+				WHERE("end of consequence");
 			    int pos_aa=consequence->position_in_cdna/3;
 			    int mod= consequence->position_in_cdna%3;
 			    assert(consequence->wildCodon==NULL);
@@ -668,26 +680,31 @@ class Prediction
 			    consequence->mutAA=consequence->mutProt->at(pos_aa);
 			    if(geneticCode->isStop(consequence->wildProt->at(pos_aa)) &&
 				    !geneticCode->isStop(consequence->mutProt->at(pos_aa)))
-				{
-				consequence->type.insert("EXON_STOP_LOST");
-				}
+					{
+					consequence->type.insert("EXON_STOP_LOST");
+					}
 			    else if( !geneticCode->isStop(consequence->wildProt->at(pos_aa)) &&
 				    geneticCode->isStop(consequence->mutProt->at(pos_aa)))
-				{
-				consequence->type.insert( "EXON_STOP_GAINED");
-				}
+					{
+					consequence->type.insert( "EXON_STOP_GAINED");
+					}
 			    else if(consequence->wildProt->at(pos_aa)==consequence->mutProt->at(pos_aa))
-				{
-				consequence->type.insert("EXON_CODING_SYNONYMOUS");
-				}
+					{
+					consequence->type.insert("EXON_CODING_SYNONYMOUS");
+					}
 			    else
-				{
-				consequence->type.insert("EXON_CODING_NON_SYNONYMOUS");
-				}
+					{
+					consequence->type.insert("EXON_CODING_NON_SYNONYMOUS");
+					}
 			    }
+			else
+				{
+				WHERE("not in coding");
+				}
 			}//end of simpe ATCG
 		    else
 			{
+		    	WHERE("not a simple ATGC "<< refBase << " "<< alt);
 			int32_t wildrna=-1;
 
 			if(gene->isForward())
@@ -1007,7 +1024,6 @@ class Prediction
 
 		    cout << endl;
 		    found=true;
-		    WHERE("");
 		    delete consequence;
 		    WHERE("");
 		    }
