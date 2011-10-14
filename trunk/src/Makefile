@@ -22,7 +22,8 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/mysqlucsc \
 	$(BINDIR)/mysqlquery \
 	$(BINDIR)/vcfbigbed \
-	$(BINDIR)/vcfbigwig
+	$(BINDIR)/vcfbigwig \
+	$(BINDIR)/uniprot
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -60,7 +61,8 @@ $(BINDIR)/mysqlucsc: mysqlucsc.cpp  tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 $(BINDIR)/mysqlquery: mysqlquery.cpp  tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) `mysql_config --cflags  --libs` -lz 
-
+$(BINDIR)/uniprot: uniprot.cpp  application.o netstreambuf.o
+	$(CPP) -o $@ $< application.o netstreambuf.o $(CFLAGS) `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
@@ -96,6 +98,8 @@ geneticcode.o: geneticcode.cpp geneticcode.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 netstreambuf.o: netstreambuf.cpp netstreambuf.cpp
 	$(CPP) -c -o $@ $< $(CFLAGS) `curl-config --cflags`
+application.o: application.cpp application.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
