@@ -3,25 +3,53 @@
 \usepackage{graphics}
 \usepackage{color}
 \title{The Variation Toolkit}
-\author{Pierre Lindenbaum PhD.\\plindenbaum@yahoo.fr}
-\date{October 11, 2011}
+\author{Pierre Lindenbaum PhD.\\\texttt{plindenbaum@yahoo.fr}\\ \url{http://plindenbaum.blogspot.com}\\ \url{https://twitter.com/yokofakun}}
+\date{\today}
+
+
 
 \begin{document}
 \maketitle
+
+%%\begin{abstract}
+%%C++ tools for the interpretations of NGS data.
+%%\end{abstract}
+\cleardoublepage
 \section{Introduction}
 The Variation Toolkit is a set of C/C++ programs to handle Variant Call Format (VCF).
-The programs have been preliminary designed for knime4bio ( \url{http://code.google.com/p/knime4bio/})
+The programs have been preliminary designed for knime4bio ( \url{http://code.google.com/p/knime4bio/}) \cite{pmid21984761}
 but here, the bioinformaticians are the preliminary audience for this toolkit.
 \section{Building}
 \subsection{Dependencies}
 \begin{description}
-\item[wget]: wget is used to download the sources for samtools and tabix.
-Your web proxy should allow an access to sourceforge.net .
+\item[Samtools]: Utilities for post-processing alignments in the SAM format. \cite{pmid19505943}
+\item[Tabix]: fast retrieval of sequence features from generic TAB-delimited files. \cite{pmid21208982}
 \item[mysql-dev]: the files and libraries for mysql.
 \item[libxml2]: the C library for xml \url{http://xmlsoft.org/}.
 \item[libxslt]: the C library for xslt \url{http://xmlsoft.org/XSLT/}.
 \item[libcurl]: the C library for downloading some URLs.
+
 \end{description}
+\subsection{Building}
+Download the latest version of varking using subversion:
+
+\begin{quote}
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+\end{quote}
+
+or update your current version by calling "svn update" in the  variationtoolkit folder.
+\begin{quote} 
+svn update
+\end{quote}
+
+Edit the file variationtoolkit/config.mk . You'll have to set the path to the sources of tabix (>=0.2.5), samtools (>=-0.1.18), etc..
+You'll also have to specify your architecture for "objcpy".
+
+then type:
+\begin{quote} 
+make
+\end{quote}
+the binaries will be generated in the "bin" folder.
 
 
 \section{Tools}
@@ -745,5 +773,117 @@ $1	#CHROM   	1
 (...)
 \end{verbatim}
 \end{quote}
+
+\subsection{uniprot}
+Take as input a position on a protein and an uniprot ACN, connect to uniprot.org and answers wether a amino acid is contained in a 'feature'.
+
+
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#POS\tID\n54\tQ04721\n1\tHELLO\n166\tP03536" |\
+    uniprot -p 1 -s 2 |\
+    verticalize 
+#warning: Cannot find record for HELLO
+>>>	2
+$1	#POS            	54
+$2	ID              	Q04721
+$3	uniprot.beg     	26
+$4	uniprot.end     	2471
+$5	uniprot.type    	chain
+$6	uniprot.status  	.
+$7	uniprot.desc    	Neurogenic locus notch homolog protein 2
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	2
+
+>>>	3
+$1	#POS            	54
+$2	ID              	Q04721
+$3	uniprot.beg     	26
+$4	uniprot.end     	1677
+$5	uniprot.type    	topological domain
+$6	uniprot.status  	potential
+$7	uniprot.desc    	Extracellular
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	3
+
+>>>	4
+$1	#POS            	54
+$2	ID              	Q04721
+$3	uniprot.beg     	26
+$4	uniprot.end     	63
+$5	uniprot.type    	domain
+$6	uniprot.status  	.
+$7	uniprot.desc    	EGF-like 1
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	4
+
+>>>	5
+$1	#POS            	54
+$2	ID              	Q04721
+$3	uniprot.beg     	53
+$4	uniprot.end     	62
+$5	uniprot.type    	disulfide bond
+$6	uniprot.status  	by similarity
+$7	uniprot.desc    	.
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	5
+
+>>>	6
+$1	#POS            	1
+$2	ID              	HELLO
+$3	uniprot.beg     	.
+$4	uniprot.end     	.
+$5	uniprot.type    	.
+$6	uniprot.status  	.
+$7	uniprot.desc    	.
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	6
+
+>>>	7
+$1	#POS            	166
+$2	ID              	P03536
+$3	uniprot.beg     	1
+$4	uniprot.end     	315
+$5	uniprot.type    	chain
+$6	uniprot.status  	.
+$7	uniprot.desc    	Non-structural protein 3
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	7
+
+>>>	8
+$1	#POS            	166
+$2	ID              	P03536
+$3	uniprot.beg     	150
+$4	uniprot.end     	206
+$5	uniprot.type    	region of interest
+$6	uniprot.status  	.
+$7	uniprot.desc    	Dimerization
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	8
+
+>>>	9
+$1	#POS            	166
+$2	ID              	P03536
+$3	uniprot.beg     	166
+$4	uniprot.end     	237
+$5	uniprot.type    	coiled-coil region
+$6	uniprot.status  	potential
+$7	uniprot.desc    	.
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	9
+\end{verbatim}
+\end{quote}
+
+
+\bibliographystyle{abbrv}
+\bibliography{varkit}
 
 \end{document}
