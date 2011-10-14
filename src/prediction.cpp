@@ -364,7 +364,6 @@ class Prediction
 			    "knownGene.cdsStart" << tokenizer.delim <<
 			    "knownGene.cdsEnd" << tokenizer.delim <<
 			    "prediction.type" << tokenizer.delim <<
-			    "prediction.type" << tokenizer.delim <<
 			    "prediction.pos_in_cdna" << tokenizer.delim <<
 			    "prediction.pos_in_protein" << tokenizer.delim <<
 			    "prediction.exon" << tokenizer.delim <<
