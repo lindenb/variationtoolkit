@@ -118,7 +118,10 @@ kentBigWig.o: kentBigWig.cpp kentBigWig.h
 	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
 kentBigBed.o: kentBigBed.cpp kentBigBed.h
 	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
-	
+
+#not in production
+$(BINDIR)/sqlitequery: sqlitequery.cpp application.o
+	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
 	
 	
 man:
