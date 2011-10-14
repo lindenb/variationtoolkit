@@ -120,10 +120,11 @@ class NcbiEsearch
 				{
 				if(!isdigit(*(p+1)))
 					{
+					os.write(prev,p-prev);
 					prev=p+1;
 					continue;
 					}
-				os.write(prev,prev-p);
+				os.write(prev,p-prev);
 				++p;
 				char *p2;
 				int col=(int)strtol(p,&p2,10);

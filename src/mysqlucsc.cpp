@@ -24,15 +24,13 @@
 #include <cassert>
 #include <stdint.h>
 #include <mysql.h>
+#include "where.h"
+#include "throw.h"
+#include "zstreambuf.h"
+#include "tokenizer.h"
 
 using namespace std;
 
-#define WHERE(a) cerr << __FILE__ << ":" << __LINE__ << ":" << a << endl
-
-#define THROW(a) do{ostringstream _os;\
-	_os << __FILE__ << ":"<< __LINE__ << ":"<< a << endl;\
-	throw runtime_error(_os.str());\
-	}while(0)
 
 static void binsInRange(
         int chromStart,
@@ -112,7 +110,6 @@ class MysqlUcsc
     public:
 	 MYSQL* mysql;
 	 Table* table;
-	 char delim;
 	 bool first_line_header;
 	 int chromcol;
 	 int startcol;
@@ -120,10 +117,10 @@ class MysqlUcsc
 	 int limit;
 	 bool data_are_plus1_based;
 	 int select_type;
+	 Tokenizer tokenizer;
 	 MysqlUcsc():
 		 mysql(NULL),
 		 table(NULL),
-		 delim('\t'),
 		 first_line_header(true),
 		 limit(-1),
 		 data_are_plus1_based(false),
@@ -143,22 +140,6 @@ class MysqlUcsc
 	     ::mysql_close(mysql);
 	     }
 
-	 void split(const string& line,vector<string>& tokens)
-		{
-		size_t prev=0;
-		size_t i=0;
-		tokens.clear();
-		while(i<=line.size())
-		    {
-		    if(i==line.size() || line[i]==delim)
-			{
-			tokens.push_back(line.substr(prev,i-prev));
-			if(i==line.size()) break;
-			prev=i+1;
-			}
-		    ++i;
-		    }
-		}
 
 	 Table* schema(const char* tableName)
 	     {
@@ -234,144 +215,144 @@ class MysqlUcsc
 	     const string base_query(os.str());
 
 	     while(getline(in,line,'\n'))
-		 {
-		 ++nLine;
-		 split(line,tokens);
-		 if(nLine==1 && first_line_header)
-		     {
-		     for(size_t i=0;i< tokens.size();++i)
 			 {
-			 if(i>0) cout << delim;
-			 cout << tokens[i];
-			 }
-		     for(size_t i=0;i< table->columns.size();++i)
-			 {
-			 cout << delim<< table->columns[i];
-			 }
-		     cout <<endl;
-		     continue;
-		     }
-		 if((size_t)chromcol>=tokens.size())
-		     {
-		     cerr << "Chrom column: index out of range in "<< line << endl;
-		     continue;
-		     }
-		 if((size_t)startcol>=tokens.size())
-		     {
-		     cerr << "START column: index out of range in "<< line << endl;
-		     continue;
-		     }
-		 if((size_t)endcol>=tokens.size())
-		     {
-		     cerr << "END column: index out of range in "<< line << endl;
-		     continue;
-		     }
+			 ++nLine;
+			 tokenizer.split(line,tokens);
+			 if(nLine==1 && first_line_header)
+				 {
+				 for(size_t i=0;i< tokens.size();++i)
+				 {
+				 if(i>0) cout << tokenizer.delim;
+				 cout << tokens[i];
+				 }
+				 for(size_t i=0;i< table->columns.size();++i)
+				 {
+				 cout << tokenizer.delim<< table->columns[i];
+				 }
+				 cout <<endl;
+				 continue;
+				 }
+			 if((size_t)chromcol>=tokens.size())
+				 {
+				 cerr << "Chrom column: index out of range in "<< line << endl;
+				 continue;
+				 }
+			 if((size_t)startcol>=tokens.size())
+				 {
+				 cerr << "START column: index out of range in "<< line << endl;
+				 continue;
+				 }
+			 if((size_t)endcol>=tokens.size())
+				 {
+				 cerr << "END column: index out of range in "<< line << endl;
+				 continue;
+				 }
 
-		 char* p2;
-		 int chromStart=strtol(tokens[startcol].c_str(),&p2,10);
-		 if(*p2!=0)
-		     {
-		     cerr << "Bad chromStart in "<< line << endl;
-		     continue;
-		     }
-		 int chromEnd=strtol(tokens[endcol].c_str(),&p2,10);
-		 if(*p2!=0)
-		     {
-		     cerr << "Bad chromStart in "<< line << endl;
-		     continue;
-		     }
-		 if(data_are_plus1_based)
-		     {
-		     chromStart--;
-		     chromEnd--;
-		     }
+			 char* p2;
+			 int chromStart=strtol(tokens[startcol].c_str(),&p2,10);
+			 if(*p2!=0)
+				 {
+				 cerr << "Bad chromStart in "<< line << endl;
+				 continue;
+				 }
+			 int chromEnd=strtol(tokens[endcol].c_str(),&p2,10);
+			 if(*p2!=0)
+				 {
+				 cerr << "Bad chromStart in "<< line << endl;
+				 continue;
+				 }
+			 if(data_are_plus1_based)
+				 {
+				 chromStart--;
+				 chromEnd--;
+				 }
 
-		 ostringstream sql;
-		 sql << base_query;
-		 sql << tokens[chromcol] << "\" and ";
-		 switch(select_type)
-		     {
-		     case select_user_IN_sql:
-			 {
-			 sql << table->chromStart << " <= " << tokens[startcol]
-			    << " and "<< table->chromEnd << " >= " << tokens[endcol];
+			 ostringstream sql;
+			 sql << base_query;
+			 sql << tokens[chromcol] << "\" and ";
+			 switch(select_type)
+				 {
+				 case select_user_IN_sql:
+				 {
+				 sql << table->chromStart << " <= " << tokens[startcol]
+					<< " and "<< table->chromEnd << " >= " << tokens[endcol];
 
-			 break;
-			 }
-		     case select_user_OUT_sql:
-			 {
-			 sql << table->chromStart << " >= " << tokens[startcol]
-			    << " and "<< table->chromEnd << " <= " << tokens[endcol]
-			     ;
-			 break;
-			 }
-		     default:
-			 {
-			 sql << " NOT(" << table->chromEnd << " <= " << tokens[startcol]
-			    << " or "<< table->chromStart << " > " << tokens[endcol]
-			    << ")";
-			 break;
-			 }
-		     }
-		 if(table->hasBin)
-		     {
-		     binList.clear();
-		     bins(chromStart,chromEnd,binList);
-		     sql << " and bin in (";
-		     for(size_t i=0;i< binList.size();++i)
-			 {
-			 if(i>0) sql << ",";
-			 sql << binList[i];
-			 }
-		     sql << ")";
-		     }
-		  if(limit>0)
-		     {
-		     sql << " limit "<< limit;
-		     }
-		 bool found=false;
-		 string query(sql.str());
+				 break;
+				 }
+				 case select_user_OUT_sql:
+				 {
+				 sql << table->chromStart << " >= " << tokens[startcol]
+					<< " and "<< table->chromEnd << " <= " << tokens[endcol]
+					 ;
+				 break;
+				 }
+				 default:
+				 {
+				 sql << " NOT(" << table->chromEnd << " <= " << tokens[startcol]
+					<< " or "<< table->chromStart << " > " << tokens[endcol]
+					<< ")";
+				 break;
+				 }
+				 }
+			 if(table->hasBin)
+				 {
+				 binList.clear();
+				 bins(chromStart,chromEnd,binList);
+				 sql << " and bin in (";
+				 for(size_t i=0;i< binList.size();++i)
+				 {
+				 if(i>0) sql << ",";
+				 sql << binList[i];
+				 }
+				 sql << ")";
+				 }
+			  if(limit>0)
+				 {
+				 sql << " limit "<< limit;
+				 }
+			 bool found=false;
+			 string query(sql.str());
 
-		 MYSQL_ROW row;
-		 if(mysql_real_query( mysql, query.c_str(),query.size())!=0)
-		     {
-		     cerr << "Failure for "<< query << "\n";
-		     cerr << mysql_error(mysql)<< endl;
-		     continue;
-		     }
-		 MYSQL_RES* res=mysql_use_result( mysql );
-		 int ncols=mysql_field_count(mysql);
-		 while(( row = mysql_fetch_row( res ))!=NULL )
-			 {
-			 for(size_t i=0;i< tokens.size();++i)
-			     {
-			     if(i>0) cout << delim;
-			     cout << tokens[i];
-			     }
-			 for(int i=0;i< ncols;++i)
-			     {
-			     cout << delim << row[i];
-			     }
-			 cout << endl;
-			 found=true;
-			 }
-		 ::mysql_free_result( res );
+			 MYSQL_ROW row;
+			 if(mysql_real_query( mysql, query.c_str(),query.size())!=0)
+				 {
+				 cerr << "Failure for "<< query << "\n";
+				 cerr << mysql_error(mysql)<< endl;
+				 continue;
+				 }
+			 MYSQL_RES* res=mysql_use_result( mysql );
+			 int ncols=mysql_field_count(mysql);
+			 while(( row = mysql_fetch_row( res ))!=NULL )
+				 {
+				 for(size_t i=0;i< tokens.size();++i)
+					 {
+					 if(i>0) cout << tokenizer.delim;
+					 cout << tokens[i];
+					 }
+				 for(int i=0;i< ncols;++i)
+					 {
+					 cout << tokenizer.delim << row[i];
+					 }
+				 cout << endl;
+				 found=true;
+				 }
+			 ::mysql_free_result( res );
 
-		 if(!found)
-		     {
-		     for(size_t i=0;i< tokens.size();++i)
-			 {
-			 if(i>0) cout << delim;
-			 cout << tokens[i];
-			 }
-		     for(size_t i=0;i< table->columns.size();++i)
-			 {
-			 cout << delim ;
-			 }
-		     cout << endl;
-		     }
+			 if(!found)
+				 {
+				 for(size_t i=0;i< tokens.size();++i)
+				 {
+				 if(i>0) cout << tokenizer.delim;
+				 cout << tokens[i];
+				 }
+				 for(size_t i=0;i< table->columns.size();++i)
+				 {
+				 cout << tokenizer.delim ;
+				 }
+				 cout << endl;
+				 }
 
-		 }
+			 }
 	     }
 
     };
@@ -498,15 +479,15 @@ int main(int argc,char** argv)
 		port=atoi(argv[++optind]);
 		}
 	    else if(std::strcmp(argv[optind],"--delim")==0 && optind+1< argc)
-		{
-		char* p=argv[++optind];
-		if(strlen(p)!=1)
-		    {
-		    cerr << "Bad delimiter \""<< p << "\"\n";
-		    exit(EXIT_FAILURE);
-		    }
-		app.delim=p[0];
-		}
+			{
+			char* p=argv[++optind];
+			if(strlen(p)!=1)
+				{
+				cerr << "Bad delimiter \""<< p << "\"\n";
+				exit(EXIT_FAILURE);
+				}
+			app.tokenizer.delim=p[0];
+			}
 	    else if(argv[optind][0]=='-')
 		{
 		fprintf(stderr,"unknown option '%s'\n",argv[optind]);
@@ -545,14 +526,15 @@ int main(int argc,char** argv)
 	THROW("mysql_real_connect failed.");
 	}
     app.table=app.schema(tablename);
+    if(app.table==NULL) THROW("Cannot get schema for "<< tablename);
     if(!custom_fields.empty())
-	{
-	app.table->columns.clear();
-	for(size_t i=0;i< custom_fields.size();++i)
-	    {
-	    app.table->columns.push_back(custom_fields[i]);
-	    }
-	}
+		{
+		app.table->columns.clear();
+		for(size_t i=0;i< custom_fields.size();++i)
+			{
+			app.table->columns.push_back(custom_fields[i]);
+			}
+		}
     if(app.table==NULL)
 	{
 	cerr << "Cannot get table "<< database<<"."<< tablename << endl;
@@ -560,22 +542,20 @@ int main(int argc,char** argv)
 	}
     if(optind==argc)
 	    {
-	    app.run(cin);
+    	igzstreambuf buf;
+		istream in(&buf);
+		app.run(in);
 	    }
     else
 	    {
-	    while(optind< argc)
-		{
-		char* filename=argv[optind++];
-		fstream in(filename,ios::in);
-		if(!in.is_open())
-		    {
-		    cerr << "Cannot open "<< filename << " " << strerror(errno) << endl;
-		    return EXIT_FAILURE;
-		    }
-		app.run(in);
-		in.close();
-		}
+    	while(optind< argc)
+			{
+			char* filename=argv[optind++];
+			igzstreambuf buf(filename);
+			istream in(&buf);
+			app.run(in);
+			buf.close();
+			}
 	    }
     return EXIT_SUCCESS;
     }
