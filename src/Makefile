@@ -1,12 +1,10 @@
+include ../config.mk
 BINDIR=../bin
 CPP=g++
 CFLAGS=-O3 -Wall
-SAMDIR=../ext/samtools
-TABIXDIR=../ext/tabix
-#elf32-i386
-#elf64-x86-64
-OBJCPY= objcopy --input binary --output elf32-i386 --binary-architecture i386
+OBJCPY= objcopy --input binary --output ${OBJCPYARCH} --binary-architecture i386
 all:$(BINDIR)/scanvcf \
+	$(BINDIR)/verticalize \
 	$(BINDIR)/groupbygene \
 	$(BINDIR)/numericsplit \
 	$(BINDIR)/extractinfo \
@@ -26,6 +24,8 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfbigwig
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
+	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/verticalize: verticalize.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/groupbygene: groupbygene.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -94,7 +94,12 @@ geneticcode.o: geneticcode.cpp geneticcode.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 netstreambuf.o: netstreambuf.cpp netstreambuf.cpp
 	$(CPP) -c -o $@ $< $(CFLAGS) `curl-config --cflags`
+
+keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
+	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
 	
+	
+
 #UCSC
 $(BINDIR)/vcfbigwig: vcfbigwig.cpp kentBigWig.o
 	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigWig.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigWig.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl; fi
