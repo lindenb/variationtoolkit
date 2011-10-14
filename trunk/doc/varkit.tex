@@ -328,9 +328,118 @@ chr1 887560 rs3748595 A C 99 0 . GT:GQ:DP:FLT 1/1:99:40:0 CCAGGCTGAC A AGTCAGGCT
 \end{quote}
 
 \subsection{prediction}
-variation prediction
+variation predictor.
 
-TODO
+\begin{quote}
+\begin{verbatim}
+$ mysql -e 'select chrom as "#CHROM",cdsStart+1 as "POS","A" as "REF" ,"G" as "ALT" from knownGene where strand="+" and cdsStart<cdsEnd limit 10' -D hg19 |\
+   prediction -f hg19.fa |\
+   bin/verticalize | cut -c 1-80
+   
+>>>	2
+$1	#CHROM                   	chr1
+$2	POS                      	12190
+$3	REF                      	A
+$4	ALT                      	G
+$5	knownGene.name           	uc001aaa.3
+$6	knownGene.strand         	+
+$7	knownGene.txStart        	11873
+$8	knownGene.txEnd          	14409
+$9	knownGene.cdsStart       	11873
+$10	knownGene.cdsEnd         	11873
+$11	prediction.type          	UTR3
+$12	prediction.pos_in_cdna   	.
+$13	prediction.pos_in_protein	.
+$14	prediction.exon          	.
+$15	prediction.intron        	.
+$16	prediction.wild.codon    	.
+$17	prediction.mut.codon     	.
+$18	prediction.wild.aa       	.
+$19	prediction.mut.aa        	.
+$20	prediction.wild.prot     	.
+$21	prediction.mut.prot      	.
+$22	prediction.wild.rna      	.
+$23	prediction.mut.rna       	.
+$24	prediction.splicing      	.
+<<<	2
+
+>>>	3
+$1	#CHROM                   	chr1
+$2	POS                      	12190
+$3	REF                      	A
+$4	ALT                      	G
+$5	knownGene.name           	uc010nxq.1
+$6	knownGene.strand         	+
+$7	knownGene.txStart        	11873
+$8	knownGene.txEnd          	14409
+$9	knownGene.cdsStart       	12189
+$10	knownGene.cdsEnd         	13639
+$11	prediction.type          	EXON|EXON_CODING_NON_SYNONYMOUS
+$12	prediction.pos_in_cdna   	0
+$13	prediction.pos_in_protein	1
+$14	prediction.exon          	Exon 1
+$15	prediction.intron        	.
+$16	prediction.wild.codon    	ATG
+$17	prediction.mut.codon     	GTG
+$18	prediction.wild.aa       	M
+$19	prediction.mut.aa        	V
+$20	prediction.wild.prot     	MSESINFSHNLGQLLSPPRCVVMPGMPFPSIRSPELQKTTADLDHTLVSV
+$21	prediction.mut.prot      	VSESINFSHNLGQLLSPPRCVVMPGMPFPSIRSPELQKTTADLDHTLVSV
+$22	prediction.wild.rna      	ATGAGTGAGAGCATCAACTTCTCTCACAACCTAGGCCAGCTCCTGTCTCC
+$23	prediction.mut.rna       	GTGAGTGAGAGCATCAACTTCTCTCACAACCTAGGCCAGCTCCTGTCTCC
+$24	prediction.splicing      	.
+<<<	3
+
+>>>	4
+$1	#CHROM                   	chr1
+$2	POS                      	12190
+$3	REF                      	A
+$4	ALT                      	G
+$5	knownGene.name           	uc010nxr.1
+$6	knownGene.strand         	+
+$7	knownGene.txStart        	11873
+$8	knownGene.txEnd          	14409
+$9	knownGene.cdsStart       	11873
+$10	knownGene.cdsEnd         	11873
+$11	prediction.type          	UTR3
+$12	prediction.pos_in_cdna   	.
+$13	prediction.pos_in_protein	.
+$14	prediction.exon          	.
+$15	prediction.intron        	.
+$16	prediction.wild.codon    	.
+$17	prediction.mut.codon     	.
+$18	prediction.wild.aa       	.
+$19	prediction.mut.aa        	.
+$20	prediction.wild.prot     	.
+$21	prediction.mut.prot      	.
+$22	prediction.wild.rna      	.
+$23	prediction.mut.rna       	.
+$24	prediction.splicing      	.
+<<<	4
+
+>>>	5
+$1	#CHROM                   	chr1
+$2	POS                      	69091
+$3	REF                      	A
+$4	ALT                      	G
+$5	knownGene.name           	uc001aal.1
+$6	knownGene.strand         	+
+$7	knownGene.txStart        	69090
+$8	knownGene.txEnd          	70008
+$9	knownGene.cdsStart       	69090
+$10	knownGene.cdsEnd         	70008
+$11	prediction.type          	EXON|EXON_CODING_NON_SYNONYMOUS
+$12	prediction.pos_in_cdna   	0
+$13	prediction.pos_in_protein	1
+$14	prediction.exon          	Exon 1
+$15	prediction.intron        	.
+$16	prediction.wild.codon    	ATG
+$17	prediction.mut.codon     	GTG
+$18	prediction.wild.aa       	M
+(...)
+\end{verbatim}
+\end{quote}
+
 \subsection{manhattan}
 plots a manhattan plot as postscript.
 
@@ -464,8 +573,39 @@ $ gunzip -c data.vcf.gz |\
 \end{verbatim}
 \end{quote}
 
+
+\subsection{mysqlquery}
+Ask a mysql query for each row:
+
+
 \subsection{mysqlucsc}
 Intersection VCF/UCSC mysql data.
+
+\begin{quote}
+\begin{verbatim}
+$  echo -e "#Gene\nuc001aaa.3\nHello\nuc001aac.3" |\
+      mysqlquery --host localhost --user anonymous --port 3316  \
+             -q 'select mRNA,description from kgXref where kgId="$1"'  |\
+      verticalize 
+>>>	2
+$1	#Gene      	uc001aaa.3
+$2	mRNA       	BC032353
+$3	description	Homo sapiens mRNA for DEAD/H box polypeptide 11 like 1 (DDX11L1 gene).
+<<<	2
+
+>>>	3
+$1	#Gene      	Hello
+$2	mRNA       	.
+$3	description	.
+<<<	3
+
+>>>	4
+$1	#Gene      	uc001aac.3
+$2	mRNA       	BC063459
+$3	description	Homo sapiens cDNA FLJ31670 fis, clone NT2RI2004984.
+<<<	4
+\end{verbatim}
+\end{quote}
 
 
 Compute the intersection of our data with ucsc.snp132 keep the lines containing the word 'syn'.
@@ -580,5 +720,30 @@ chrX	1	!N/A	!N/A	!N/A
 \end{verbatim}
 \end{quote}
 
+\subsection{verticalize}
+Verticalize a table:
+\begin{quote}
+\begin{verbatim}
+$ gunzip -c file.vcf.gz | grep -v "##" |\
+   verticalize  |\
+   head -n 100
+>>>	2
+$1	#CHROM   	1
+$2	POS      	880238
+$3	ID       	rs3748592
+$4	REF      	A
+$5	ALT      	G
+$6	QUAL     	48
+$7	FILTER   	0
+$8	INFO     	AC=2;DB=1;ST=0:0,3:4;DP=7;NC=-3.73;UM=3;CQ=INTRONIC;MQ=60;AN=2;PA=1^1:0.930&2^1:0.860&3^1:0.950;MZ=0;GN=NOC2L;PS=1
+$9	FORMAT   	GT:GQ:DP:FLT
+$10	162214_A1	1/1:48:7:0
+<<<	2
+
+>>>	3
+$1	#CHROM   	1
+(...)
+\end{verbatim}
+\end{quote}
 
 \end{document}
