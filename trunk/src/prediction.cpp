@@ -251,15 +251,23 @@ class Prediction
 	int posColumn;
 	int refColumn;
 	int altColumn;
+	string host,username,password,database;
+	int port;
 	Prediction():indexedFasta(NULL),
 		fasta(NULL),
 		mysql(NULL),
 		chromColumn(0),
 		posColumn(1),
 		refColumn(3),
-		altColumn(4)
+		altColumn(4),
+		host("genome-mysql.cse.ucsc.edu"),
+		username("genome"),
+		database("hg19"),
+		port(0)
 	    {
 	    if((mysql=::mysql_init(NULL))==NULL) THROW("Cannot init mysql");
+
+
 	    }
 	~Prediction()
 	    {
@@ -1044,23 +1052,38 @@ class Prediction
 	    }
 
 
-	void usage(int argc,char** argv)
+	void usage(ostream& out,int argc,char** argv)
 		{
-		cerr << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
-		cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-		cerr << "Options:\n";
-		cerr << "  -d <column-delimiter> (default:tab)" << endl;
-		cerr << "  -f genome file indexed with samtools faidx." << endl;
+		out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
+		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+		out << "Options:\n";
+		out << "  -d <column-delimiter> (default:tab)" << endl;
+		out << "  -f genome file indexed with samtools faidx." << endl;
+		out << "  -c <CHROM col> (default:"<< chromColumn <<")" << endl;
+		out << "  -p <POS col> (default:"<< posColumn <<")" << endl;
+		out << "  -r <REF col> (default:"<< refColumn <<")" << endl;
+		out << "  -a <ALT col> (default:"<< altColumn <<")" << endl;
+		out << "  --host <mysql host> default:" << host << endl;
+		out << "  --user <mysql user> default:" << username << endl;
+		out << "  --password <mysql password> default:" << password << endl;
+		out << "  --database <mysql database> default:" << database << endl;
+		out << "  --port <mysql password> default:" << port << endl;
 		}
     };
+#define ARGVCOL(flag,var) else if(std::strcmp(argv[optind],flag)==0 && optind+1<argc)\
+	{\
+	char* p2;\
+	app.var=(int)strtol(argv[++optind],&p2,10);\
+	if(app.var<1 || *p2!=0)\
+		{cerr << "Bad column for "<< flag << ".\n";app.usage(cerr,argc,argv);return EXIT_FAILURE;}\
+	app.var--;\
+	}
+
 
 int main(int argc,char** argv)
     {
     Prediction app;
-    string host("genome-mysql.cse.ucsc.edu");
-    string username("genome");
-    string password;
-    string database("hg19");
+
 
     int port=0;
     int optind=1;
@@ -1068,31 +1091,39 @@ int main(int argc,char** argv)
 		{
 		if(strcmp(argv[optind],"-h")==0)
 			{
-			app.usage(argc,argv);
+			app.usage(cerr,argc,argv);
 			return(EXIT_FAILURE);
 			}
+		ARGVCOL("-c",chromColumn)
+		ARGVCOL("-p",posColumn)
+		ARGVCOL("-r",refColumn)
+		ARGVCOL("-a",altColumn)
 		else if(std::strcmp(argv[optind],"--host")==0 && optind+1<argc)
 			{
-			host.assign(argv[++optind]);
+			app.host.assign(argv[++optind]);
 			}
 		else if(std::strcmp(argv[optind],"--user")==0 && optind+1<argc)
 			{
-			username.assign(argv[++optind]);
+			app.username.assign(argv[++optind]);
 			}
 		else if(std::strcmp(argv[optind],"--password")==0 && optind+1<argc)
 			{
-			password.assign(argv[++optind]);
+			app.password.assign(argv[++optind]);
+			}
+		else if(std::strcmp(argv[optind],"--database")==0 && optind+1<argc)
+			{
+			app.database.assign(argv[++optind]);
 			}
 		else if(std::strcmp(argv[optind],"--port")==0 && optind+1<argc)
 			{
-			port=atoi(argv[++optind]);
+			app.port=atoi(argv[++optind]);
 			}
 		else if(strcmp(argv[optind],"-d")==0 && optind+1< argc)
 			{
 			char* p=argv[++optind];
 			if(strlen(p)!=1)
 			{
-			fprintf(stderr,"Bad delimiter \"%s\"\n",p);
+			cerr<< "bad delimiter \"" << p << "\"\n";
 			return (EXIT_FAILURE);
 			}
 			app.tokenizer.delim=p[0];
@@ -1110,7 +1141,7 @@ int main(int argc,char** argv)
 			{
 
 			cerr << "unknown option '" << argv[optind]<< "'" << endl;
-			app.usage(argc,argv);
+			app.usage(cerr,argc,argv);
 			return EXIT_FAILURE;
 			}
 		else
@@ -1123,16 +1154,16 @@ int main(int argc,char** argv)
     if( app.fasta==NULL)
 		{
 		cerr << "genome fasta file undefined." << endl;
-		 app.usage(argc,argv);
+		 app.usage(cerr,argc,argv);
 		return EXIT_FAILURE;
 		}
     WHERE("connect");
     if(::mysql_real_connect(
     	    app. mysql,
-    	    host.c_str(),
-    	    username.c_str(),
-    	    password.c_str(),
-    	    database.c_str(), port,NULL, 0 )==NULL)
+    	    app.host.c_str(),
+    	    app.username.c_str(),
+    	    app.password.c_str(),
+    	    app.database.c_str(), port,NULL, 0 )==NULL)
     	{
     	THROW("mysql_real_connect failed "<< mysql_error(app.mysql));
     	}

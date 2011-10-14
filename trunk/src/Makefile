@@ -23,7 +23,8 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/mysqlquery \
 	$(BINDIR)/vcfbigbed \
 	$(BINDIR)/vcfbigwig \
-	$(BINDIR)/uniprot
+	$(BINDIR)/uniprot \
+	$(BINDIR)/vcf2bed
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -68,7 +69,8 @@ $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
 $(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o dbsnpxsl.o genexsl.o taxonomyxsl.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o dbsnpxsl.o  genexsl.o taxonomyxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
-
+$(BINDIR)/vcf2bed: vcf2bed.cpp application.o 
+	$(CPP) -o $@ $< application.o  $(CFLAGS) -lz
 
 
 pubmedxsl.o:pubmed.xsl
