@@ -1014,7 +1014,9 @@ class Prediction
 		    }
 		if(!found)
 		    {
-		    cout << line << endl;
+		    cout << line;
+		    for(int i=0;i< 21;++i) cout << tokenizer.delim << ".";
+		    cout << endl;
 		    }
 
 		while(!genes.empty())
