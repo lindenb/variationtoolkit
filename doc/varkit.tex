@@ -31,23 +31,23 @@ but here, the bioinformaticians are the preliminary audience for this toolkit.
 
 \end{description}
 \subsection{Building}
-Download the latest version of varking using subversion:
+Download the latest version of varking using \texttt{subversion}:
 
 \begin{quote}
-svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+\$ svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 \end{quote}
 
-or update your current version by calling "svn update" in the  variationtoolkit folder.
+or update your current version by calling \texttt{"svn update"} in the  variationtoolkit folder.
 \begin{quote} 
-svn update
+\$ svn update
 \end{quote}
 
 Edit the file variationtoolkit/config.mk . You'll have to set the path to the sources of tabix (>=0.2.5), samtools (>=-0.1.18), etc..
-You'll also have to specify your architecture for "objcpy".
+You'll also have to specify your architecture for \texttt{"objcpy"}.
 
 then type:
-\begin{quote} 
-make
+\begin{quote}
+\$ make
 \end{quote}
 the binaries will be generated in the "bin" folder.
 
