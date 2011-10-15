@@ -30,3 +30,8 @@ void AbstractApplication::redirectTo(const char* filename)
 	{
 
 	}
+
+int AbstractApplication::argument(int optind,int argc,char** argv)
+    {
+    return -1;
+    }

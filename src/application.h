@@ -22,6 +22,7 @@ class AbstractApplication
 		virtual void usage(std::ostream& out,int argc,char** argv);
 		virtual void usage(int argc,char** argv);
 		virtual void redirectTo(const char* filename);
+		virtual int argument(int optind,int argc,char** argv);
 	};
 
 #endif

@@ -3,7 +3,7 @@ BINDIR=../bin
 CPP=g++
 CFLAGS=-O3 -Wall
 OBJCPY= objcopy --input binary --output ${OBJCPYARCH} --binary-architecture i386
-all:$(BINDIR)/scanvcf \
+TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/verticalize \
 	$(BINDIR)/groupbygene \
 	$(BINDIR)/numericsplit \
@@ -24,7 +24,12 @@ all:$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfbigbed \
 	$(BINDIR)/vcfbigwig \
 	$(BINDIR)/uniprot \
-	$(BINDIR)/vcf2bed
+	$(BINDIR)/vcf2bed \
+	$(BINDIR)/emblstringresolve \
+	$(BINDIR)/emblstringinteractions \
+	$(BINDIR)/emblstringinteractors
+
+all:$(TARGET_BINARIES)
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -71,6 +76,13 @@ $(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o db
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o dbsnpxsl.o  genexsl.o taxonomyxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
 $(BINDIR)/vcf2bed: vcf2bed.cpp application.o 
 	$(CPP) -o $@ $< application.o  $(CFLAGS) -lz
+$(BINDIR)/emblstringresolve : emblstring.cpp application.o netstreambuf.o
+	$(CPP) -o $@ $< application.o netstreambuf.o -DEMBL_RESOLVE $(CFLAGS) `curl-config --cflags --libs` -lz
+$(BINDIR)/emblstringinteractions : emblstring.cpp application.o netstreambuf.o
+	$(CPP) -o $@ $< application.o netstreambuf.o -DEMBL_INTERACTIONS $(CFLAGS) `curl-config --cflags --libs` -lz
+$(BINDIR)/emblstringinteractors : emblstring.cpp application.o netstreambuf.o
+	$(CPP) -o $@ $< application.o netstreambuf.o -DEMBL_INTERACTOR $(CFLAGS) `curl-config --cflags --libs` -lz
+
 
 
 pubmedxsl.o:pubmed.xsl
@@ -123,7 +135,5 @@ kentBigBed.o: kentBigBed.cpp kentBigBed.h
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
 	
-	
-man:
-	mkdir -p ../man
-	for S in groupbygene ; do  awk '/^__BEGIN_DOC__/ {i=1;next;} /^__END_DOC__/ {i=0;next} {if(i==1) print;}' $${S}.cpp > ../man/$${S}.1 ; done
+clean:
+	rm -f $(TARGET_BINARIES) *.o a.out 
