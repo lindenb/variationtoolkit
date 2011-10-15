@@ -20,6 +20,7 @@
 #include "throw.h"
 #include "zstreambuf.h"
 #include "where.h"
+#include "httpescape.h"
 using namespace std;
 
 #define XSDLODC(XSLT) virtual std::string xsldoc()\
@@ -220,29 +221,7 @@ class NcbiEFetch
 	    ::xmlCleanupParser();
 	    ::xmlMemoryDump();
 	    }
-	std::string escape(const std::string& s)
-	    {
-	    ostringstream os;
-	    for(size_t i=0;i< s.size();++i)
-			{
-			char c=s[i];
-			if(c==' ')
-				{
-				os << "+";
-				}
-			else if(isalpha(c) || isdigit(c))
-				{
-				os <<c;
-				}
-			else
-				{
-				char tmp[10];
-				sprintf(tmp,"%02X",(int)c);
-				os << "%" << tmp;
-				}
-			}
-	    return os.str();
-	    }
+
 
 
 	xmlDocPtr fetch(const char* url)
@@ -265,7 +244,7 @@ class NcbiEFetch
 
 	    ostringstream baseos;
 		baseos << "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=";
-		baseos << escape(handler->database()) <<
+		baseos << httpEscape(handler->database()) <<
 				handler->urlparams()<< "&retmode=xml&id=";
 		string urlbase(baseos.str());
 

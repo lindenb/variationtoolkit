@@ -15,6 +15,7 @@
 #include "throw.h"
 #include "zstreambuf.h"
 #include "where.h"
+#include "httpescape.h"
 using namespace std;
 
 class NcbiEsearch
@@ -36,29 +37,7 @@ class NcbiEsearch
 	    ::xmlCleanupParser();
 	    ::xmlMemoryDump();
 	    }
-	std::string escape(const std::string& s)
-	    {
-	    ostringstream os;
-	    for(size_t i=0;i< s.size();++i)
-		{
-		char c=s[i];
-		if(c==' ')
-		    {
-		    os << "+";
-		    }
-		else if(isalpha(c) || isdigit(c))
-		    {
-		    os <<c;
-		    }
-		else
-		    {
-		    char tmp[10];
-		    sprintf(tmp,"%02X",(int)c);
-		    os << "%" << tmp;
-		    }
-		}
-	    return os.str();
-	    }
+
 	static int _xmlInputReadCallback(
 		 void * context,
 		 char * buffer,
@@ -97,7 +76,7 @@ class NcbiEsearch
 
 	    ostringstream baseos;
 		baseos << "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=";
-		baseos << escape(database) << "&retmode=xml&retmax="<< limit
+		baseos << httpEscape(database) << "&retmode=xml&retmax="<< limit
 	    	  << "&term=";
 	    string baseurl(baseos.str());
 
@@ -145,7 +124,7 @@ class NcbiEsearch
 			os << prev;
 			if(!ok) continue;
 			string url(baseurl);
-			url.append(escape(os.str()));
+			url.append(httpEscape(os.str()).str());
 
 			xmlTextReaderPtr reader=parse(url.c_str());
 			for(;;)
