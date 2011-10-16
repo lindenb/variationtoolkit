@@ -31,23 +31,18 @@
 #include <cassert>
 #include <stdint.h>
 #include "zstreambuf.h"
-#include "tokenizer.h"
+#include "application.h"
 
 using namespace std;
 
 
-class Verticalize
+class Verticalize:public AbstractApplication
     {
     public:
-
-	char delim;
-	bool first_line_is_header;
-
-
-	Verticalize()
+	   bool first_line_is_header;
+	Verticalize():first_line_is_header(true)
 	    {
-	    delim='\t';
-	    first_line_is_header=true;
+
 	    }
 	~Verticalize()
 	    {
@@ -64,11 +59,11 @@ class Verticalize
 	    string line;
 	    size_t len_word=0UL;
 	    Tokenizer tokenizer;
-	    tokenizer.delim=delim;
 	    if(first_line_is_header)
 		{
 		while(getline(in,line,'\n'))
 		    {
+		    if(AbstractApplication::stopping()) break;
 		    ++nLine;
 		    if(line.empty()) continue;
 		    if(line.size()>1 && line[0]=='#' && line[1]=='#')
@@ -84,19 +79,20 @@ class Verticalize
 
 	    while(getline(in,line,'\n'))
 		{
+		if(AbstractApplication::stopping()) break;
 		++nLine;
-		cout << ">>>"<< delim << (nLine)<< endl;
+		cout << ">>>"<< tokenizer.delim << (nLine)<< endl;
 		tokenizer.split(line,tokens);
 		if(first_line_is_header)
 		    {
 		    for(size_t i=0;i< header.size();++i)
 			{
-			cout << "$"<<(i+1)<< delim << header[i];
+			cout << "$"<<(i+1)<< tokenizer.delim << header[i];
 			for(size_t j=header[i].size();j< len_word;++j)
 			    {
 			    cout << " ";
 			    }
-			cout <<delim;
+			cout <<tokenizer.delim;
 			if(i<tokens.size())
 			    {
 			    cout << tokens[i];
@@ -109,22 +105,28 @@ class Verticalize
 			}
 		    for(size_t i=header.size();i< tokens.size();++i)
 			{
-			cout << "$"<<(i+1)<<delim << "???";
+			cout << "$"<<(i+1);
+			if(i+1<100) cout << " ";
+			if(i+1<10) cout << " ";
+			cout <<tokenizer.delim << "???";
 			for(size_t j=3;j< len_word;++j)
 			    {
 			    cout << " ";
 			    }
-			cout << delim << tokens[i] << endl;
+			cout << tokenizer.delim << tokens[i] << endl;
 			}
 		    }
 		else
 		    {
 		    for(size_t i=header.size();i< tokens.size();++i)
 			{
-			cout << "$"<<(i+1)<<delim << tokens[i] << endl;
+			cout << "$"<<(i+1);
+			if(i+1<100) cout << " ";
+			if(i+1<10) cout << " ";
+			cout <<tokenizer.delim << tokens[i] << endl;
 			}
 		    }
-		cout << "<<<"<< delim << (nLine)<< "\n\n";
+		cout << "<<<"<< tokenizer.delim << (nLine)<< "\n\n";
 		}
 	    }
 	void usage(int argc,char** argv)
@@ -167,7 +169,7 @@ int main(int argc,char** argv)
 			    app.usage(argc,argv);
 			    exit(EXIT_FAILURE);
 			    }
-			app.delim=p[0];
+			app.tokenizer.delim=p[0];
 			}
    		else if(argv[optind][0]=='-')
    			{
@@ -192,6 +194,7 @@ int main(int argc,char** argv)
 	    {
 	    while(optind< argc)
 		{
+		if(AbstractApplication::stopping()) break;
 		igzstreambuf buf(argv[optind++]);
 		istream in(&buf);
 		app.run(in);

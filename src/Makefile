@@ -33,8 +33,8 @@ all:$(TARGET_BINARIES)
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
-$(BINDIR)/verticalize: verticalize.cpp tokenizer.h throw.h zstreambuf.h
-	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/verticalize: verticalize.cpp application.o
+	$(CPP) -o $@ $< application.o $(CFLAGS) -lz
 $(BINDIR)/groupbygene: groupbygene.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/normalizechrom: normalizechrom.cpp tokenizer.h throw.h zstreambuf.h

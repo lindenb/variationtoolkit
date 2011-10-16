@@ -91,6 +91,7 @@ class SqliteQuery:public AbstractApplication
 
 	 static  int callback(void* ptr,int n_columns,char** columns,char**labels)
 	     {
+	     if(AbstractApplication::stopping()) return 0;
 	     Shuttle* shuttle=(Shuttle*)ptr;
 	     if(shuttle->ncols==-1) shuttle->ncols=n_columns;
 	     if(!shuttle->headerLines->empty())
@@ -141,6 +142,7 @@ class SqliteQuery:public AbstractApplication
 
 	     while(getline(in,line,'\n'))
 		 {
+		 if(AbstractApplication::stopping()) break;
 		 ++nLine;
 		 tokenizer.split(line,tokens);
 		 if(line.empty()) continue;
@@ -343,6 +345,7 @@ int main(int argc,char** argv)
 	{
 	while(optind< argc)
 	    {
+	    if(AbstractApplication::stopping()) break;
 	    char* filename=argv[optind++];
 	    igzstreambuf buf(filename);
 	    istream in(&buf);

@@ -60,6 +60,7 @@ class AbstractEmblSTRING:public AbstractApplication
 
 	     while(std::getline(in,line,'\n'))
 		 {
+		 if(stopping()) break;
 		 if(line.empty()) continue;
 		 if(line[0]=='#')
 		     {
@@ -171,6 +172,7 @@ class AbstractEmblSTRING:public AbstractApplication
   		 {
   		 while(optind< argc)
   		     {
+  		     if(stopping()) break;
   		     char* filename=argv[optind++];
   		     igzstreambuf buf(filename);
   		     istream in(&buf);
@@ -219,6 +221,7 @@ class EmblStringResolve:public AbstractEmblSTRING
 	     istream in(&buff);
 	     while(getline(in,line2,'\n'))
 		 {
+		 if(stopping()) break;
 		 ++nLine;
 		 tab.split(line2,tokens);
 		 if(nLine==1)
@@ -303,6 +306,7 @@ class EmblStringInteractionList:public AbstractEmblSTRING
 	     istream in(&buff);
 	     while(getline(in,line2,'\n'))
 		 {
+		 if(stopping()) break;
 		 if(line2.empty()) continue;
 		 tab.split(line2,tokens);
 		 if((int)tokens.size()!=numHeaders()) THROW("Format of EMBLhas changed."<< line << " :"<< tokens.size());
@@ -362,6 +366,7 @@ class EmblStringInteractor:public AbstractEmblSTRING
 	     istream in(&buff);
 	     while(getline(in,line2,'\n'))
 		 {
+		 if(stopping()) break;
 		 if(line2.empty() || line2.compare("itemId")==0) continue;
 		 cout << line << tokenizer.delim <<  line2 << endl;
 		 found=true;

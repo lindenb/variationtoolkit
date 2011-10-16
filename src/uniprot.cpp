@@ -105,148 +105,149 @@ class UniProt:public AbstractApplication
 
 	void run(std::istream& in)
 	    {
-		vector<string> tokens;
+	    vector<string> tokens;
 	    string line;
 
 
 	    while(getline(in,line,'\n'))
+		{
+		if(AbstractApplication::stopping()) break;
+		if(line.empty()) continue;
+		if(line[0]=='#')
+		    {
+		    if(line.size()>1 && line[1]=='#')
 			{
-			if(line.empty()) continue;
-			if(line[0]=='#')
-				{
-				if(line.size()>1 && line[1]=='#')
-					{
-					cout << line << endl;
-					continue;
-					}
-				cout << line << tokenizer.delim
-						<< "uniprot.beg"  << tokenizer.delim
-						 << "uniprot.end"  << tokenizer.delim
-						 << "uniprot.type"  << tokenizer.delim
-						 << "uniprot.status"  << tokenizer.delim
-						 << "uniprot.desc"  << tokenizer.delim
-						 << "uniprot.evidence"  << tokenizer.delim
-						 << "uniprot.ref"
-						 << endl;
-				continue;
-				}
-
-			tokenizer.split(line,tokens);
-			if(column_aa_pos>=(int)tokens.size())
-				{
-				cerr << "Out of range for COLUMN_AA in " << line << endl;
-				continue;
-				}
-			if(column_spId>=(int)tokens.size())
-				{
-				cerr << "Out of range for SWISSPROT-ID in " << line << endl;
-				continue;
-				}
-
-
-			string swissprotId=tokens[column_spId];
-			if(swissprotId.empty() || swissprotId.compare(".")==0)
-				{
-				cout << line;
-				for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
-				cout << endl;
-				continue;
-				}
-			char* p2;
-			int posAA= (int)strtol(tokens[column_aa_pos].c_str(),&p2,10);
-			if(*p2!=0 || posAA<1)
-				{
-				cerr << "Bad Column-aa in " << line << endl;
-				continue;
-				}
-			if(!(current_recordid.compare(swissprotId)==0 && record!=NULL))
-				{
-				if(record!=NULL) ::xmlFreeDoc(record);
-				record=NULL;
-
-				ostringstream urlos;
-				urlos << "http://www.uniprot.org/uniprot/" << swissprotId << ".xml";
-				string url(urlos.str());
-				netstreambuf in;
-				in.open(url.c_str());
-				string xml=in.content();
-				in.close();
-				int options=XML_PARSE_NOERROR|XML_PARSE_NONET;
-				record=xmlReadMemory(xml.c_str(),xml.size(),
-						url.c_str(),
-						NULL,
-						options);
-				if(record==NULL)
-					{
-					cerr << "#warning: Cannot find record for "<< swissprotId << endl;
-					cout << line ;
-					for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
-					cout << endl;
-					continue;
-					}
-				current_recordid.assign(swissprotId);
-				}
-			bool found=false;
-			xmlNodePtr uniprot=xmlDocGetRootElement(record);
-			xmlNodePtr entry=first(uniprot,"entry");
-			if(entry!=NULL)
-				{
-				for(xmlNodePtr feature = entry->children; feature!=NULL; feature = feature->next)
-					{
-					if (feature->type != XML_ELEMENT_NODE) continue;
-					if(!::xmlStrEqual(feature->name,BAD_CAST "feature"))
-						{
-						continue;
-						}
-					bool match=false;
-					xmlNodePtr location=first(feature,"location");
-					if(location==NULL) continue;
-
-					int featBeg;
-					int featEnd;
-					xmlNodePtr locpos=first(location,"position");
-					if(locpos!=NULL)
-						{
-						featBeg=parseAttInt(locpos,"position");
-						featEnd=featBeg;
-						if(featBeg==posAA) match=true;
-						}
-					else
-						{
-						xmlNodePtr locbegin=first(location,"begin");
-						xmlNodePtr locend=first(location,"end");
-						if(locbegin!=NULL && locend!=NULL)
-							{
-							featBeg=parseAttInt(locbegin,"position");
-							featEnd=parseAttInt(locend,"position");
-							if(featBeg<=featEnd && featBeg<=posAA && posAA<=featEnd)
-								{
-								match=true;
-								}
-							}
-						}
-					if(!match) continue;
-					cout << line << tokenizer.delim
-					     << featBeg  << tokenizer.delim
-					     << featEnd  << tokenizer.delim
-					     << parseAttStr(feature,"type")  << tokenizer.delim
-					     << parseAttStr(feature,"status")  << tokenizer.delim
-					     << parseAttStr(feature,"description")  << tokenizer.delim
-					     << parseAttStr(feature,"evidence")  << tokenizer.delim
-					     << parseAttStr(feature,"ref")
-					     << endl
-					     ;
-
-					found=true;
-					}
-				}
-			if(!found)
-				{
-				cout << line;
-				for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
-				cout << endl;
-				}
+			cout << line << endl;
+			continue;
 			}
+		    cout << line << tokenizer.delim
+			    << "uniprot.beg"  << tokenizer.delim
+			    << "uniprot.end"  << tokenizer.delim
+			    << "uniprot.type"  << tokenizer.delim
+			    << "uniprot.status"  << tokenizer.delim
+			    << "uniprot.desc"  << tokenizer.delim
+			    << "uniprot.evidence"  << tokenizer.delim
+			    << "uniprot.ref"
+			    << endl;
+		    continue;
+		    }
+
+		tokenizer.split(line,tokens);
+		if(column_aa_pos>=(int)tokens.size())
+		    {
+		    cerr << "Out of range for COLUMN_AA in " << line << endl;
+		    continue;
+		    }
+		if(column_spId>=(int)tokens.size())
+		    {
+		    cerr << "Out of range for SWISSPROT-ID in " << line << endl;
+		    continue;
+		    }
+
+
+		string swissprotId=tokens[column_spId];
+		if(swissprotId.empty() || swissprotId.compare(".")==0)
+		    {
+		    cout << line;
+		    for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
+		    cout << endl;
+		    continue;
+		    }
+		char* p2;
+		int posAA= (int)strtol(tokens[column_aa_pos].c_str(),&p2,10);
+		if(*p2!=0 || posAA<1)
+		    {
+		    cerr << "Bad Column-aa in " << line << endl;
+		    continue;
+		    }
+		if(!(current_recordid.compare(swissprotId)==0 && record!=NULL))
+		    {
+		    if(record!=NULL) ::xmlFreeDoc(record);
+		    record=NULL;
+
+		    ostringstream urlos;
+		    urlos << "http://www.uniprot.org/uniprot/" << swissprotId << ".xml";
+		    string url(urlos.str());
+		    netstreambuf in;
+		    in.open(url.c_str());
+		    string xml=in.content();
+		    in.close();
+		    int options=XML_PARSE_NOERROR|XML_PARSE_NONET;
+		    record=xmlReadMemory(xml.c_str(),xml.size(),
+			    url.c_str(),
+			    NULL,
+			    options);
+		    if(record==NULL)
+			{
+			cerr << "#warning: Cannot find record for "<< swissprotId << endl;
+			cout << line ;
+			for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
+			cout << endl;
+			continue;
+			}
+		    current_recordid.assign(swissprotId);
+		    }
+		bool found=false;
+		xmlNodePtr uniprot=xmlDocGetRootElement(record);
+		xmlNodePtr entry=first(uniprot,"entry");
+		if(entry!=NULL)
+		    {
+		    for(xmlNodePtr feature = entry->children; feature!=NULL; feature = feature->next)
+			{
+			if (feature->type != XML_ELEMENT_NODE) continue;
+			if(!::xmlStrEqual(feature->name,BAD_CAST "feature"))
+			    {
+			    continue;
+			    }
+			bool match=false;
+			xmlNodePtr location=first(feature,"location");
+			if(location==NULL) continue;
+
+			int featBeg;
+			int featEnd;
+			xmlNodePtr locpos=first(location,"position");
+			if(locpos!=NULL)
+			    {
+			    featBeg=parseAttInt(locpos,"position");
+			    featEnd=featBeg;
+			    if(featBeg==posAA) match=true;
+			    }
+			else
+			    {
+			    xmlNodePtr locbegin=first(location,"begin");
+			    xmlNodePtr locend=first(location,"end");
+			    if(locbegin!=NULL && locend!=NULL)
+				{
+				featBeg=parseAttInt(locbegin,"position");
+				featEnd=parseAttInt(locend,"position");
+				if(featBeg<=featEnd && featBeg<=posAA && posAA<=featEnd)
+				    {
+				    match=true;
+				    }
+				}
+			    }
+			if(!match) continue;
+			cout << line << tokenizer.delim
+				<< featBeg  << tokenizer.delim
+				<< featEnd  << tokenizer.delim
+				<< parseAttStr(feature,"type")  << tokenizer.delim
+				<< parseAttStr(feature,"status")  << tokenizer.delim
+				<< parseAttStr(feature,"description")  << tokenizer.delim
+				<< parseAttStr(feature,"evidence")  << tokenizer.delim
+				<< parseAttStr(feature,"ref")
+				<< endl
+				;
+
+			found=true;
+			}
+		    }
+		if(!found)
+		    {
+		    cout << line;
+		    for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
+		    cout << endl;
+		    }
+		}
 	    }
 
     virtual void usage(ostream& out,int argc,char** argv)
@@ -346,13 +347,14 @@ int main(int argc,char** argv)
     else
 	    {
 	    while(optind< argc)
-			{
-			char* filename=argv[optind++];
-			igzstreambuf buf(filename);
-			istream in(&buf);
-			app.run(in);
-			buf.close();
-			}
+		{
+		if(AbstractApplication::stopping()) break;
+		char* filename=argv[optind++];
+		igzstreambuf buf(filename);
+		istream in(&buf);
+		app.run(in);
+		buf.close();
+		}
 	    }
     return EXIT_SUCCESS;
     }
