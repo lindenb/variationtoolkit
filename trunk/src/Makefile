@@ -27,7 +27,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcf2bed \
 	$(BINDIR)/emblstringresolve \
 	$(BINDIR)/emblstringinteractions \
-	$(BINDIR)/emblstringinteractors
+	$(BINDIR)/emblstringinteractors \
+	$(BINDIR)/vcfcut
 
 all:$(TARGET_BINARIES)
 
@@ -82,7 +83,8 @@ $(BINDIR)/emblstringinteractions : emblstring.cpp application.o netstreambuf.o
 	$(CPP) -o $@ $< application.o netstreambuf.o -DEMBL_INTERACTIONS $(CFLAGS) `curl-config --cflags --libs` -lz
 $(BINDIR)/emblstringinteractors : emblstring.cpp application.o netstreambuf.o
 	$(CPP) -o $@ $< application.o netstreambuf.o -DEMBL_INTERACTOR $(CFLAGS) `curl-config --cflags --libs` -lz
-
+$(BINDIR)/vcfcut:vcfcut.cpp segparser.tab.o lex.segparser.o application.o segments.o
+	$(CPP) $(CFLAGS) -o $@ $^ -lz
 
 
 pubmedxsl.o:pubmed.xsl
@@ -114,12 +116,18 @@ netstreambuf.o: netstreambuf.cpp netstreambuf.cpp
 	$(CPP) -c -o $@ $< $(CFLAGS) `curl-config --cflags`
 application.o: application.cpp application.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
+segments.o:segments.cpp segments.h smartcmp.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
-	
-	
 
+segparser.tab.o lex.segparser.o: parsereg.l parsereg.y
+	flex -B -i -P segparser $<
+	bison --locations -v parsereg.y -b segparser -d
+	$(CPP) -g -c -o lex.segparser.o lex.segparser.c
+	$(CPP) -g  -c -o segparser.tab.o segparser.tab.c
+	
 #UCSC
 $(BINDIR)/vcfbigwig: vcfbigwig.cpp kentBigWig.o
 	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigWig.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigWig.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl; fi

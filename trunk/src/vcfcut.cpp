@@ -30,27 +30,28 @@
 #include "tokenizer.h"
 #include "knowngene.h"
 #include "application.h"
-#define NOWHERE
+//#define NOWHERE
 #include "where.h"
+#include "segments.h"
 
 using namespace std;
 
-class VcfToBed:public AbstractApplication
+extern std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s);
+
+class VcfCut:public AbstractApplication
     {
     public:
 	int chromColumn;
 	int posColumn;
-	int scoreColumn;
-	set<int> name_columns;
-	char delim_name;
-	VcfToBed():
+	map<string,vector<StartEnd> > ranges;
+	bool inverse;
+	VcfCut():
 		chromColumn(0),
 		posColumn(1),
-		scoreColumn(-1),
-		delim_name('|')
+		inverse(false)
 	    {
 	    }
-	virtual ~VcfToBed()
+	virtual ~VcfCut()
 	    {
 	    }
 
@@ -68,7 +69,13 @@ class VcfToBed:public AbstractApplication
 	    while(getline(in,line,'\n'))
 		    {
 		    if(AbstractApplication::stopping()) break;
-		    if(line.empty() || line[0]=='#') continue;
+		    if(line.empty()) continue;
+		    if(line[0]=='#')
+			{
+			cout << line << endl;
+			continue;
+			}
+
 		    tokenizer.split(line,tokens);
 		    CHECKCOL(chromColumn);
 		    CHECKCOL(posColumn);
@@ -79,35 +86,32 @@ class VcfToBed:public AbstractApplication
 			    cerr << "Bad POS "<< tokens[posColumn] << " in "<<line << endl;
 			    continue;
 			    }
-		    cout << tokens[chromColumn] << "\t"
-			     << (pos-1) << "\t"
-			     << pos  << "\t"
-			     ;
-		    if(name_columns.empty())
+		    bool keep=ranges.empty();
+
+		    map<string,vector<StartEnd> >::iterator r=ranges.find(tokens[chromColumn]);
+		    if(r==ranges.end())
 			{
-			cout << tokens[chromColumn] << "_" << pos;
+
+			keep=false;
 			}
 		    else
 			{
-			for(set<int>::iterator r=name_columns.begin();r!=name_columns.end();++r)
-				{
-				if(r!=name_columns.begin()) cout << delim_name;
-				if((*r)>=(int)tokens.size()) continue;
-				cout << tokens[(*r)];
-				}
+			keep=false;
+			//QUICK'n dirty scan
+			for(size_t i=0;i< r->second.size();++i)
+			    {
+
+			    if(pos < r->second[i].start || pos > r->second[i].end) continue;
+
+			    keep=true;
+
+			    break;
+			    }
 			}
-		    cout << "\t";
-		    if(scoreColumn!=-1 && scoreColumn< (int)tokens.size())
-			    {
-			    cout << tokens[scoreColumn];
-			    }
-		    else
-			    {
-			    cout << "0";
-			    }
-		    cout << "\t";
-		    cout << "+";
-		    cout << endl;
+		    if(keep==!inverse)
+			{
+			cout << line <<endl;
+			}
 		    }
 	    }
 
@@ -117,14 +121,11 @@ class VcfToBed:public AbstractApplication
 		out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
 		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 		out << "Options:\n";
-		out << "  -d <column-delimiter> (default:tab)" << endl;
-
+		out << "  -e <ranges> (chr:start-end)*" << endl;
 		out << "  -c <CHROM col> (default:"<< chromColumn <<")" << endl;
 		out << "  -p <POS col> (default:"<< posColumn <<")" << endl;
-		out << "  -S <bed score col> (default:"<< scoreColumn <<")" << endl;
-		out << "  -N <col> adds this column for the 'name'" << endl;
-		out << "  -D <char> name separator." << endl;
-		out << "  -t print ucsc custom track header." << endl;
+		out << "  -d delimiter, default:tab" << endl;
+		out << "  -v inverse" << endl;
 		}
     };
 
@@ -140,8 +141,7 @@ class VcfToBed:public AbstractApplication
 
 int main(int argc,char** argv)
     {
-	VcfToBed app;
-	bool custom_track_header=false;
+    VcfCut app;
     int optind=1;
     while(optind < argc)
 		{
@@ -152,24 +152,19 @@ int main(int argc,char** argv)
 			}
 		ARGVCOL("-c",chromColumn)
 		ARGVCOL("-p",posColumn)
-		ARGVCOL("-S",scoreColumn)
-		else if(std::strcmp(argv[optind],"-N")==0 && optind+1<argc)
-			{
-			Tokenizer t;
-			t.delim=',';
-			vector<string> comma;
-			t.split(argv[++optind],comma);
-			for(size_t i=0;i< comma.size();++i)
-				{
-				if(comma[i].empty()) continue;
-				char* p2;
-				int x=(int)strtol(comma[i].c_str(),&p2,10);
-				if(x<1 || *p2!=0)
-					{cerr << "Bad column for -N.\n";app.usage(cerr,argc,argv);return EXIT_FAILURE;}
-				app.name_columns.insert(x-1);
-				}
-			}
 
+		else if(std::strcmp(argv[optind],"-e")==0 && optind+1<argc)
+			{
+			std::auto_ptr<std::vector<ChromStartEnd> > m=parseSegments(argv[++optind]);
+			if(m.get()!=NULL)
+			    {
+			    for(size_t i=0;i< m->size();++i)
+				{
+				const ChromStartEnd& seg=m->at(i);
+				app.ranges[seg.chrom].push_back(StartEnd(seg.start,seg.end));
+				}
+			    }
+			}
 		else if(strcmp(argv[optind],"-d")==0 && optind+1< argc)
 			{
 			char* p=argv[++optind];
@@ -180,20 +175,10 @@ int main(int argc,char** argv)
 				}
 			app.tokenizer.delim=p[0];
 			}
-		else if(strcmp(argv[optind],"-D")==0 && optind+1< argc)
-			{
-			char* p=argv[++optind];
-			if(strlen(p)!=1)
-				{
-				cerr<< "bad option -D \"" << p << "\"";
-				return (EXIT_FAILURE);
-				}
-			app.delim_name=p[0];
-			}
-		else if(strcmp(argv[optind],"-t")==0 )
-			{
-			custom_track_header=true;
-			}
+		else if(strcmp(argv[optind],"-v")==0 )
+		    {
+		    app.inverse=true;
+		    }
 		else if(strcmp(argv[optind],"--")==0)
 			{
 			++optind;
@@ -211,12 +196,6 @@ int main(int argc,char** argv)
 			}
 		++optind;
 		}
-
-
-    if(custom_track_header)
-    	{
-    	cout << "track name=\"__TRACK_NAME__\" description=\"__TRACK_DESC__\" " << endl;
-    	}
 
 
     if(optind==argc)
