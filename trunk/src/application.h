@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <csignal>
 #include "tokenizer.h"
 
 class AbstractApplication
@@ -23,6 +24,10 @@ class AbstractApplication
 		virtual void usage(int argc,char** argv);
 		virtual void redirectTo(const char* filename);
 		virtual int argument(int optind,int argc,char** argv);
+		static bool stopping();
+	private:
+		static volatile sig_atomic_t stop_called;
+		static void catch_signal(int sig);
 	};
 
 #endif

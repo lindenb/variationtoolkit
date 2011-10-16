@@ -66,41 +66,42 @@ class VcfToBed:public AbstractApplication
 	    string line;
 
 	    while(getline(in,line,'\n'))
-			{
-			if(line.empty() || line[0]=='#') continue;
-			tokenizer.split(line,tokens);
-			CHECKCOL(chromColumn);
-			CHECKCOL(posColumn);
-			char* p2;
-			int pos=(int)strtol(tokens[posColumn].c_str(),&p2,10);
-			if(pos <0 || *p2!=0)
-				{
-				cerr << "Bad POS "<< tokens[posColumn] << " in "<<line << endl;
-				continue;
-				}
-			cout << tokens[chromColumn] << "\t"
-				 << (pos-1) << "\t"
-				 << pos  << "\t"
-				 ;
-			for(set<int>::iterator r=name_columns.begin();r!=name_columns.end();++r)
-				{
-				if(r!=name_columns.begin()) cout << delim_name;
-				if((*r)>=(int)tokens.size()) continue;
-				cout << tokens[(*r)];
-				}
-			cout << "\t";
-			if(scoreColumn!=-1 && scoreColumn< (int)tokens.size())
-				{
-				cout << tokens[scoreColumn];
-				}
-			else
-				{
-				cout << "0";
-				}
-			cout << "\t";
-			cout << "+";
-			cout << endl;
-			}
+		    {
+		    if(AbstractApplication::stopping()) break;
+		    if(line.empty() || line[0]=='#') continue;
+		    tokenizer.split(line,tokens);
+		    CHECKCOL(chromColumn);
+		    CHECKCOL(posColumn);
+		    char* p2;
+		    int pos=(int)strtol(tokens[posColumn].c_str(),&p2,10);
+		    if(pos <0 || *p2!=0)
+			    {
+			    cerr << "Bad POS "<< tokens[posColumn] << " in "<<line << endl;
+			    continue;
+			    }
+		    cout << tokens[chromColumn] << "\t"
+			     << (pos-1) << "\t"
+			     << pos  << "\t"
+			     ;
+		    for(set<int>::iterator r=name_columns.begin();r!=name_columns.end();++r)
+			    {
+			    if(r!=name_columns.begin()) cout << delim_name;
+			    if((*r)>=(int)tokens.size()) continue;
+			    cout << tokens[(*r)];
+			    }
+		    cout << "\t";
+		    if(scoreColumn!=-1 && scoreColumn< (int)tokens.size())
+			    {
+			    cout << tokens[scoreColumn];
+			    }
+		    else
+			    {
+			    cout << "0";
+			    }
+		    cout << "\t";
+		    cout << "+";
+		    cout << endl;
+		    }
 	    }
 
 
@@ -221,6 +222,7 @@ int main(int argc,char** argv)
 		{
 		while(optind< argc)
 			{
+			if(AbstractApplication::stopping()) break;
 			igzstreambuf buf(argv[optind++]);
 			istream in(&buf);
 			app.run(in);

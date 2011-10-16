@@ -9,9 +9,22 @@
 
 using namespace std;
 
+volatile sig_atomic_t AbstractApplication::stop_called=0;
+
+void AbstractApplication::catch_signal(int sig)
+    {
+    stop_called=1;
+    }
+
+bool AbstractApplication::stopping()
+    {
+    return stop_called!=0;
+    }
+
 AbstractApplication::AbstractApplication()
-	{
-	}
+    {
+    signal (SIGPIPE, catch_signal);
+    }
 
 AbstractApplication::~AbstractApplication()
 	{
