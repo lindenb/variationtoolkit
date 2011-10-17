@@ -11,6 +11,7 @@ class ChromPosition
 		std::string chrom;
 		int32_t pos;
 		ChromPosition(const char* s,int32_t pos);
+		ChromPosition(const std::string& ,int32_t pos);
 		ChromPosition(const ChromPosition& cp);
 		~ChromPosition();
 		ChromPosition& operator=(const ChromPosition& cp);

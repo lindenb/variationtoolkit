@@ -118,7 +118,9 @@ application.o: application.cpp application.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 segments.o:segments.cpp segments.h smartcmp.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
-
+xcurses.o: xcurses.cpp xcurses.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+	
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
 
@@ -142,6 +144,10 @@ kentBigBed.o: kentBigBed.cpp kentBigBed.h
 #not in production
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
-	
+
+$(BINDIR)/angelheart: angelheart.cpp application.o xcurses.cpp segments.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses
+
 clean:
-	rm -f $(TARGET_BINARIES) *.o a.out 
+	rm -f $(TARGET_BINARIES) *.o a.out lex.segparser.c \
+		segparser.tab.c segparser.tab.h segparser.output
