@@ -68,9 +68,9 @@ chrom:  TEXT {$$=$1}|
 	INTEGER { ostringstream os; os << $1; $$=new string(os.str()); }
 	;
 range: 	{$$=new StartEnd(0,numeric_limits<int32_t>::max()-10); } |
-	COLON pos optpos { $$=new StartEnd($2,$3); } |
-	COLON DASH  pos { $$=new StartEnd(0,$3); } |
-	COLON pos PLUS pos { $$=new StartEnd($2-$4<0?0:$2-$4,$2+$4+1); } 
+	COLON pos optpos { $$=new StartEnd((int32_t)$2,(int32_t)$3); } |
+	COLON DASH  pos { $$=new StartEnd(1,(int32_t)$3); } |
+	COLON pos PLUS pos { $$=new StartEnd($2-$4<1?1:(int32_t)($2-$4),(int32_t)($2+$4)); } 
 	;
 optpos:	DASH  pos { $$=$2;} | { $$=numeric_limits<int32_t>::max()-10;};
 
@@ -86,11 +86,11 @@ integer: INTEGER { $$=$1;};
 std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s)
 	{
 	extern int segparser_scan_string(const char *);
-	extern int segparserlex_destroy(void);
+	//extern int segparserlex_destroy(void);
 	ROOT_VECTOR=NULL;
 	segparser_scan_string(s);
 	yyparse();// return std::auto_ptr<std::vector<ChromStartEnd> >();
-	segparserlex_destroy();
+	//segparserlex_destroy();
 
 	return std::auto_ptr<std::vector<ChromStartEnd> >(ROOT_VECTOR);
 	}
