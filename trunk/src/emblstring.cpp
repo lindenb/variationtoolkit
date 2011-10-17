@@ -208,9 +208,11 @@ class EmblStringResolve:public AbstractEmblSTRING
 
 	 virtual bool process(const string& line,const string& identifier)
 	     {
+		 int same_name_index=-1;
 	     bool found=false;
 	     Tokenizer tab;
 	     int nLine=0;
+	     vector<vector<string> > table;
 	     vector<string> tokens;
 	     string line2;
 	     ostringstream os;
@@ -220,26 +222,44 @@ class EmblStringResolve:public AbstractEmblSTRING
 	     buff.open(os.str().c_str());
 	     istream in(&buff);
 	     while(getline(in,line2,'\n'))
-		 {
-		 if(stopping()) break;
-		 ++nLine;
-		 tab.split(line2,tokens);
-		 if(nLine==1)
-		     {
-		     if(!tokens[0].compare("stringId")==0)
 			 {
-			 return false;
+			 if(stopping()) break;
+			 ++nLine;
+			 tab.split(line2,tokens);
+			 if(nLine==1)
+				 {
+				 if(!tokens[0].compare("stringId")==0)
+					 {
+					 return false;
+					 }
+				 continue;
+				 }
+			 if(tokens.size()!=5) THROW("Format of EMBLhas changed."<< line);
+
+			 vector<string> row;
+			 row.push_back(tokens[0]);
+			 row.push_back(tokens[3]);
+			 row.push_back(tokens[4]);
+			 table.push_back(row);
+			 if(tokens[3].compare(identifier)==0)
+			 	 {
+				 same_name_index=(int)table.size()-1;
+				 break;
+			 	 }
 			 }
-		     continue;
-		     }
-		 if(tokens.size()!=5) THROW("Format of EMBLhas changed."<< line);
-		 cout << line << tokenizer.delim <<
-			 tokens[0] << tokenizer.delim <<
-			 tokens[3] << tokenizer.delim <<
-			 tokens[4] << endl;
-		 found=true;
-		 }
 	     buff.close();
+
+	     for(size_t i=0;i< table.size();++i)
+	     	 {
+	    	 if(same_name_index!=-1 && same_name_index!=(int)i) continue;
+	    	 cout << line << tokenizer.delim <<
+	    			 	 	table[i][0] << tokenizer.delim <<
+	    			 	 	table[i][1] << tokenizer.delim <<
+	    			 	 	table[i][2] << endl;
+	    	 found=true;
+	     	 }
+
+
 	     return found;
 	     }
 
