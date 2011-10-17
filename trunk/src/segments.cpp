@@ -7,7 +7,11 @@ static SmartComparator _SMART;
 ChromPosition::ChromPosition(const char* s,int32_t pos):chrom(s),pos(pos)
 	{
 	}
-	
+
+ChromPosition::ChromPosition(const string& s,int32_t pos):chrom(s),pos(pos)
+	{
+	}
+
 ChromPosition::ChromPosition(const ChromPosition& cp):chrom(cp.chrom),pos(cp.pos)
 	{
 	}
