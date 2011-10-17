@@ -3,7 +3,13 @@
 \usepackage{graphics}
 \usepackage{color}
 \title{The Variation Toolkit}
-\author{Pierre Lindenbaum PhD.\\\texttt{plindenbaum@yahoo.fr}\\ \url{http://plindenbaum.blogspot.com}\\ \url{https://twitter.com/yokofakun}}
+\author{Pierre Lindenbaum PhD.
+\\
+\\Institut du Thorax\\INSERM UMR-915\\44000 Nantes - France\\
+\\
+\texttt{plindenbaum@yahoo.fr}\\ \url{http://plindenbaum.blogspot.com}\\ \url{https://twitter.com/yokofakun}
+\\
+}
 \date{\today}
 
 
@@ -903,6 +909,149 @@ chr1	888638	888639	rs3748596_T_C	99	+
 chr1	888658	888659	rs3748597_T_C	99	+
 chr1	889157	889158	rs56262069_G_C	51	+
 (...)
+\end{verbatim}
+\end{quote}
+
+\subsection{emblstringresolve}
+Calls the service: EMBL String resolve ( \url{http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html} ).
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" |\
+  emblstringresolve -c 1 |verticalize 
+>>>	2
+$1	#Gene        	NOTCH2
+$2	stringId     	9606.ENSP00000256646
+$3	preferredName	NOTCH2
+$4	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor...
+<<<	2
+
+>>>	3
+$1	#Gene        	EIF4G1
+$2	stringId     	9606.ENSP00000316879
+$3	preferredName	EIF4G1
+$4	annotation   	eukaryotic translation initiation factor 4 gamma, 1; ...
+<<<	3
+
+>>>	4
+$1	#Gene        	PABPC1
+$2	stringId     	9606.ENSP00000313007
+$3	preferredName	PABPC1
+$4	annotation   	poly(A) binding protein, cytoplasmic 1; Binds the...
+<<<	4
+\end{verbatim}
+\end{quote}
+
+
+\subsection{emblstringinteractors}
+Calls the service: EMBL String interactors ( \url{http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html} ).
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" |\
+  emblstringresolve -c 1 | \
+  emblstringinteractors -c 2 | \
+  emblstringresolve -c 5 | \
+  verticalize
+  
+>>>	2
+$1	#Gene        	NOTCH2
+$2	stringId     	9606.ENSP00000256646
+$3	preferredName	NOTCH2
+$4	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor for membr
+$5	interactor   	9606.ENSP00000256646
+$6	stringId     	9606.ENSP00000256646
+$7	preferredName	NOTCH2
+$8	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor for membr
+<<<	2
+
+>>>	3
+$1	#Gene        	NOTCH2
+$2	stringId     	9606.ENSP00000256646
+$3	preferredName	NOTCH2
+$4	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor for membr
+$5	interactor   	9606.ENSP00000345206
+$6	stringId     	9606.ENSP00000345206
+$7	preferredName	RBPJ
+$8	annotation   	recombination signal binding protein for immunoglobulin kappa J
+<<<	3
+
+>>>	4
+$1	#Gene        	NOTCH2
+$2	stringId     	9606.ENSP00000256646
+$3	preferredName	NOTCH2
+$4	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor for membr
+$5	interactor   	9606.ENSP00000355718
+$6	stringId     	9606.ENSP00000355718
+$7	preferredName	DLL1
+  
+  
+\end{verbatim}
+\end{quote}
+
+\subsection{emblstringinteractions}
+Calls the service: EMBL String interactions ( \url{http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html} ).
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" | \
+   emblstringresolve -c 1 | \
+   emblstringinteractions -c 2 | \
+   verticalize 
+   
+>>>	2
+$1	#Gene          	NOTCH2
+$2	stringId       	9606.ENSP00000256646
+$3	preferredName  	NOTCH2
+$4	annotation     	Notch homolog 2 (Drosophila); Functions as a receptor for membrane-bound ligands Jagged1, Jagged2 and Delta1 to regulate cell-fate determination. Upon ligand activation through the released notch intracellular domain (NICD) it forms a transcriptional activator complex with RBP-J kappa and activates genes of the enhancer of split locus. Affects the implementation of differentiation, proliferation and apoptotic programs (By similarity)
+$5	interactorA    	string:9606.ENSP00000355718
+$6	interactorB    	string:9606.ENSP00000326366
+$7	labelA         	DLL1
+$8	labelB         	PSEN1
+$9	aliasesA       	-
+$10	aliasesB       	-
+$11	method         	-
+$12	firstAuthor    	-
+$13	publication    	-
+$14	taxonA         	taxid:9606
+$15	taxonB         	taxid:9606
+$16	types          	-
+$17	sources        	-
+$18	interaction.ids	-
+$19	score          	score:0.999|escore:0.639|dscore:0.9|tscore:0.984
+<<<	2
+
+>>>	3
+$1	#Gene          	NOTCH2
+$2	stringId       	9606.ENSP00000256646
+$3	preferredName  	NOTCH2
+$4	annotation     	Notch homolog 2 (Drosophila); Functions as a receptor for membrane-bound ligands Jagged1, Jagged2 and Delta1 to regulate cell-fate determination. Upon ligand activation through the released notch intracellular domain (NICD) it forms a transcriptional activator complex with RBP-J kappa and activates genes of the enhancer of split locus. Affects the implementation of differentiation, proliferation and apoptotic programs (By similarity)
+$5	interactorA    	string:9606.ENSP00000345206
+$6	interactorB    	string:9606.ENSP00000292599
+$7	labelA         	RBPJ
+
+\end{verbatim}
+\end{quote}
+
+\subsection{vcfcut}
+Simple "cut this region".
+\begin{quote}
+\begin{verbatim}
+$ curl -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of4intersection.20100804.sites.vcf.gz" |\
+   gunzip -c | grep -v "##" |\
+   vcfcut -e '2:10kb+500bp;1:10000-20000'
+   
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	10327	rs112750067	T	C	.	PASS	DP=65;AF=0.208;CB=BC,NCBI
+1	10469	rs117577454	C	G	.	PASS	DP=2055;AF=0.020;CB=UM,BC,NCBI
+1	10492	rs55998931	C	T	.	PASS	DP=231;AF=0.167;CB=BC,NCBI
+(...)
+1	16841	.	G	T	.	PASS	DP=2906;AF=0.004;CB=UM,BI;EUR_R2=0.248
+2	10038	.	C	A	.	PASS	DP=73;AF=0.409;CB=BC,NCBI
+2	10075	.	C	A	.	PASS	DP=31;AF=0.150;CB=BC,NCBI
+2	10144	.	C	A	.	PASS	DP=33;AF=0.562;CB=BC,NCBI
+2	10159	.	C	A	.	PASS	DP=32;AF=0.222;CB=BC,NCBI
+2	10205	.	T	G	.	PASS	DP=582;AF=0.107;CB=UM,BC
+2	10297	.	G	T	.	PASS	DP=500;AF=0.246;CB=UM,BC
+2	10363	.	G	A	.	PASS	DP=788;AF=0.016;CB=UM,BI;EUR_R2=0.273;AFR_R2=0.034
+2	10437	rs71337607	C	T	.	PASS	DP=324;AF=0.267;CB=UM,BC
 \end{verbatim}
 \end{quote}
 

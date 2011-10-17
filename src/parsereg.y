@@ -79,7 +79,7 @@ pos:	integer factor
 	$$=$1*$2;
 	if($$ > numeric_limits<int32_t>::max() ) THROW("Value is too large for bp " << $$);
 	};
-factor:	{$$=1;}| SIZE_BP {$$=1L;}| SIZE_KP {$$=100L;} | SIZE_MP {$$=100000L;} | SIZE_GP {$$=100000000L;};
+factor:	{$$=1;}| SIZE_BP {$$=1L;}| SIZE_KP {$$=1000L;} | SIZE_MP {$$=1000000L;} | SIZE_GP {$$=1000000000L;};
 integer: INTEGER { $$=$1;};
 %%
 
