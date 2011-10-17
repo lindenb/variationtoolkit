@@ -57,6 +57,10 @@ void netstreambuf::open(const char* url)
     check_error(ret);
     ret=::curl_easy_setopt(this->curl_handle, CURLOPT_VERBOSE, 0);
     check_error(ret);
+
+    ret=::curl_easy_setopt(this->curl_handle, CURLOPT_FAILONERROR, 1);
+    check_error(ret);
+
     ret=::curl_easy_setopt(this->curl_handle, CURLOPT_WRITEDATA, this);
     check_error(ret);
     ret=::curl_easy_setopt(this->curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
@@ -64,7 +68,25 @@ void netstreambuf::open(const char* url)
     ret=::curl_easy_setopt(this->curl_handle, CURLOPT_WRITEFUNCTION,
 	    netstreambuf::write_callback );
     check_error(ret);
+    char* proxy=NULL;
+    if(strncmp(url,"http://",7)==0)
+    	{
+    	proxy=getenv("http_proxy");
+    	}
+    else if(strncmp(url,"https://",7)==0)
+		{
+		proxy=getenv("https_proxy");
+		}
+    else if(strncmp(url,"ftp://",7)==0)
+		{
+		proxy=getenv("ftp_proxy");
+		}
 
+    if(proxy!=NULL)
+    	{
+    	ret=::curl_easy_setopt(this->curl_handle, CURLOPT_PROXY,proxy);
+    	check_error(ret);
+    	}
 
     this->multi_handle=::curl_multi_init();
     if(this->multi_handle==NULL)
@@ -155,9 +177,9 @@ std::string netstreambuf::content()
     char t[BUFSIZ];
     streamsize nRead;
     while((nRead=read(t,BUFSIZ))!=0)
-	{
-	page.append(t,nRead);
-	}
+		{
+		page.append(t,nRead);
+		}
     close();
     return page;
     }
