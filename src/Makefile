@@ -123,7 +123,7 @@ keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
 
 segparser.tab.o lex.segparser.o: parsereg.l parsereg.y
-	flex -B -i -P segparser $<
+	flex -B -i -Psegparser $<
 	bison --locations -v parsereg.y -b segparser -d
 	$(CPP) -g -c -o lex.segparser.o lex.segparser.c
 	$(CPP) -g  -c -o segparser.tab.o segparser.tab.c
