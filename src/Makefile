@@ -28,7 +28,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/emblstringresolve \
 	$(BINDIR)/emblstringinteractions \
 	$(BINDIR)/emblstringinteractors \
-	$(BINDIR)/vcfcut
+	$(BINDIR)/vcfcut \
+	$(BINDIR)/ucscgenesps
 
 all:$(TARGET_BINARIES)
 
@@ -46,14 +47,14 @@ $(BINDIR)/extractinfo: extractinfo.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/extractformat: extractformat.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
-$(BINDIR)/samplespersnp: samplespersnp.cpp tokenizer.h throw.h zstreambuf.h
-	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/samplespersnp: samplespersnp.cpp application.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/ranges: ranges.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/manhattan: manhattan.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
-$(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o 
-	$(CPP) -o $@ $< $(CFLAGS) knowngene.o xfaidx.o geneticcode.o  -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
+$(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o application.o
+	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
 $(BINDIR)/dnacontext: dnacontext.cpp xfaidx.o
 	$(CPP) -o $@ $< $(CFLAGS) xfaidx.o  -L $(SAMDIR) -lz -lbam
 $(BINDIR)/vcftabix: vcftabix.cpp  xtabix.o 
@@ -85,7 +86,8 @@ $(BINDIR)/emblstringinteractors : emblstring.cpp application.o netstreambuf.o
 	$(CPP) -o $@ $< application.o netstreambuf.o -DEMBL_INTERACTOR $(CFLAGS) `curl-config --cflags --libs` -lz
 $(BINDIR)/vcfcut:vcfcut.cpp segparser.tab.o lex.segparser.o application.o segments.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lz
-
+$(BINDIR)/ucscgenesps: ucscgenesps.cpp application.o knowngene.o 
+	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 
 pubmedxsl.o:pubmed.xsl
 	$(OBJCPY) $< $@
@@ -147,6 +149,8 @@ $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 
 $(BINDIR)/angelheart: angelheart.cpp application.o xcurses.cpp segments.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses
+
+
 
 clean:
 	rm -f $(TARGET_BINARIES) *.o a.out lex.segparser.c \

@@ -20,6 +20,16 @@ class auto_vector
                 delegate.pop_back();
                 }
             }
+        void clear()
+        	{
+        	 while(!delegate.empty())
+				{
+				T* item=delegate.back();
+				if(item!=NULL) delete item;
+				delegate.pop_back();
+				}
+        	}
+
         bool empty() const
             {
             return delegate.empty();
@@ -52,12 +62,20 @@ class auto_vector
             {
             return at(i);
             }
+
+        void erase(size_type i)
+        	{
+        	T*  item=at(i);
+        	if(item!=NULL) delete item;
+        	delegate.erase(delegate.begin()+i);
+        	}
+
         T* release(size_type i)
-		{
-		T* v=delegate.at(i);
-		delegate.assign(i,NULL);
-		return v;
-		}
+			{
+			T* v=delegate.at(i);
+			delegate.erase(delegate.begin()+i);
+			return v;
+			}
 
         void assign(size_type i,T* item)
             {
@@ -84,9 +102,9 @@ class auto_vector
             return delegate.back();
             }
         T* front()
-	    {
-	    return delegate.front();
-	    }
+			{
+			return delegate.front();
+			}
     };
 
 
