@@ -1,6 +1,6 @@
 \documentclass[12pt]{article}
 \usepackage{hyperref}
-\usepackage{graphics}
+\usepackage{graphicx}
 \usepackage{color}
 \title{The Variation Toolkit}
 \author{Pierre Lindenbaum PhD.
@@ -1052,6 +1052,24 @@ $ curl -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of
 2	10297	.	G	T	.	PASS	DP=500;AF=0.246;CB=UM,BC
 2	10363	.	G	A	.	PASS	DP=788;AF=0.016;CB=UM,BI;EUR_R2=0.273;AFR_R2=0.034
 2	10437	rs71337607	C	T	.	PASS	DP=324;AF=0.267;CB=UM,BC
+\end{verbatim}
+\end{quote}
+\subsection{ucscgenesps}
+Reads an ordered VCF (ordered by CHROM/POS and optionaly by SAMPLE) , connect to an UCSC database a print the
+variation in postscript.
+\begin{figure}
+\includegraphics[keepaspectratio=true,scale=0.45]{ucscgenes.eps}
+\caption{Structure of a gene}
+\end{figure}
+\begin{quote}
+\begin{verbatim}
+$ cat sample2vcf.tsv | tr -d ' ' |\
+  scanvcf |\
+  awk -F '      ' '($3==".")' |\
+  normalizechrom |\
+  sort -t '  ' -k1,1 -k2,2n -k11,11 |\
+  head -n 10000 |\
+  ucscgenesps --host localhost --user username --port 3316 -s 11 > result.ps 
 \end{verbatim}
 \end{quote}
 
