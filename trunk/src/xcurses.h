@@ -12,9 +12,12 @@
 
 class Window
     {
+	protected:
+		Window();
     public:
+
 	typedef int32_t pixel_t;
-	Window();
+
 	virtual ~Window();
 	bool moveto(int y,int x);
 	bool erase( int y, int x);
@@ -32,7 +35,6 @@ class Window
 	virtual void clear();
 	virtual int getch();
 	virtual void refresh();
-
     };
 
 class Screen:public Window

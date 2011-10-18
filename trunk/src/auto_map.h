@@ -10,18 +10,16 @@ class auto_map
         std::map<K,V*> delegate;
     public:
         typedef typename std::map<K,V*>::size_type size_type;
-        typedef typename std::map<K,V*>::key_type key_type;
-        typedef typename std::map<K,V*>::mapped_type mapped_type;
         auto_map() {}
         virtual ~auto_map()
             {
             for(std::map<L,V*>::iterator r=delegate.begin();
         	   r!=delegate.end();
         	   ++r)
-        	{
-        	T* item=r->second;
-        	if(item!=NULL) delete item;
-        	}
+				{
+				T* item=r->second;
+				if(item!=NULL) delete item;
+				}
             delegate.clear();
             }
 
@@ -45,7 +43,17 @@ class auto_map
             std::map<K,V*>::iterator r=delegate.find(k);
             return r==delegate.end()?NULL:r->second;
             }
-
+        T* release(K k)
+        	{
+        	T* item=NULL;
+        	std::map<K,V*>::iterator r=delegate.find(k);
+			if(r!=delegate.end())
+				{
+				item= r->second;
+				delegate.erase(r);
+				}
+			return item;
+        	}
         void remove(K k)
             {
             std::map<K,V*>::iterator r=delegate.find(k);
@@ -60,12 +68,12 @@ class auto_map
             {
             std::map<K,V*>::iterator r=delegate.find(k);
             if(r!=delegate.end() && r->second!=v && r->second!=NULL)
-        	{
-        	delete r->second;
-        	}
+				{
+				delete r->second;
+				}
             r->second=v;
-            return old;
             }
+
         T* operator[](K k)
             {
             return get(k);

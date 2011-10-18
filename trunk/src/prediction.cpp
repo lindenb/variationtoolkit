@@ -23,8 +23,7 @@
 #include <cassert>
 #include <memory>
 #include <stdint.h>
-#include <mysql.h>
-
+#include "mysqlapplication.h"
 #include "geneticcode.h"
 #include "zstreambuf.h"
 #include "xfaidx.h"
@@ -240,39 +239,28 @@ class Consequence
 /**
  * StringSequence
  */
-class Prediction
+class Prediction:public MysqlApplication
     {
     public:
-	Tokenizer tokenizer;
 	IndexedFasta* indexedFasta;
 	const char* fasta;
-	MYSQL* mysql;
 	int chromColumn;
 	int posColumn;
 	int refColumn;
 	int altColumn;
-	string host,username,password,database;
-	int port;
-	Prediction():indexedFasta(NULL),
+
+	Prediction():MysqlApplication(),
+		indexedFasta(NULL),
 		fasta(NULL),
-		mysql(NULL),
 		chromColumn(0),
 		posColumn(1),
 		refColumn(3),
-		altColumn(4),
-		host("genome-mysql.cse.ucsc.edu"),
-		username("genome"),
-		database("hg19"),
-		port(0)
+		altColumn(4)
 	    {
-	    if((mysql=::mysql_init(NULL))==NULL) THROW("Cannot init mysql");
-
-
 	    }
-	~Prediction()
+	virtual ~Prediction()
 	    {
 	    if(indexedFasta!=NULL) delete indexedFasta;
-	    ::mysql_close(mysql);
 	    }
 
 	std::vector<KnownGene*> getGenes(
@@ -355,9 +343,11 @@ class Prediction
 	    GenomicSeq* genomicSeq=NULL;
 	    while(getline(in,line,'\n'))
 		{
+	    if(AbstractApplication::stopping()) break;
 		if(line.empty()) continue;
 		if(line[0]=='#')
 		    {
+
 		    if(line.size()>1 && line[1]=='#')
 			{
 			cout << line << endl;
@@ -1063,11 +1053,7 @@ class Prediction
 		out << "  -p <POS col> (default:"<< posColumn <<")" << endl;
 		out << "  -r <REF col> (default:"<< refColumn <<")" << endl;
 		out << "  -a <ALT col> (default:"<< altColumn <<")" << endl;
-		out << "  --host <mysql host> default:" << host << endl;
-		out << "  --user <mysql user> default:" << username << endl;
-		out << "  --password <mysql password> default:" << password << endl;
-		out << "  --database <mysql database> default:" << database << endl;
-		out << "  --port <mysql password> default:" << port << endl;
+		MysqlApplication::printConnectOptions(out);
 		}
     };
 #define ARGVCOL(flag,var) else if(std::strcmp(argv[optind],flag)==0 && optind+1<argc)\
@@ -1083,9 +1069,7 @@ class Prediction
 int main(int argc,char** argv)
     {
     Prediction app;
-
-
-    int port=0;
+    int n_optind;
     int optind=1;
     while(optind < argc)
 		{
@@ -1132,6 +1116,11 @@ int main(int argc,char** argv)
 			{
 			app.fasta=argv[++optind];
 			}
+		else if((n_optind=app.argument(optind,argc,argv))!=-1)
+			{
+			if(n_optind==-2) return EXIT_FAILURE;
+			optind=n_optind;
+			}
 		else if(strcmp(argv[optind],"--")==0)
 			{
 			++optind;
@@ -1139,7 +1128,6 @@ int main(int argc,char** argv)
 			}
 		else if(argv[optind][0]=='-')
 			{
-
 			cerr << "unknown option '" << argv[optind]<< "'" << endl;
 			app.usage(cerr,argc,argv);
 			return EXIT_FAILURE;
@@ -1157,17 +1145,7 @@ int main(int argc,char** argv)
 		 app.usage(cerr,argc,argv);
 		return EXIT_FAILURE;
 		}
-    WHERE("connect");
-    if(::mysql_real_connect(
-    	    app. mysql,
-    	    app.host.c_str(),
-    	    app.username.c_str(),
-    	    app.password.c_str(),
-    	    app.database.c_str(), port,NULL, 0 )==NULL)
-    	{
-    	THROW("mysql_real_connect failed "<< mysql_error(app.mysql));
-    	}
-
+    app.connect();
     WHERE("fasta");
     app.indexedFasta=new IndexedFasta(app.fasta);
     WHERE("reading");
@@ -1181,6 +1159,7 @@ int main(int argc,char** argv)
 		{
 		while(optind< argc)
 			{
+			if(AbstractApplication::stopping()) break;
 			igzstreambuf buf(argv[optind++]);
 			istream in(&buf);
 			app.run(in);

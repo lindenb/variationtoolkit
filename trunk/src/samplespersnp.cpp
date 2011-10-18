@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include "zstreambuf.h"
 #include "tokenizer.h"
+#include "application.h"
 
 using namespace std;
 
@@ -50,10 +51,9 @@ typedef int column_t;
 	    if(use_ref_alt) CHECK_COL_INDEX(altcol,list);\
 	    CHECK_COL_INDEX(samplecol,list);
 
-class SamplePerSnp
+class SamplePerSnp:public AbstractApplication
     {
     public:
-	Tokenizer tokenizer;
 	set<string> samples;
 	column_t chromcol;
 	column_t poscol;
@@ -64,10 +64,11 @@ class SamplePerSnp
 
 	bool use_ref_alt;
 	vector<string> buffer;
+	set<string> always_exclude_samples;
+	set<string> always_include_samples;
 
 	SamplePerSnp()
 	    {
-	    tokenizer.delim='\t';
 	    chromcol=0;
 	    poscol=1;
 	    refcol=3;
@@ -111,22 +112,60 @@ class SamplePerSnp
 	    return true;
 	    }
 
-	size_t countSamples()
-	    {
-	    set<string> samples;
-	    for(size_t i=0;i< buffer.size();++i)
+	void samplesInBuffer(set<string>& set)
 		{
-		vector<string> tokens;
-		tokenizer.split(buffer[i],tokens);
-		CHECK_COL_INDEX(samplecol,tokens);
-		if(tokens[samplecol].empty())
-		    {
-		    cerr << "Warning empty sample name in "<< buffer[i]<< endl;
-		    }
-		samples.insert(tokens[samplecol]);
+		set.clear();
+		for(size_t i=0;i< buffer.size();++i)
+			{
+			vector<string> tokens;
+			tokenizer.split(buffer[i],tokens);
+			CHECK_COL_INDEX(samplecol,tokens);
+			if(tokens[samplecol].empty())
+				{
+				cerr << "Warning empty sample name in "<< buffer[i]<< endl;
+				}
+			samples.insert(tokens[samplecol]);
+			}
 		}
-	    return samples.size();
-	    }
+
+
+
+	void dumpBuffer()
+		{
+		if(buffer.empty()) return;
+		set<string> samples;
+		samplesInBuffer(samples);
+		bool print=true;
+
+		for(set<string>::iterator r=always_exclude_samples.begin();
+				r!=always_exclude_samples.end();++r)
+			{
+			if(samples.find(*r)!=samples.end())
+				{
+				print=false;
+				break;
+				}
+			}
+
+		for(set<string>::iterator r=always_include_samples.begin();
+						r!=always_include_samples.end();++r)
+			{
+			if(samples.find(*r)==samples.end())
+				{
+				print=false;
+				break;
+				}
+			}
+
+		if(print)
+			{
+			for(size_t i=0;i< buffer.size();++i)
+				{
+				cout << buffer[i] << tokenizer.delim <<samples.size()<< endl;
+				}
+			}
+		buffer.clear();
+		}
 
 
 	void run(std::istream& in)
@@ -134,46 +173,42 @@ class SamplePerSnp
 	    string line;
 
 	    while(getline(in,line,'\n'))
-		{
-		if(line.empty()) continue;
-		if(line[0]=='#')
 			{
-			cout << line << tokenizer.delim << "Sample/SNP" << endl;
-			continue;
-			}
+			if(line.empty()) continue;
+			if(line[0]=='#')
+				{
+				cout << line << tokenizer.delim << "Sample/SNP" << endl;
+				continue;
+				}
 
-		if(buffer.empty() || equals(buffer.front(),line))
-		    {
-		    buffer.push_back(line);
-		    }
-		else
-		    {
-		    for(size_t i=0;i< buffer.size();++i)
-			{
-			cout << buffer[i] << tokenizer.delim <<countSamples()<< endl;
+			if(buffer.empty() || equals(buffer.front(),line))
+				{
+				buffer.push_back(line);
+				}
+			else
+				{
+				dumpBuffer();
+				buffer.clear();
+				buffer.push_back(line);
+				}
 			}
-		    buffer.clear();
-		    buffer.push_back(line);
-		    }
-		}
-	    for(size_t i=0;i< buffer.size();++i)
-		{
-		cout << buffer[i] << tokenizer.delim << countSamples() << endl;
-		}
+	    dumpBuffer();
 	    }
-	void usage(int argc,char **argv)
+	void usage(ostream& out,int argc,char **argv)
 		{
-		cerr << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
-   			cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-   			cerr << "Options:\n";
-   			cerr << "  --delim (char) delimiter default:tab\n";
-   			cerr << "  --norefalt : don't look at REF and ALT\n";
-   			cerr << "  --sample SAMPLE column index\n";
-   			cerr << "  --chrom CHROM column index: default "<< (chromcol+1) << "\n";
-   			cerr << "  --pos POS position column index: default "<< (poscol+1) << "\n";
-   			cerr << "  --ref REF reference allele column index: default "<< (refcol+1) << "\n";
-   			cerr << "  --alt ALT alternate allele column index: default "<< (altcol+1) << "\n";
-   			cerr << "(stdin|vcf|vcf.gz)\n";
+		out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
+		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+		out << "Options:\n";
+		out << "  --delim (char) or -d <delimiter> (char) default:tab\n";
+		out << "  --norefalt : don't look at REF and ALT\n";
+		out << "  --sample SAMPLE column index\n";
+		out << "  --chrom CHROM column index: default "<< (chromcol+1) << "\n";
+		out << "  --pos POS position column index: default "<< (poscol+1) << "\n";
+		out << "  --ref REF reference allele column index: default "<< (refcol+1) << "\n";
+		out << "  --alt ALT alternate allele column index: default "<< (altcol+1) << "\n";
+		out << "  -X <sample> add sample to be always eXcluded."<< "\n";
+		out << "  -I <sample> add sample to be always Included."<< "\n";
+		out << "(stdin|vcf|vcf.gz)\n";
 		}
     };
 
@@ -195,9 +230,17 @@ int main(int argc,char** argv)
    		{
    		if(std::strcmp(argv[optind],"-h")==0)
    			{
-   			app.usage(argc,argv);
+   			app.usage(cerr,argc,argv);
    			exit(EXIT_FAILURE);
    			}
+   		else if(std::strcmp(argv[optind],"-I")==0 && optind+1 < argc)
+			{
+			app.always_include_samples.insert(argv[++optind]);
+			}
+   		else if(std::strcmp(argv[optind],"-X")==0 && optind+1 < argc)
+			{
+			app.always_exclude_samples.insert(argv[++optind]);
+			}
    		SETINDEX("--sample",samplecol)
    		SETINDEX("--chrom",chromcol)
    		SETINDEX("--pos",poscol)
@@ -207,21 +250,23 @@ int main(int argc,char** argv)
    			{
    			app.use_ref_alt=false;
    			}
-   		else if(std::strcmp(argv[optind],"--delim")==0 && optind+1< argc)
+   		else if(
+   				(std::strcmp(argv[optind],"-d")==0 ||
+   				 std::strcmp(argv[optind],"--delim")==0) && optind+1< argc)
 			{
 			char* p=argv[++optind];
 			if(strlen(p)!=1)
 			    {
 			    cerr << "Bad delimiter \""<< p << "\"\n";
-			    app.usage(argc,argv);
+			    app.usage(cerr,argc,argv);
 			    exit(EXIT_FAILURE);
 			    }
 			app.tokenizer.delim=p[0];
 			}
    		else if(argv[optind][0]=='-')
    			{
-   			fprintf(stderr,"unknown option '%s'\n",argv[optind]);
-			app.usage(argc,argv);
+   			cerr << "unknown option '"<< argv[optind] << "'\n";
+			app.usage(cerr,argc,argv);
    			exit(EXIT_FAILURE);
    			}
    		else
@@ -233,7 +278,7 @@ int main(int argc,char** argv)
     if(app.samplecol==-1)
     	{
     	cerr << "Undefined sample column."<< endl;
-	app.usage(argc,argv);
+    	app.usage(cerr,argc,argv);
     	return (EXIT_FAILURE);
     	}
    if(optind==argc)
