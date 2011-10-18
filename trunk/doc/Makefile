@@ -1,7 +1,7 @@
 all: varkit.pdf
 varkit.pdf:varkit.dvi
 	dvipdf $<
-varkit.dvi:varkit.tex varkit.bib
+varkit.dvi:varkit.tex varkit.bib manhattan.eps ucscgenes.eps
 	latex  $<
 	latex  $<
 	bibtex varkit
