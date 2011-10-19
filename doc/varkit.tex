@@ -236,6 +236,13 @@ $ cat list.tsv | scanvcf  |\
 \end{verbatim}
 \end{quote}
 
+This tool also takes an option '-e' for a query over the samples. e.g: "variation must contains Sample11, Sample12 BUT NOT Sample1 to Sample5:"
+\begin{quote}
+\begin{verbatim}
+-e '(Sample11  && Sample12 && (!(Sample1 || Sample2 || Sample3 || Sample4 || Sample5)))'
+\end{verbatim}
+\end{quote}
+
 \subsection{numericsplit}
 A simple numeric splitter.
 
