@@ -27,9 +27,11 @@
 #include <algorithm>
 #include <cassert>
 #include <stdint.h>
+#include "application.h"
 #include "tokenizer.h"
 #include "smartcmp.h"
 #include "zstreambuf.h"
+#include "color.h"
 using namespace std;
 
 
@@ -40,6 +42,8 @@ struct Data
     {
     pos_t pos;
     value_t value;
+    /** rgb color */
+    uint32_t rgb;
     bool operator < (const Data& cp) const
 	{
 	return pos < cp.pos;
@@ -47,9 +51,15 @@ struct Data
     };
 
 
-class Manhattan
+class Manhattan:public AbstractApplication
     {
     public:
+	 class Frame
+	     {
+	     public:
+		 std::string sample;
+		 Manhattan* owner;
+	     };
 
 	class ChromInfo
 	    {
@@ -61,9 +71,9 @@ class Manhattan
 		pixel_t width;
 		size_t index_data;
 		ChromInfo():chromStart(INT_MAX),chromEnd(INT_MIN)
-			{
-			
-			}
+		    {
+
+		    }
 		pos_t length()
 		    {
 		    return chromEnd-chromStart;
@@ -77,7 +87,6 @@ class Manhattan
 		
 	    };
 	typedef std::map<string,ChromInfo*,SmartComparator> chrom2info_t;
-	Tokenizer tokenizer;
 	chrom2info_t chrom2info;
 	value_t minValue;
 	value_t maxValue;
@@ -88,9 +97,20 @@ class Manhattan
 	pixel_t margin_right;
 	pixel_t margin_top;
 	pixel_t margin_bottom;
+	int chromCol;
+	int posCol;
+	int valueCol;
+	int colorCol;
+	int sampleCol;
+
 	Manhattan():
 		chrom2info(),
-		output(&cout)
+		output(&cout),
+		chromCol(0),
+		posCol(1),
+		valueCol(-1),
+		colorCol(-1),
+		sampleCol(-1)
 	    {
 	    tokenizer.delim='\t';
 	    minValue=DBL_MAX;
@@ -101,6 +121,7 @@ class Manhattan
 	    margin_right=100;
 	    x_axis_width=841.89 -(margin_left+margin_right);
 	    y_axis_height=595.28-(margin_top+margin_bottom);
+
 	    }
 
 	~Manhattan()
@@ -125,21 +146,40 @@ class Manhattan
 	    string line;
 	    while(getline(in,line,'\n'))
 		{
-
+		if(AbstractApplication::stopping()) break;
 		if(line.empty() || line[0]=='#') continue;
 		tokenizer.split(line,tokens);
-		if(tokens.size()<3)
+		if(chromCol>=(int)tokens.size())
 		    {
-		    cerr << "Expected 3 tokens in "<< line << endl;
+		    cerr << "CHROM column out of range in "<< line << endl;
 		    continue;
 		    }
+		if(posCol>=(int)tokens.size())
+		    {
+		    cerr << "POS column out of range in "<< line << endl;
+		    continue;
+		    }
+
+		if(valueCol>=(int)tokens.size())
+		    {
+		    cerr << "VALUE column out of range in "<< line << endl;
+		    continue;
+		    }
+
+		if(sampleCol>=(int)tokens.size())
+		    {
+		    cerr << "SAMPLE column out of range in "<< line << endl;
+		    continue;
+		    }
+
+		/** searching chromosome */
 		ChromInfo* chromInfo;
-		chrom2info_t::iterator r= chrom2info.find(tokens[0]);
+		chrom2info_t::iterator r= chrom2info.find(tokens[chromCol]);
 		if(r==chrom2info.end())
 		    {
 		    chromInfo=new ChromInfo;
-		    chromInfo->chrom=tokens[0];
-		    chrom2info.insert(make_pair<string,ChromInfo*>(tokens[0],chromInfo));
+		    chromInfo->chrom=tokens[chromCol];
+		    chrom2info.insert(make_pair<string,ChromInfo*>(tokens[chromCol],chromInfo));
 		    }
 		else
 		    {
@@ -150,7 +190,16 @@ class Manhattan
 
 		char* p2;
 		Data newdata;
-		newdata.pos= strtol(tokens[1].c_str(),&p2,10);
+		if(colorCol==-1 || tokens[colorCol].empty())
+		    {
+		    newdata.rgb=(int32_t)0L;
+		    }
+		else
+		    {
+		    Color color(tokens[colorCol].c_str());
+		    newdata.rgb=color.asInt();
+		    }
+		newdata.pos= strtol(tokens[posCol].c_str(),&p2,10);
 		if(!(*p2==0) || newdata.pos<0)
 		    {
 		    THROW("Bad position in "<< line);
@@ -158,7 +207,7 @@ class Manhattan
 		chromInfo->chromStart=min(chromInfo->chromStart,newdata.pos);
 		chromInfo->chromEnd=max(chromInfo->chromEnd,newdata.pos);
 
-		newdata.value= strtod(tokens[2].c_str(),&p2);
+		newdata.value= strtod(tokens[valueCol].c_str(),&p2);
 		if(!(*p2==0) || isnan(newdata.value))
 		    {
 		    THROW("Bad value in "<< line);
@@ -259,7 +308,7 @@ class Manhattan
 			"   x 5 add y lineto\n"
 			"   x y 5 sub lineto\n"
 			"   x 5 sub y lineto\n"
-			" closepath 0 0  1 setrgbcolor fill "
+			" closepath" << (colorCol==-1?" 0.1 0.1 0.5 setrgbcolor ":"") << " fill\n"
 			"   end } bind def\n"
 		    "/box { 4 dict begin\n"
 		    "  /height exch def\n"
@@ -296,6 +345,18 @@ class Manhattan
 			    r2!=r->second->data.end();
 			    ++r2)
 			    {
+			    if(colorCol!=-1)
+				{
+				Color color((uint32_t)r2->rgb);
+				if(color.r==color.g && color.r==color.b)
+				    {
+				    out << color.r/255.0 << " setgray\n";
+				    }
+				else
+				    {
+				    out << color.r/255.0 << " "<< color.g/255.0 << " " << color.b/255.0 << " setrgbcolor\n";
+				    }
+				}
 			    out << chromInfo->convertToX(&*(r2))  << " " << convertToY(&(*r2)) << " dd\n";
 			    index_data++;
 			    }
@@ -339,53 +400,88 @@ class Manhattan
 	    out << "showpage\n";
 	    out.flush();
 	    }
-    void usage(int argc,char** argv)
+    void usage(ostream& out,int argc,char** argv)
 	{
-	cerr << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
-   	cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+	out << endl;
+	out << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
+	out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+   	out << " -c <int> CHROM column default:"<< chromCol << endl;
+   	out << " -p <int> POS column default:"<< posCol << endl;
+   	out << " -v <int> value column default:"<< valueCol << endl;
+   	out << " -r <int> COLOR column (optional)" << endl;
+   	out << " -s <int> SAMPLE column (optional)" << endl;
+   	out << endl;
+	}
+
+
+#define ARGVCOL(flag,var) else if(std::strcmp(argv[optind],flag)==0 && optind+1<argc)\
+	{\
+	char* p2;\
+	this->var=(int)strtol(argv[++optind],&p2,10);\
+	if(this->var<1 || *p2!=0)\
+		{cerr << "Bad column for "<< flag << ".\n";this->usage(cerr,argc,argv);return EXIT_FAILURE;}\
+		this->var--;\
+	}
+
+    int main(int argc,char** argv)
+	{
+	int optind=1;
+	while(optind < argc)
+		    {
+		    if(std::strcmp(argv[optind],"-h")==0)
+			    {
+			    usage(cerr,argc,argv);
+			    return (EXIT_FAILURE);
+			    }
+		    ARGVCOL("-c",chromCol)
+		    ARGVCOL("-p",posCol)
+		    ARGVCOL("-v",valueCol)
+		    ARGVCOL("-r",colorCol)
+		    ARGVCOL("-s",sampleCol)
+		    else if(argv[optind][0]=='-')
+			    {
+			    cerr << "unknown option '"<< argv[optind] << "'\n";
+			    usage(cerr,argc,argv);
+			    return (EXIT_FAILURE);
+			    }
+		    else
+			    {
+			    break;
+			    }
+		    ++optind;
+		    }
+	if(valueCol==-1)
+	    {
+	    cerr << "Column for VALUE undefined"<< endl;
+	    usage(cerr,argc,argv);
+	    return EXIT_FAILURE;
+	    }
+	if(optind==argc)
+		{
+		igzstreambuf buf;
+		istream in(&buf);
+		this->readData(in);
+		}
+	else
+		{
+		while(optind< argc)
+		    {
+		    if(AbstractApplication::stopping()) break;
+		    char* filename=argv[optind++];
+		    igzstreambuf buf(filename);
+		    istream in(&buf);
+		    this->readData(in);
+		    buf.close();
+		    }
+		}
+	this->print();
+	return EXIT_SUCCESS;
 	}
     };
+
 
 int main(int argc,char** argv)
     {
     Manhattan app;
-    int optind=1;
-    while(optind < argc)
-   		{
-   		if(std::strcmp(argv[optind],"-h")==0)
-   			{
-			app.usage(argc,argv);
-   			return (EXIT_FAILURE);
-   			}
-   		else if(argv[optind][0]=='-')
-   			{
-   			cerr << "unknown option '"<< argv[optind] << "'\n";
-			app.usage(argc,argv);
-   			return (EXIT_FAILURE);
-   			}
-   		else
-   			{
-   			break;
-   			}
-   		++optind;
-                }
-    if(optind==argc)
-	    {
-	    igzstreambuf buf;
-	    istream in(&buf);
-	    app.readData(in);
-	    }
-    else
-	    {
-	    while(optind< argc)
-		{
-		char* filename=argv[optind++];
-		igzstreambuf buf(filename);
-		istream in(&buf);
-		app.readData(in);
-		buf.close();
-		}
-	    }
-    app.print();
-    return EXIT_SUCCESS;
+    return app.main(argc,argv);
     }
