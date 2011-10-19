@@ -53,8 +53,8 @@ $(BINDIR)/samplespersnp: samplespersnp.cpp application.o selectset.l selectset.y
 	$(CPP) -o $@ samplespersnp.cpp application.o lex.selectset.c selectset.tab.c $(CFLAGS) -lz
 $(BINDIR)/ranges: ranges.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
-$(BINDIR)/manhattan: manhattan.cpp tokenizer.h throw.h zstreambuf.h
-	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/manhattan: manhattan.cpp parsecolor.tab.o lex.parsecolor.o color.o application.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
 $(BINDIR)/dnacontext: dnacontext.cpp xfaidx.o
@@ -124,6 +124,8 @@ segments.o:segments.cpp segments.h smartcmp.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 xcurses.o: xcurses.cpp xcurses.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
+color.o: color.cpp color.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
 	
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
@@ -152,7 +154,11 @@ $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 $(BINDIR)/angelheart: angelheart.cpp application.o xcurses.cpp segments.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses
 
-
+parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o
+	flex -B -i -Pparsecolor $<
+	bison --locations -v parsecolor.y -b parsecolor -d
+	$(CPP) $(CFLAGS) -c -o lex.parsecolor.o lex.parsecolor.c
+	$(CPP) $(CFLAGS) -c -o parsecolor.tab.o parsecolor.tab.c
 
 clean:
 	rm -f $(TARGET_BINARIES) *.o a.out lex.segparser.c \
