@@ -40,10 +40,14 @@ typedef float pixel_t;
 typedef double value_t;
 struct Data
     {
+    /** genomic position */
     pos_t pos;
+    /** y value */
     value_t value;
     /** rgb color */
     uint32_t rgb;
+
+
     bool operator < (const Data& cp) const
 	{
 	return pos < cp.pos;
@@ -54,12 +58,7 @@ struct Data
 class Manhattan:public AbstractApplication
     {
     public:
-	 class Frame
-	     {
-	     public:
-		 std::string sample;
-		 Manhattan* owner;
-	     };
+
 
 	class ChromInfo
 	    {
@@ -78,7 +77,7 @@ class Manhattan:public AbstractApplication
 		    {
 		    return chromEnd-chromStart;
 		    }
-		vector<Data> data;
+		/* vector<Data> data;*/
 		
 		pixel_t convertToX(const Data* d)
 			{
@@ -86,8 +85,26 @@ class Manhattan:public AbstractApplication
 			}
 		
 	    };
+
+	class Frame
+	     {
+	     public:
+		 pixel_t y;
+		 pixel_t height;
+		 std::string sample;
+		 Manhattan* owner;
+		 map<ChromInfo*,vector<Data> > chrom2data;
+
+		 pixel_t convertToY(const Data* d)
+			{
+			return y+ ((d->value-owner->minValue)/(double)(owner->maxValue-owner->minValue))*height;
+			}
+	     };
+
 	typedef std::map<string,ChromInfo*,SmartComparator> chrom2info_t;
 	chrom2info_t chrom2info;
+	typedef std::map<string,Frame*,SmartComparator> sample2frame_t;
+	sample2frame_t sample2frame;
 	value_t minValue;
 	value_t maxValue;
 	std::ostream* output;
@@ -132,13 +149,16 @@ class Manhattan:public AbstractApplication
 		{
 		delete (*r).second;
 		}
+	    for(map<string,Frame*>::iterator r=sample2frame.begin();
+			r!=sample2frame.end();
+			++r)
+		{
+		delete (*r).second;
+		}
 	    }
 
-	pixel_t convertToY(const Data* d)
-		{
-		return margin_bottom+ ((d->value-minValue)/(double)(maxValue-minValue))*y_axis_height;
-		}
 	
+
 
 	void readData(std::istream& in)
 	    {
@@ -185,9 +205,28 @@ class Manhattan:public AbstractApplication
 		    {
 		    chromInfo=r->second;
 		    }
-
-
-
+		/* search frame */
+		Frame* frame=NULL;
+		if(sampleCol==-1)//no sample used
+		    {
+		    assert(!sample2frame.empty());
+		    frame=sample2frame.begin()->second;
+		    }
+		else
+		    {
+		    sample2frame_t::iterator r2=sample2frame.find(tokens[sampleCol]);
+		    if(r2==sample2frame.end()) /* new sample */
+			{
+			frame=new Frame;
+			frame->owner=this;
+			frame->sample.assign(tokens[sampleCol]);
+			sample2frame.insert(make_pair<string,Frame*>(frame->sample,frame));
+			}
+		    else
+			{
+			frame=r2->second;
+			}
+		    }
 		char* p2;
 		Data newdata;
 		if(colorCol==-1 || tokens[colorCol].empty())
@@ -212,7 +251,8 @@ class Manhattan:public AbstractApplication
 		    {
 		    THROW("Bad value in "<< line);
 		    }
-		chromInfo->data.push_back(newdata);
+		frame->chrom2data[chromInfo].push_back(newdata);
+		//chromInfo->data.push_back(newdata);
 		minValue=min(minValue,newdata.value);
 		maxValue=max(maxValue,newdata.value);
 		}
@@ -247,11 +287,14 @@ class Manhattan:public AbstractApplication
 		c->chromStart=max(0,(pos_t)(c->chromStart-length5));
 		c->chromEnd=(pos_t)(c->chromEnd+length5);
 
-		std::sort(c->data.begin(),c->data.end());
+		//std::sort(c->data.begin(),c->data.end());
 
 		size_of_genome+=c->length();
 		assert(size_of_genome>0);
 		}
+
+
+
 	    pixel_t x=margin_left;
 	    for(chrom2info_t::iterator r=chrom2info.begin();
 	   		    r!=chrom2info.end();
@@ -266,6 +309,25 @@ class Manhattan:public AbstractApplication
 		assert(c->width>0);
 		x+=c->width;
 		}
+
+	    pixel_t y=pageHeight()-margin_top;
+	    for(sample2frame_t::iterator r=sample2frame.begin();
+		r!=sample2frame.end();
+		++r)
+		{
+		Frame* f=r->second;
+		f->height = y_axis_height/(pixel_t)sample2frame.size();
+		f->y = y-f->height;
+
+		for(map<ChromInfo*,vector<Data> >::iterator r2=f->chrom2data.begin();
+		    r2!=f->chrom2data.end();
+		    ++r2)
+		    {
+		    std::sort(r2->second.begin(),r2->second.end());
+		    }
+		y-=f->height;
+		}
+
 
 	    ostream& out=(*output);
 	    time_t rawtime;
@@ -334,15 +396,22 @@ class Manhattan:public AbstractApplication
 		    
 		    out << " 0.4 setgray newpath "<< chromInfo->x << " "<< margin_bottom << " "<< chromInfo->width << " " << y_axis_height <<  " closepath box stroke ";
 		    }
-		    
-		    
-		for(chrom2info_t::iterator r=chrom2info.begin();
-		    r!=chrom2info.end();
+
+	/* loop over samples */
+	for(sample2frame_t::iterator r3=sample2frame.begin();
+		r3!=sample2frame.end();
+		++r3)
+		{
+		Frame* frame=r3->second;
+		/* loop over chromosomes */
+		for(map<ChromInfo*,vector<Data> >::iterator r=frame->chrom2data.begin();
+		    r!=frame->chrom2data.end();
 		    ++r)
 		    {
-		    ChromInfo* chromInfo=r->second;
-		    for(vector<Data>::iterator r2=r->second->data.begin();
-			    r2!=r->second->data.end();
+		    ChromInfo* chromInfo=r->first;
+		    /** loop over data */
+		    for(vector<Data>::iterator r2=r->second.begin();
+			    r2!=r->second.end();
 			    ++r2)
 			    {
 			    if(colorCol!=-1)
@@ -357,41 +426,63 @@ class Manhattan:public AbstractApplication
 				    out << color.r/255.0 << " "<< color.g/255.0 << " " << color.b/255.0 << " setrgbcolor\n";
 				    }
 				}
-			    out << chromInfo->convertToX(&*(r2))  << " " << convertToY(&(*r2)) << " dd\n";
+			    out << chromInfo->convertToX(&*(r2))  << " " << frame->convertToY(&(*r2)) << " dd\n";
 			    index_data++;
 			    }
-		    if(chromInfo->width>200)
-		    	{
-		    for(int i=0;i<=10.0;++i)
-	   		{
-	   		double x=chromInfo->x + ((chromInfo->width)/10.0)*i;
-	   		out << " 0 setgray newpath "
-	   		    << " " << x << " "  << (margin_bottom) << " moveto "
-	   		    << " 0 -10 rlineto closepath stroke " 
-	   		    << " " << x << " "  << (margin_bottom-20) << " moveto "
-	   		    << " -90 rotate (" << (int)(chromInfo->chromStart+((chromInfo->length()/10.0)*i)) << ") show 90 rotate"
-	   		    << endl
-	   		    ;
-	   		}
-	   		}
-	   	    
-	   	    out 	<< " 0 setgray "
-	   	    		<< " " << (chromInfo->x + (chromInfo->width/2.0))
-	   	    		<< " "  << (margin_bottom+10+y_axis_height) << " moveto "
-	   		    	<< "  90 rotate (" << chromInfo->chrom << ") show -90 rotate "
-	   		    	<< endl;
+		    /* draw box for this chrom/frame */
+		    out << "0 setgray\n"<< chromInfo->x<<" "<< frame->y<< " "
+			<< chromInfo->width <<" " << frame->height << " box\n";
+
+		    /** draw y ticks */
+		    for(int i=0;i<=10;++i)
+			{
+			out << " 0 setgray newpath ";
+			out << " " << margin_left << " " << (frame->y+(i/10.0)*frame->height) << " moveto -15 0 rlineto ";
+			out << " closepath stroke ";
+			out << " 1 " << (frame->y+(i/10.0)*frame->height) << " moveto";
+			out << " (" << (minValue+ (i/10.0)*(maxValue-minValue)) << ") show ";
+			}
+		    /* draw label */
+		    out      << " 0 setgray "
+			    << " " << (pageWidth()-margin_right+1)
+			    << " "  << (frame->y+frame->height) << " moveto "
+			    << "  90 rotate (" << frame->sample << ") show -90 rotate "
+			    << endl;
 		    }
+		}/* end loop samples */
+
+	    /** draw chromosomes */
+	    for(chrom2info_t::iterator r=chrom2info.begin();
+				r!=chrom2info.end();
+				++r)
+		{
+		ChromInfo* chromInfo=r->second;
+		/* draw ticks */
+		if(chromInfo->width>200)
+		    {
+		    for(int i=0;i<=10.0;++i)
+			{
+			double x=chromInfo->x + ((chromInfo->width)/10.0)*i;
+			out << " 0 setgray newpath "
+				<< " " << x << " "  << (margin_bottom) << " moveto "
+				<< " 0 -10 rlineto closepath stroke "
+				<< " " << x << " "  << (margin_bottom-20) << " moveto "
+				<< " -90 rotate (" << (int)(chromInfo->chromStart+((chromInfo->length()/10.0)*i)) << ") show 90 rotate"
+				<< endl
+				;
+			}
+		    }
+		/* draw label */
+		out 	<< " 0 setgray "
+			<< " " << (chromInfo->x + (chromInfo->width/2.0))
+			<< " "  << (margin_bottom+10+y_axis_height) << " moveto "
+			<< "  90 rotate (" << chromInfo->chrom << ") show -90 rotate "
+			<< endl;
+		}
 
 	
-	   for(int i=0;i<=10;++i)
-	   	{
-	   	out << " 0 setgray newpath ";
-	   	out << " " << margin_left << " " << (margin_bottom+(i/10.0)*y_axis_height) << " moveto -15 0 rlineto ";
-	   	out << " closepath stroke ";
-	   	out << " 1 " << (margin_bottom+(i/10.0)*y_axis_height) << " moveto";
-	   	out << " (" << (minValue+ (i/10.0)*(maxValue-minValue)) << ") show "; 
-	   	}
 	  
+
 	   
 	    out << "0 setgray\n0 0 "<< pageWidth()<<" " << pageHeight() << " box\n"
 		"0 setgray\n"
@@ -455,6 +546,13 @@ class Manhattan:public AbstractApplication
 	    cerr << "Column for VALUE undefined"<< endl;
 	    usage(cerr,argc,argv);
 	    return EXIT_FAILURE;
+	    }
+	if(sampleCol==-1)
+	    {
+	    Frame* f=new Frame;
+	    f->sample.assign("");
+	    f->owner=this;
+	    sample2frame.insert(make_pair<string,Frame*>(f->sample,f));
 	    }
 	if(optind==argc)
 		{
