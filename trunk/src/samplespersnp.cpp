@@ -54,7 +54,6 @@ typedef int column_t;
 class SamplePerSnp:public AbstractApplication
     {
     public:
-	set<string> samples;
 	column_t chromcol;
 	column_t poscol;
 	column_t genecol;
@@ -64,8 +63,7 @@ class SamplePerSnp:public AbstractApplication
 
 	bool use_ref_alt;
 	vector<string> buffer;
-	set<string> always_exclude_samples;
-	set<string> always_include_samples;
+	void* selectSetOpaque;
 
 	SamplePerSnp()
 	    {
@@ -75,6 +73,7 @@ class SamplePerSnp:public AbstractApplication
 	    altcol=4;
 	    samplecol=-1;
 	    use_ref_alt=true;
+	    selectSetOpaque=NULL;
 	    }
 	~SamplePerSnp()
 	    {
@@ -124,7 +123,7 @@ class SamplePerSnp:public AbstractApplication
 				{
 				cerr << "Warning empty sample name in "<< buffer[i]<< endl;
 				}
-			samples.insert(tokens[samplecol]);
+			set.insert(tokens[samplecol]);
 			}
 		}
 
@@ -137,24 +136,10 @@ class SamplePerSnp:public AbstractApplication
 		samplesInBuffer(samples);
 		bool print=true;
 
-		for(set<string>::iterator r=always_exclude_samples.begin();
-				r!=always_exclude_samples.end();++r)
+		if(selectSetOpaque!=NULL)
 			{
-			if(samples.find(*r)!=samples.end())
-				{
-				print=false;
-				break;
-				}
-			}
-
-		for(set<string>::iterator r=always_include_samples.begin();
-						r!=always_include_samples.end();++r)
-			{
-			if(samples.find(*r)==samples.end())
-				{
-				print=false;
-				break;
-				}
+			extern bool selectSetEval(void*,const set<string>&);
+			print=selectSetEval(selectSetOpaque,samples);
 			}
 
 		if(print)
@@ -199,15 +184,14 @@ class SamplePerSnp:public AbstractApplication
 		out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
 		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 		out << "Options:\n";
-		out << "  --delim (char) or -d <delimiter> (char) default:tab\n";
+		out << "  --delim (char) or -d  (char) <delimiter> default:tab\n";
 		out << "  --norefalt : don't look at REF and ALT\n";
 		out << "  --sample SAMPLE column index\n";
 		out << "  --chrom CHROM column index: default "<< (chromcol+1) << "\n";
 		out << "  --pos POS position column index: default "<< (poscol+1) << "\n";
 		out << "  --ref REF reference allele column index: default "<< (refcol+1) << "\n";
 		out << "  --alt ALT alternate allele column index: default "<< (altcol+1) << "\n";
-		out << "  -X <sample> add sample to be always eXcluded."<< "\n";
-		out << "  -I <sample> add sample to be always Included."<< "\n";
+		out << "  -e <query> (optional) filters by samples using boolean request eg. '((S1 && S2) || (!(S3) || \"S4\"))'."<< "\n";
 		out << "(stdin|vcf|vcf.gz)\n";
 		}
     };
@@ -219,8 +203,7 @@ class SamplePerSnp:public AbstractApplication
       	if(idx<1) THROW("Bad " option " index in "<< argv[optind]);\
 	app.col=idx-1;\
 	}
-#define SHOW_OPT(col) \
-	cerr << "  --"<< cols<< " (column index)\n";
+
 
 int main(int argc,char** argv)
     {
@@ -233,13 +216,10 @@ int main(int argc,char** argv)
    			app.usage(cerr,argc,argv);
    			exit(EXIT_FAILURE);
    			}
-   		else if(std::strcmp(argv[optind],"-I")==0 && optind+1 < argc)
+   		else if(std::strcmp(argv[optind],"-e")==0 && optind+1 < argc)
 			{
-			app.always_include_samples.insert(argv[++optind]);
-			}
-   		else if(std::strcmp(argv[optind],"-X")==0 && optind+1 < argc)
-			{
-			app.always_exclude_samples.insert(argv[++optind]);
+   			extern void* selectSetParse(const char* s);
+			app.selectSetOpaque=selectSetParse(argv[++optind]);
 			}
    		SETINDEX("--sample",samplecol)
    		SETINDEX("--chrom",chromcol)
@@ -298,5 +278,10 @@ int main(int argc,char** argv)
 			++optind;
 			}
 		}
+   if(app.selectSetOpaque!=NULL)
+   	   {
+	   extern void selectSetFree(void* ptr);
+	   selectSetFree(app.selectSetOpaque);
+   	   }
     return EXIT_SUCCESS;
     }

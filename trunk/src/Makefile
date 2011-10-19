@@ -47,8 +47,10 @@ $(BINDIR)/extractinfo: extractinfo.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/extractformat: extractformat.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
-$(BINDIR)/samplespersnp: samplespersnp.cpp application.o
-	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/samplespersnp: samplespersnp.cpp application.o selectset.l selectset.y
+	flex -B -i -Pselectset selectset.l
+	bison --locations -v selectset.y -b selectset -d
+	$(CPP) -o $@ samplespersnp.cpp application.o lex.selectset.c selectset.tab.c $(CFLAGS) -lz
 $(BINDIR)/ranges: ranges.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/manhattan: manhattan.cpp tokenizer.h throw.h zstreambuf.h
