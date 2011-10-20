@@ -3,6 +3,7 @@ BINDIR=../bin
 CPP=g++
 CFLAGS=-O3 -Wall
 OBJCPY= objcopy --input binary --output ${OBJCPYARCH} --binary-architecture i386
+COLOR_O=parsecolor.tab.o lex.parsecolor.o color.o
 TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/verticalize \
 	$(BINDIR)/groupbygene \
@@ -31,6 +32,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfcut \
 	$(BINDIR)/ucscgenesps
 
+
+
 all:$(TARGET_BINARIES)
 
 $(BINDIR)/scanvcf: scanvcf.cpp tokenizer.h throw.h zstreambuf.h
@@ -53,7 +56,7 @@ $(BINDIR)/samplespersnp: samplespersnp.cpp application.o selectset.l selectset.y
 	$(CPP) -o $@ samplespersnp.cpp application.o lex.selectset.c selectset.tab.c $(CFLAGS) -lz
 $(BINDIR)/ranges: ranges.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
-$(BINDIR)/manhattan: manhattan.cpp parsecolor.tab.o lex.parsecolor.o color.o application.o
+$(BINDIR)/manhattan: manhattan.cpp $(COLOR_O) application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
@@ -88,7 +91,7 @@ $(BINDIR)/emblstringinteractors : emblstring.cpp application.o netstreambuf.o
 	$(CPP) -o $@ $< application.o netstreambuf.o -DEMBL_INTERACTOR $(CFLAGS) `curl-config --cflags --libs` -lz
 $(BINDIR)/vcfcut:vcfcut.cpp segparser.tab.o lex.segparser.o application.o segments.o
 	$(CPP) $(CFLAGS) -o $@ $^ -lz
-$(BINDIR)/ucscgenesps: ucscgenesps.cpp application.o knowngene.o 
+$(BINDIR)/ucscgenesps: ucscgenesps.cpp application.o knowngene.o $(COLOR_O)
 	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 
 pubmedxsl.o:pubmed.xsl

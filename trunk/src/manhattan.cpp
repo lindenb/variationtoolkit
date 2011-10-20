@@ -550,9 +550,8 @@ class Manhattan:public AbstractApplication
 		out << " -v <int> value column default:"<< (valueCol+1) << endl;
 		out << " -r <int> COLOR column (optional)" << endl;
 		out << " -s <int> SAMPLE column (optional)" << endl;
-		out << " -m <double> user's min value" << endl;
-		out << " -M <double> user's max value" << endl;
-		out << " --scale <float> scale" << endl;
+		out << " -m <double> optional user's min value" << endl;
+		out << " -M <double> optional user's max value" << endl;
 		out << endl;
 		}
 
