@@ -32,6 +32,8 @@
 #include "smartcmp.h"
 #include "zstreambuf.h"
 #include "color.h"
+
+#include "where.h"
 using namespace std;
 
 
@@ -122,6 +124,7 @@ class Manhattan:public AbstractApplication
 	value_t* user_min_value;
 	value_t* user_max_value;
 
+
 	Manhattan():
 		chrom2info(),
 		output(&cout),
@@ -150,15 +153,15 @@ class Manhattan:public AbstractApplication
 	    for(map<string,ChromInfo*>::iterator r=chrom2info.begin();
 		    r!=chrom2info.end();
 		    ++r)
-		{
-		delete (*r).second;
-		}
-	    for(map<string,Frame*>::iterator r=sample2frame.begin();
-			r!=sample2frame.end();
-			++r)
-		{
-		delete (*r).second;
-		}
+			{
+			delete (*r).second;
+			}
+			for(map<string,Frame*>::iterator r=sample2frame.begin();
+				r!=sample2frame.end();
+				++r)
+			{
+			delete (*r).second;
+			}
 	    }
 
 	
@@ -283,11 +286,13 @@ class Manhattan:public AbstractApplication
 	    }
 	pixel_t pageHeight()
 	    {
-	    return (margin_top+margin_bottom+y_axis_height);
+	    return (margin_top+margin_bottom+y_axis_height*sample2frame.size());
 	    }
 	void print()
 	    {
 	    int64_t size_of_genome=0L;
+
+
 
 	    if(user_min_value!=NULL)
 		{
@@ -303,6 +308,12 @@ class Manhattan:public AbstractApplication
 		minValue-=1;
 		maxValue+=1;
 		}
+
+	    if(minValue==DBL_MAX || maxValue==-DBL_MAX)
+	    	{
+	    	cerr << "manhattan: no data ?\n";
+	    	return;
+	    	}
 
 
 	    for(chrom2info_t::iterator r=chrom2info.begin();
@@ -344,7 +355,7 @@ class Manhattan:public AbstractApplication
 		++r)
 		{
 		Frame* f=r->second;
-		f->height = y_axis_height/(pixel_t)sample2frame.size();
+		f->height = y_axis_height;
 		f->y = y-f->height;
 
 		for(map<ChromInfo*,vector<Data> >::iterator r2=f->chrom2data.begin();
@@ -369,27 +380,21 @@ class Manhattan:public AbstractApplication
 			<<(int)pageWidth()<< " "
 			<<(int)pageHeight()<<"\n"
 		    "%%Pages! 1\n"
-		    "/marginBottom "<< margin_bottom << " def\n"
-		    "/marginLeft "<< margin_left << " def\n"
-		    "/yAxis "<< y_axis_height << " def\n"
-		    "/getChromName { 0 get } bind def\n"
-		    "/getChromStart { 1 get } bind def\n"
-		    "/getChromEnd { 2 get } bind def\n"
-		    "/getChromX { 3 get } bind def\n"
-		    "/getChromWidth { 4 get } bind def\n"
-		     "/getChromLength {1 dict begin /chrom exch def chrom getChromEnd  chrom getChromStart sub end} bind def\n"
-		    "/getChromDataIndex { 5 get } bind def\n"
-		    "/getChromDataCount { 6 get } bind def\n"
-		    "/convertPos2X {2 dict begin /pos exch def /chrom exch def  "
-		    "pos chrom getChromStart sub chrom getChromLength div chrom getChromWidth mul chrom getChromX add\n"
-		    "end } bind def\n"
-		    "/minValue "<< minValue<<" def\n"
-		    "/maxValue "<< maxValue<<" def\n"
-		    "/toString { 20 string cvs} bind def\n"
+		    //"/marginBottom "<< margin_bottom << " def\n"
+		    //"/marginLeft "<< margin_left << " def\n"
+		    //"/yAxis "<< y_axis_height << " def\n"
+		    //"/getChromName { 0 get } bind def\n"
+		    //"/getChromStart { 1 get } bind def\n"
+		    //"/getChromEnd { 2 get } bind def\n"
+		    //"/getChromX { 3 get } bind def\n"
+		    //"/getChromWidth { 4 get } bind def\n"
+		    //"/getChromLength {1 dict begin /chrom exch def chrom getChromEnd  chrom getChromStart sub end} bind def\n"
+		    //"/getChromDataIndex { 5 get } bind def\n"
+		    //"/getChromDataCount { 6 get } bind def\n"
+		    //"/toString { 20 string cvs} bind def\n"
 		    "/Courier findfont 14 scalefont setfont\n"
-		    "/convertValue2Y {\n"
-		    " minValue sub maxValue minValue sub div yAxis mul marginBottom add"
-		    "} bind def\n"
+
+
 		    "/dd { 2 dict begin\n"
 			"  /y exch def\n"
 			"  /x exch def\n"
@@ -412,30 +417,42 @@ class Manhattan:public AbstractApplication
 		    "   0 height -1 mul rlineto\n"
 		    "   end } bind def\n"
 		    ;
-	    int index_data=-1;
-	    for(chrom2info_t::iterator r=chrom2info.begin();
-		    r!=chrom2info.end();
-		    ++r)
-		    {
-		    index_data++;
-		    ChromInfo* chromInfo=r->second;
-		    
-		    out << " "<< (index_data%2==0?1:0.7)<< " setgray newpath "<< chromInfo->x << " "<< margin_bottom << " "<< chromInfo->width << " " << y_axis_height <<  " closepath box fill ";
-		    
-		    out << " 0.4 setgray newpath "<< chromInfo->x << " "<< margin_bottom << " "<< chromInfo->width << " " << y_axis_height <<  " closepath box stroke ";
-		    }
 
+
+
+
+	int index_sample=-1;
 	/* loop over samples */
 	for(sample2frame_t::iterator r3=sample2frame.begin();
 		r3!=sample2frame.end();
 		++r3)
 		{
+		index_sample++;
 		Frame* frame=r3->second;
+
+		int index_chrom=-1;
+		for(chrom2info_t::iterator r=chrom2info.begin();
+			r!=chrom2info.end();
+			++r)
+			{
+			index_chrom++;
+			ChromInfo* chromInfo=r->second;
+
+			out << " "<< (index_chrom%2==index_sample%2?1:0.7)<< " setgray newpath "
+					<< chromInfo->x << " "<< frame->y << " "<< chromInfo->width << " " << frame->height
+					<<  " closepath box fill ";
+
+			out << " 0.4 setgray newpath "<< chromInfo->x << " "<< margin_bottom << " "<< chromInfo->width << " " << (pageHeight()-(margin_bottom+margin_top)) <<  " closepath box stroke ";
+			}
+
+
 		/* loop over chromosomes */
 		for(map<ChromInfo*,vector<Data> >::iterator r=frame->chrom2data.begin();
 		    r!=frame->chrom2data.end();
 		    ++r)
 		    {
+
+
 		    ChromInfo* chromInfo=r->first;
 		    /** loop over data */
 		    for(vector<Data>::iterator r2=r->second.begin();
@@ -444,7 +461,9 @@ class Manhattan:public AbstractApplication
 			    {
 			    if(colorCol!=-1)
 				{
+
 				Color color((uint32_t)r2->rgb);
+
 				if(color.r==color.g && color.r==color.b)
 				    {
 				    out << color.r/255.0 << " setgray\n";
@@ -455,26 +474,27 @@ class Manhattan:public AbstractApplication
 				    }
 				}
 			    out << chromInfo->convertToX(&*(r2))  << " " << frame->convertToY(&(*r2)) << " dd\n";
-			    index_data++;
+
 			    }
 		    /* draw box for this chrom/frame */
 		    out << "0 setgray\n"<< chromInfo->x<<" "<< frame->y<< " "
-			<< chromInfo->width <<" " << frame->height << " box\n";
+		    		<< chromInfo->width <<" " << frame->height << " box\n";
 
 		    /** draw y ticks */
 		    for(int i=0;i<=10;++i)
-			{
-			out << " 0 setgray newpath ";
-			out << " " << margin_left << " " << (frame->y+(i/10.0)*frame->height) << " moveto -15 0 rlineto ";
-			out << " closepath stroke ";
-			out << " 1 " << (frame->y+(i/10.0)*frame->height) << " moveto";
-			out << " (" << (minValue+ (i/10.0)*(maxValue-minValue)) << ") show ";
-			}
+				{
+		    	if(i==10 && index_sample!=0 && sample2frame.size()>1) continue;
+				out << " 0 setgray newpath ";
+				out << " " << margin_left << " " << (frame->y+(i/10.0)*frame->height) << " moveto -15 0 rlineto ";
+				out << " closepath stroke ";
+				out << " 1 " << (frame->y+(i/10.0)*frame->height) << " moveto";
+				out << " (" << (minValue+ (i/10.0)*(maxValue-minValue)) << ") show ";
+				}
 		    /* draw label */
 		    out      << " 0 setgray "
-			    << " " << (pageWidth()-margin_right+1)
+			    << " " << (pageWidth()-margin_right+10)
 			    << " "  << (frame->y+frame->height) << " moveto "
-			    << "  90 rotate (" << frame->sample << ") show -90 rotate "
+			    << "  -90 rotate (" << frame->sample << ") show 90 rotate "
 			    << endl;
 		    }
 		}/* end loop samples */
@@ -489,21 +509,21 @@ class Manhattan:public AbstractApplication
 		if(chromInfo->width>200)
 		    {
 		    for(int i=0;i<=10.0;++i)
-			{
-			double x=chromInfo->x + ((chromInfo->width)/10.0)*i;
-			out << " 0 setgray newpath "
-				<< " " << x << " "  << (margin_bottom) << " moveto "
-				<< " 0 -10 rlineto closepath stroke "
-				<< " " << x << " "  << (margin_bottom-20) << " moveto "
-				<< " -90 rotate (" << (int)(chromInfo->chromStart+((chromInfo->length()/10.0)*i)) << ") show 90 rotate"
-				<< endl
-				;
-			}
+				{
+				double x=chromInfo->x + ((chromInfo->width)/10.0)*i;
+				out << " 0 setgray newpath "
+					<< " " << x << " "  << (margin_bottom) << " moveto "
+					<< " 0 -10 rlineto closepath stroke "
+					<< " " << x << " "  << (margin_bottom-20) << " moveto "
+					<< " -90 rotate (" << (int)(chromInfo->chromStart+((chromInfo->length()/10.0)*i)) << ") show 90 rotate"
+					<< endl
+					;
+				}
 		    }
 		/* draw label */
 		out 	<< " 0 setgray "
 			<< " " << (chromInfo->x + (chromInfo->width/2.0))
-			<< " "  << (margin_bottom+10+y_axis_height) << " moveto "
+			<< " "  << (pageHeight()-margin_top+10) << " moveto "
 			<< "  90 rotate (" << chromInfo->chrom << ") show -90 rotate "
 			<< endl;
 		}
@@ -517,22 +537,24 @@ class Manhattan:public AbstractApplication
 		"stroke\n"
 		;
 	    out << "showpage\n";
+	    cout << "\n%%EOF\n";
 	    out.flush();
 	    }
     void usage(ostream& out,int argc,char** argv)
-	{
-	out << endl;
-	out << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
-	out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-   	out << " -c <int> CHROM column default:"<< chromCol << endl;
-   	out << " -p <int> POS column default:"<< posCol << endl;
-   	out << " -v <int> value column default:"<< valueCol << endl;
-   	out << " -r <int> COLOR column (optional)" << endl;
-   	out << " -s <int> SAMPLE column (optional)" << endl;
-   	out << " -m <double> user's min value" << endl;
-   	out << " -M <double> user's max value" << endl;
-   	out << endl;
-	}
+		{
+		out << endl;
+		out << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
+		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+		out << " -c <int> CHROM column default:"<< (chromCol+1) << endl;
+		out << " -p <int> POS column default:"<< (posCol+1) << endl;
+		out << " -v <int> value column default:"<< (valueCol+1) << endl;
+		out << " -r <int> COLOR column (optional)" << endl;
+		out << " -s <int> SAMPLE column (optional)" << endl;
+		out << " -m <double> user's min value" << endl;
+		out << " -M <double> user's max value" << endl;
+		out << " --scale <float> scale" << endl;
+		out << endl;
+		}
 
 
 #define ARGVCOL(flag,var) else if(std::strcmp(argv[optind],flag)==0 && optind+1<argc)\

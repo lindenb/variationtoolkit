@@ -58,7 +58,6 @@ class Verticalize:public AbstractApplication
 	    vector<string> tokens;
 	    string line;
 	    size_t len_word=0UL;
-	    Tokenizer tokenizer;
 	    if(first_line_is_header)
 		{
 		while(getline(in,line,'\n'))
