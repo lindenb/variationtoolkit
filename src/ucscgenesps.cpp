@@ -33,18 +33,38 @@
 #include "where.h"
 #include "auto_vector.h"
 #include "smartcmp.h"
+#include "color.h"
 
 using namespace std;
 
 class GenePostcript:public MysqlApplication
 	{
 	public:
+
+	struct SampleData
+		{
+		/* position	 */
+		int32_t pos;
+		/* color */
+		uint32_t rgb;
+
+		bool operator<(const SampleData& cp) const
+			{
+			if( pos!=cp.pos) return pos < cp.pos;
+			return rgb<cp.rgb;
+			}
+		bool operator==(const SampleData& cp) const
+			{
+			return pos == cp.pos && rgb==cp.rgb;
+			}
+		};
+
 	class Cluster
 			{
 			public:
 					auto_vector<KnownGene> genes;
 					set<int32_t> positions;
-					map<string,set<int32_t>,SmartComparator > sample2positions;
+					map<string,set<SampleData>,SmartComparator > sample2positions;
 					int32_t chromStart;
 					int32_t chromEnd;
 					void clear()
@@ -61,6 +81,7 @@ class GenePostcript:public MysqlApplication
 		int chromCol;
 		int posCol;
 		int sampleCol;
+		int colorCol;
 		Cluster cluster;
 		float margin_left;
 		float margin_right;
@@ -77,6 +98,7 @@ class GenePostcript:public MysqlApplication
 			chromCol=0;
 			posCol=1;
 			sampleCol=-1;
+			colorCol=-1;
 			page_width=900;
 			page_height=700;
 			margin_left=200;
@@ -199,7 +221,7 @@ class GenePostcript:public MysqlApplication
 			if(sampleCol!=-1)
 				{
 				double y= pageHeight()-margin_top-(fHeight*(cluster.genes.size()+1));
-				for(map<string,set<int32_t>,SmartComparator >::iterator r=cluster.sample2positions.begin();
+				for(map<string,set<SampleData>,SmartComparator >::iterator r=cluster.sample2positions.begin();
 						r!=cluster.sample2positions.end();
 						++r)
 					{
@@ -208,12 +230,21 @@ class GenePostcript:public MysqlApplication
 					cout << "10 " << (y-midy+5) << " moveto (" << r->first << ") show\n";
 					cout << "newpath "<< margin_left << " "<< y << " moveto\n"
 							<< width()<< " " << 0 << " rlineto stroke\n";
-						for(set<int32_t>::iterator r2= r->second.begin();
+						for(set<SampleData>::iterator r2= r->second.begin();
 											r2!=r->second.end();
 											++r2)
 						{
+						if(colorCol==-1)
+							{
+							cout << "0 setgray\n";
+							}
+						else
+							{
+							Color c((*r2).rgb);
+							cout << (int)c.r << " " << (int)c.g << " "<< (int)c.b <<  " setrgbcolor\n";
+							}
 						cout << "0.8 setlinewidth\n";
-						cout << "newpath "<<toPixel(*r2)<<" "<< y << " circle closepath stroke\n";
+						cout << "newpath "<<toPixel((*r2).pos)<<" "<< y << " circle closepath stroke\n";
 						}
 					y-=fHeight;
 					}
@@ -254,6 +285,11 @@ class GenePostcript:public MysqlApplication
 						cerr << "Column SAMPLE out of range in "<< line << endl;
 						continue;
 						}
+				    if(colorCol!=-1 && colorCol>=(int)tokens.size())
+						{
+						cerr << "Column COLOR out of range in "<< line << endl;
+						continue;
+						}
 				    char* p2;
 					int pos=(int)strtol(tokens[posCol].c_str(),&p2,10);
 					if(pos <0 || *p2!=0)
@@ -265,34 +301,34 @@ class GenePostcript:public MysqlApplication
 					if(cluster.chromEnd <=pos)
 						{
 						print();
-						WHERE("");
+
 						cluster.clear();
 						auto_vector<KnownGene>&  v= rchrom->second;
 
 						size_t i=0;
 						while(i< v.size())
 							{
-							WHERE("");
+
 							KnownGene* g=v.at(i);
 							WHERE((g==NULL));
 							if(cluster.genes.empty())
 								{
-								WHERE("");
+
 								if(g->txEnd <=pos || g->txStart> pos )
 									{
 									i++;
 									continue;
 									}
-								WHERE("");
+
 								cluster.chromStart= g->txStart;
 								cluster.chromEnd= g->txEnd;
-								WHERE("");
+
 								cluster.genes.push_back(v.release(i));
-								WHERE("");
+
 								}
 							else
 								{
-								WHERE("");
+
 								if(!(g->txStart>cluster.chromEnd || g->txEnd<= cluster.chromStart))
 									{
 									cluster.chromStart=min(cluster.chromStart,g->txStart);
@@ -304,10 +340,10 @@ class GenePostcript:public MysqlApplication
 									++i;
 									}
 								}
-							WHERE("");
+
 							}
 						}
-					WHERE("");
+
 					if(!(cluster.chromStart<=pos && pos<cluster.chromEnd))
 						{
 						continue;
@@ -315,10 +351,25 @@ class GenePostcript:public MysqlApplication
 					cluster.positions.insert(pos);
 					if(sampleCol!=-1)
 						{
-						cluster.sample2positions[tokens[sampleCol]].insert(pos);
+						SampleData data;
+						data.pos=pos;
+
+						if(colorCol!=-1)
+							{
+							Color color(tokens[colorCol].c_str());
+							data.rgb=color.asInt();
+							}
+						else
+							{
+							Color color(0.0f);
+							data.rgb=color.asInt();
+							}
+
+						cluster.sample2positions[ tokens[sampleCol] ].insert(data);
+
 						}
 				    }
-			    WHERE("");
+
 			    print();
 			    }
 
@@ -377,9 +428,10 @@ class GenePostcript:public MysqlApplication
 			out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
 			out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 			out << "Options:\n";
-			out << " -c <int> CHROM column default:"<< chromCol << endl;
-			out << " -p <int> POS column default:"<< posCol << endl;
-			out << " -s <int> SAMPLE column (optional) default:"<< sampleCol << endl;
+			out << " -c <int> CHROM column default:"<< (chromCol+1) << endl;
+			out << " -p <int> POS column default:"<< (posCol+1) << endl;
+			out << " -s <int> SAMPLE column (optional) " << endl;
+			out << " -r <int> COLOR column (optional)" << endl;
 			MysqlApplication::printConnectOptions(out);
 			}
 
@@ -419,6 +471,7 @@ class GenePostcript:public MysqlApplication
 				ARGVCOL("-c",chromCol)
 				ARGVCOL("-p",posCol)
 				ARGVCOL("-s",sampleCol)
+				ARGVCOL("-r",colorCol)
 				else if((n_optind=argument(optind,argc,argv))!=-1)
 					{
 					if(n_optind==-2) return EXIT_FAILURE;
