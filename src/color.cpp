@@ -47,7 +47,7 @@ Color::Color(uint32_t L)
 uint32_t Color::asInt() const
 	{
 	uint32_t  L=0L;
-	uint8_t* p=(uint8_t*)L;
+	uint8_t* p=(uint8_t*)&L;
 	p[0]=r;
 	p[1]=g;
 	p[2]=b;
