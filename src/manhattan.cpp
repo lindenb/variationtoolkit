@@ -119,6 +119,8 @@ class Manhattan:public AbstractApplication
 	int valueCol;
 	int colorCol;
 	int sampleCol;
+	value_t* user_min_value;
+	value_t* user_max_value;
 
 	Manhattan():
 		chrom2info(),
@@ -127,7 +129,9 @@ class Manhattan:public AbstractApplication
 		posCol(1),
 		valueCol(-1),
 		colorCol(-1),
-		sampleCol(-1)
+		sampleCol(-1),
+		user_min_value(NULL),
+		user_max_value(NULL)
 	    {
 	    tokenizer.delim='\t';
 	    minValue=DBL_MAX;
@@ -192,6 +196,25 @@ class Manhattan:public AbstractApplication
 		    continue;
 		    }
 
+		Data newdata;
+		char* p2;
+		/* value */
+		newdata.value= strtod(tokens[valueCol].c_str(),&p2);
+		if(!(*p2==0) || isnan(newdata.value))
+		    {
+		    THROW("Bad value in "<< line);
+		    }
+
+
+		if(user_min_value!=NULL && *user_min_value>newdata.value)
+		    {
+		    continue;
+		    }
+		if(user_max_value!=NULL && *user_max_value<newdata.value)
+		    {
+		    continue;
+		    }
+
 		/** searching chromosome */
 		ChromInfo* chromInfo;
 		chrom2info_t::iterator r= chrom2info.find(tokens[chromCol]);
@@ -227,8 +250,8 @@ class Manhattan:public AbstractApplication
 			frame=r2->second;
 			}
 		    }
-		char* p2;
-		Data newdata;
+
+
 		if(colorCol==-1 || tokens[colorCol].empty())
 		    {
 		    newdata.rgb=(int32_t)0L;
@@ -246,11 +269,8 @@ class Manhattan:public AbstractApplication
 		chromInfo->chromStart=min(chromInfo->chromStart,newdata.pos);
 		chromInfo->chromEnd=max(chromInfo->chromEnd,newdata.pos);
 
-		newdata.value= strtod(tokens[valueCol].c_str(),&p2);
-		if(!(*p2==0) || isnan(newdata.value))
-		    {
-		    THROW("Bad value in "<< line);
-		    }
+
+
 		frame->chrom2data[chromInfo].push_back(newdata);
 		//chromInfo->data.push_back(newdata);
 		minValue=min(minValue,newdata.value);
@@ -268,14 +288,22 @@ class Manhattan:public AbstractApplication
 	void print()
 	    {
 	    int64_t size_of_genome=0L;
+
+	    if(user_min_value!=NULL)
+		{
+		minValue=*user_min_value;
+		}
+	    if(user_max_value!=NULL)
+		{
+		maxValue=*user_max_value;
+		}
+
 	    if(fabs(minValue-maxValue) < 10* DBL_EPSILON)
 		{
 		minValue-=1;
 		maxValue+=1;
 		}
-	    double value5=((maxValue-minValue)/100.0)*5.0;
-	    minValue-=value5;
-	    maxValue+=value5;
+
 
 	    for(chrom2info_t::iterator r=chrom2info.begin();
 		    r!=chrom2info.end();
@@ -501,6 +529,8 @@ class Manhattan:public AbstractApplication
    	out << " -v <int> value column default:"<< valueCol << endl;
    	out << " -r <int> COLOR column (optional)" << endl;
    	out << " -s <int> SAMPLE column (optional)" << endl;
+   	out << " -m <double> user's min value" << endl;
+   	out << " -M <double> user's max value" << endl;
    	out << endl;
 	}
 
@@ -517,6 +547,8 @@ class Manhattan:public AbstractApplication
     int main(int argc,char** argv)
 	{
 	int optind=1;
+	value_t my_min_value;
+	value_t my_max_value;
 	while(optind < argc)
 		    {
 		    if(std::strcmp(argv[optind],"-h")==0)
@@ -524,6 +556,28 @@ class Manhattan:public AbstractApplication
 			    usage(cerr,argc,argv);
 			    return (EXIT_FAILURE);
 			    }
+		    else if(std::strcmp(argv[optind],"-m")==0)
+			{
+			char* p2;
+			my_min_value=strtod(argv[++optind],&p2);
+			if(*p2!=0 || errno!=0 || isnan(my_min_value))
+			    {
+			    cerr << "Bad min value "<< argv[optind] << endl;
+			    return (EXIT_FAILURE);
+			    }
+			this->user_min_value=&my_min_value;
+			}
+		    else if(std::strcmp(argv[optind],"-M")==0)
+			{
+			char* p2;
+			my_max_value=strtod(argv[++optind],&p2);
+			if(*p2!=0 || errno!=0 || isnan(my_max_value))
+			    {
+			    cerr << "Bad max value "<< argv[optind] << endl;
+			    return (EXIT_FAILURE);
+			    }
+			this->user_max_value=&my_max_value;
+			}
 		    ARGVCOL("-c",chromCol)
 		    ARGVCOL("-p",posCol)
 		    ARGVCOL("-v",valueCol)
