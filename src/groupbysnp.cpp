@@ -52,8 +52,7 @@ class GroupBySnp:public AbstractApplication
 	set<column_t> top_columns;
 	bool use_ref_alt;
 	vector<vector<string> > buffer;
-	vector<string> sampleNames;
-
+	set<string,SmartComparator> sampleNames;
 
 	GroupBySnp()
 	    {
@@ -115,23 +114,23 @@ class GroupBySnp:public AbstractApplication
 		if(buffer.empty()) return;
 		set<string> samples;
 		samplesInBuffer(samples);
-		bool first;
+		bool first=true;
 		const vector<string>& front=buffer.front();
 
 		for(set<int>::iterator r=left_columns.begin();r!=left_columns.end();++r)
 			{
-			if(first) cout << tokenizer.delim;
+			if(!first) cout << tokenizer.delim;
 			first=false;
 			cout << front[*r];
 			}
-		for(vector<string>::iterator r2=sampleNames.begin();r2!=sampleNames.end();++r2)
+		for(set<string,SmartComparator>::iterator r2=sampleNames.begin();r2!=sampleNames.end();++r2)
 			{
 			bool sample_found=false;
 			for(size_t i=0;i< buffer.size();++i)
 				{
 				if(buffer[i][samplecol].compare(*r2)!=0) continue;
 				sample_found=true;
-				if(first) cout << tokenizer.delim;
+				if(!first) cout << tokenizer.delim;
 				first=false;
 				cout << (*r2);
 				for(set<int>::iterator r=top_columns.begin();r!=top_columns.end();++r)
@@ -145,7 +144,7 @@ class GroupBySnp:public AbstractApplication
 				{
 				for(size_t i=0;i < 1+top_columns.size();++i)
 					{
-					if(first) cout << tokenizer.delim;
+					if(!first) cout << tokenizer.delim;
 					cout << ".";
 					first=false;
 					}
@@ -191,11 +190,11 @@ class GroupBySnp:public AbstractApplication
 				{
 				for(set<int>::iterator r=left_columns.begin();r!=left_columns.end();++r)
 					{
-					cout << (first?'#':tokenizer.delim);
+					if(!first) cout << tokenizer.delim;
 					first=false;
 					cout << tokens[*r];
 					}
-				for(vector<string>::iterator r2=sampleNames.begin();r2!=sampleNames.end();++r2)
+				for(set<string,SmartComparator>::iterator r2=sampleNames.begin();r2!=sampleNames.end();++r2)
 					{
 					cout << tokenizer.delim;
 					cout << (*r2);
@@ -206,6 +205,11 @@ class GroupBySnp:public AbstractApplication
 							}
 					}
 				cout << tokenizer.delim << "count.samples" << endl;
+				continue;
+				}
+
+			if(sampleNames.find(tokens[samplecol])==sampleNames.end())
+				{
 				continue;
 				}
 
@@ -255,7 +259,7 @@ int main(int argc,char** argv)
 	Tokenizer comma;
 	comma.delim=',';
     int optind=1;
-    set<string,SmartComparator> sNames;
+
     while(optind < argc)
    		{
    		if(std::strcmp(argv[optind],"-h")==0)
@@ -311,7 +315,7 @@ int main(int argc,char** argv)
 			for(size_t i=0;i< tokens.size();++i)
 				{
 				if(tokens[i].empty()) continue;
-				sNames.insert(tokens[i]);
+				sampleNames.insert(tokens[i]);
 				}
 			}
    		else if(std::strcmp(argv[optind],"--norefalt")==0)
@@ -343,11 +347,6 @@ int main(int argc,char** argv)
    			}
    		++optind;
         }
-
-    for(set<string,SmartComparator>::iterator r=sNames.begin();r!=sNames.end();++r)
-    	{
-    	this->sampleNames.push_back(*r);
-    	}
 
     if(this->sampleNames.empty())
     	{
