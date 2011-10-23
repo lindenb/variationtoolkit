@@ -73,8 +73,8 @@ $(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
 		$(SAMDIR)/bam2bcf.o \
 		$(SAMDIR)/errmod.o \
 		-L $(SAMDIR) -L $(SAMDIR)/bcftools  -lz -lbam -lbcf
-$(BINDIR)/mysqlucsc: mysqlucsc.cpp  tokenizer.h throw.h zstreambuf.h
-	$(CPP) -o $@ $< $(CFLAGS) `mysql_config --cflags  --libs` -lz 
+$(BINDIR)/mysqlucsc: mysqlucsc.cpp  bin.o
+	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 $(BINDIR)/mysqlquery: mysqlquery.cpp  tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 $(BINDIR)/uniprot: uniprot.cpp  application.o netstreambuf.o

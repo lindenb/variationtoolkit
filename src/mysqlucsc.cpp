@@ -28,65 +28,10 @@
 #include "throw.h"
 #include "zstreambuf.h"
 #include "tokenizer.h"
+#include "bin.h"
 
 using namespace std;
 
-
-static void binsInRange(
-        int chromStart,
-        int chromEnd,
-        int binId,
-        int level,
-        int binRowStart,
-        int rowIndex,
-        int binRowCount,
-        int genomicPos,
-        int genomicLength,
-        vector<int>& binList
-        )
-        {
-	binList.push_back(binId);
-        if(level<4)
-		{
-		int i;
-		int childLength=genomicLength/8;
-		int childBinRowCount=binRowCount*8;
-		int childRowBinStart=binRowStart+binRowCount;
-		int firstChildIndex=rowIndex*8;
-		int firstChildBin=childRowBinStart+firstChildIndex;
-		for(i=0;i< 8;++i)
-		        {
-		        int childStart=genomicPos+i*childLength;
-
-		        if( chromStart>(childStart+childLength) ||
-		                chromEnd<childStart )
-		                {
-		                continue;
-		                }
-		        binsInRange(
-		                chromStart,
-		                chromEnd,
-		                firstChildBin+i,
-		                level+1,
-		                childRowBinStart,
-		                firstChildIndex+i,
-		                childBinRowCount,
-		                childStart,
-		                childLength,
-				binList
-		                );
-		        }
-		}
-        }
-
-
-
-static void bins(int chromStart,int chromEnd,vector<int>& binList)
-	{
-	int genomicLength=536870912;
-	binList.clear();
-	binsInRange(chromStart,chromEnd,0,0,0,0,1,0,genomicLength,binList);
-	}
 
 enum	{
     select_any=0,
@@ -297,7 +242,7 @@ class MysqlUcsc
 			 if(table->hasBin)
 				 {
 				 binList.clear();
-				 bins(chromStart,chromEnd,binList);
+				 UcscBin::bins(chromStart,chromEnd,binList);
 				 sql << " and bin in (";
 				 for(size_t i=0;i< binList.size();++i)
 				 {
