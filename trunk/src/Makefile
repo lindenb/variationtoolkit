@@ -2,7 +2,6 @@ include ../config.mk
 BINDIR=../bin
 CPP=g++
 CFLAGS=-O3 -Wall
-OBJCPY= objcopy --input binary --output ${OBJCPYARCH} --binary-architecture i386
 COLOR_O=parsecolor.tab.o lex.parsecolor.o color.o
 TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/verticalize \
@@ -96,17 +95,23 @@ $(BINDIR)/vcfcut:vcfcut.cpp segparser.tab.o lex.segparser.o application.o segmen
 	$(CPP) $(CFLAGS) -o $@ $^ -lz
 $(BINDIR)/ucscgenesps: ucscgenesps.cpp application.o knowngene.o $(COLOR_O)
 	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz 
-
-pubmedxsl.o:pubmed.xsl
-	$(OBJCPY) $< $@
-nuccorexsl.o:nuccore.xsl
-	$(OBJCPY) $< $@
-dbsnpxsl.o:dbsnp.xsl
-	$(OBJCPY) $< $@
-genexsl.o:gene.xsl
-	$(OBJCPY) $< $@
-taxonomyxsl.o:taxonomy.xsl
-	$(OBJCPY) $< $@
+$(BINDIR)/embbedC:embbedC.c
+	$(CPP) -o $@ $^
+pubmedxsl.o:pubmed.xsl $(BINDIR)/embbedC
+	$(BINDIR)/embbedC pubmedxsl < $< > pubmedxsl.cpp
+	$(CPP) -c -o $@ pubmedxsl.cpp $(CFLAGS) 
+nuccorexsl.o:nuccore.xsl $(BINDIR)/embbedC
+	$(BINDIR)/embbedC nuccorexsl < $< > nuccorexsl.cpp
+	$(CPP) -c -o $@ nuccorexsl.cpp $(CFLAGS) 
+dbsnpxsl.o:dbsnp.xsl $(BINDIR)/embbedC
+	$(BINDIR)/embbedC dbsnpxsl < $< > dbsnpxsl.cpp
+	$(CPP) -c -o $@ dbsnpxsl.cpp $(CFLAGS) 
+genexsl.o:gene.xsl $(BINDIR)/embbedC
+	$(BINDIR)/embbedC genexsl < $< > genexsl.cpp
+	$(CPP) -c -o $@ genexsl.cpp $(CFLAGS) 
+taxonomyxsl.o:taxonomy.xsl $(BINDIR)/embbedC
+	$(BINDIR)/embbedC taxonomyxsl < $< > taxonomyxsl.cpp
+	$(CPP) -c -o $@ taxonomyxsl.cpp $(CFLAGS) 
 
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)

@@ -25,11 +25,8 @@ using namespace std;
 
 #define XSDLODC(XSLT) virtual std::string xsldoc()\
 	{\
-	extern char _binary_##XSLT##_start;\
-	extern char _binary_##XSLT##_end;\
-	string s=string(&_binary_##XSLT##_start,\
-		&(_binary_##XSLT##_end)-&(_binary_##XSLT##_start)\
-		);\
+	extern char* XSLT;\
+	string s=string(XSLT);\
 	return s;\
 	}
 
@@ -74,7 +71,7 @@ class NcbiEFetch
 			public:
 				PubmedHandler() {}
 				virtual ~PubmedHandler() {}
-				XSDLODC(pubmed_xsl)
+				XSDLODC(pubmedxsl)
 				virtual std::string database()
 					{
 					return string("pubmed");
@@ -94,7 +91,7 @@ class NcbiEFetch
 				public:
 					SeqHandler() {}
 					virtual ~SeqHandler() {}
-					XSDLODC(nuccore_xsl)
+					XSDLODC(nuccorexsl)
 					virtual std::string urlparams()
 						{
 						return "&rettype=fasta";
@@ -137,7 +134,7 @@ class NcbiEFetch
 			public:
 				DbSNPHandler() {}
 				virtual ~DbSNPHandler() {}
-				XSDLODC(dbsnp_xsl)
+				XSDLODC(dbsnpxsl)
 				virtual std::string database()
 					{
 					return string("snp");
@@ -159,7 +156,7 @@ class NcbiEFetch
 				public:
 					GeneHandler() {}
 					virtual ~GeneHandler() {}
-					XSDLODC(gene_xsl)
+					XSDLODC(genexsl)
 					virtual std::string database()
 						{
 						return string("gene");
@@ -180,7 +177,7 @@ class NcbiEFetch
 			public:
 				TaxonomyHandler() {}
 				virtual ~TaxonomyHandler() {}
-				XSDLODC(taxonomy_xsl)
+				XSDLODC(taxonomyxsl)
 				virtual std::string database()
 					{
 					return string("taxonomy");
