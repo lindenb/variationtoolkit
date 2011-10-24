@@ -34,7 +34,6 @@ but here, the bioinformaticians are the preliminary audience for this toolkit.
 \item[libxml2]: the C library for xml \url{http://xmlsoft.org/}.
 \item[libxslt]: the C library for xslt \url{http://xmlsoft.org/XSLT/}.
 \item[libcurl]: the C library for downloading some URLs.
-
 \end{description}
 \subsection{Building}
 Download the latest version of varking using \texttt{subversion}:
@@ -57,6 +56,12 @@ then type:
 \end{quote}
 the binaries will be generated in the "bin" folder.
 
+\subsection{Colors}
+Some programs use colors (e.g; 'manhattan' ). Colors can be specified as a rgb triple (e.g: 'rgb(100,10,100), rgb(0.5)', as a name (e.g: 'red'), as an hexadecimal '\#AAAAAA', etc...
+\subsection{Base index}
+The tools reading and writing VCF-like files use '+1' as the index of the first base.
+\subsection{Input}
+The tools read from files or from the standard input. The streams can be gzipped.
 
 \section{Tools}
 All the tools have the option "-h" that provides some help.
@@ -65,6 +70,13 @@ All the tools have the option "-h" that provides some help.
 \subsection{scanvcf}
 Reads a strean with two columns: a Sample-Name and the file path to a VCF(.gz) . It then prints all the VCF, adding an extra column with the sample name to the output.
 
+\paragraph{Options:}
+\begin{itemize}
+\item--sample or -S (column-index) column for the path to SAMPLE 
+\item--vcf or -V (column-index) column for the path to VCF(.gz)
+\end{itemize}
+
+\paragraph{Example:}
 \begin{quote}
 \begin{verbatim}
 $ head -n3 input.txt
@@ -94,7 +106,15 @@ Y 21154529 . G A 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample20
 
 \subsection{extractinfo}
 Extract a field from the INFO column of a VCF file.
-
+\paragraph{Options:}
+\begin{itemize}
+\item-c (info-column-infex) (7)
+\item--delim (column-delimiter) (default:tab)
+\item-t (tag) (required)
+\item-N (string) symbol for NOT-FOUND. default:N/A
+\item-i ignore line if tag was not found
+\end{itemize}
+\paragraph{Example:}
 The following script extract the GN(gene name) field from the column INFO. We keep the lines for the gene NOTCH2 and we display the associated SNP.
 \begin{quote}
 \begin{verbatim}
@@ -117,7 +137,15 @@ rs2124109
 
 \subsection{extractformat}
 Extract a field from the FORMAT column of a VCF file.
-
+\paragraph{Options:}
+\begin{itemize}
+\item-f (format-column-infex) (8)
+\item-c (call-column-infex) (9)
+\item--delim (column-delimiter) (default:tab)
+\item-t (tag) (required)
+\item-N (string) symbol for NOT-FOUND. default:N/A
+\end{itemize}
+\paragraph{Example:}
 The following command line extract the field 'GT' from the VCF and we count the occurence of the values.
 
 \begin{quote}
@@ -138,9 +166,14 @@ $ gunzip -c data.vcf.gz |\
 
 \subsection{ncbiefetch}
 Fetch a record from NCBI database.
-
 Currently supported databases: pubmed , nucleotide, proteine, snp , gene and taxonomy.
-
+\paragraph{Options:}
+\begin{itemize}
+\item-D (database) (default pubmed)
+\item-d (delimiter) (default:tab)
+\item-c (column=int) 
+\end{itemize}
+\paragraph{Example:}
 The following example generates a sequences of 6 pubmed ID and we call ncbiefetch to download the records.
 \begin{quote}
 \begin{verbatim}
@@ -207,7 +240,18 @@ $ (echo "#Gene-Id"; seq 105 2 110)  | ncbiefetch -c 1 -D gene
 
 \subsection{samplespersnp}
 Appends a column with the number of Samples per Variation.
-
+\paragraph{Options:}
+\begin{itemize}
+\item--delim (char) or -d  (char) (delimiter) default:tab
+\item--norefalt : don't look at REF and ALT
+\item--sample SAMPLE column index
+\item--chrom CHROM column index: default 1
+\item--pos POS position column index: default 2
+\item--ref REF reference allele column index: default 4
+\item--alt ALT alternate allele column index: default 5
+\item-e (query) (optional) filters by samples using boolean request eg. '((S1 \&\& S2) || (!(S3) || "S4"))'.
+\end{itemize}
+\paragraph{Example:}
 The following command line scans the VCF, sort the variations by CHROM/POS/REF/ALT/SAMPLE, counts the number of samples/variation 
 
 \begin{quote}
@@ -247,7 +291,7 @@ This tool also takes an option '-e' for a query over the samples. e.g: "variatio
 Creates a pivot table with the data(samples)=f(SNP)
 \paragraph{Options:}
 \begin{itemize}
-\item--delim (char) or -d  (char) <delimiter> default:tab
+\item--delim (char) or -d  (char) (delimiter) default:tab
 \item--norefalt : don't look at REF and ALT
 \item--sample SAMPLE column index
 \item--chrom CHROM column index: default 1
@@ -439,7 +483,15 @@ $30	count.samples	4
 
 \subsection{numericsplit}
 A simple numeric splitter.
-
+\paragraph{Options:}
+\begin{itemize}
+\item-c (column-infex) (-1)
+\item--delim (column-delimiter) (default:tab)
+\item-m (min-value)
+\item-M (max-value)
+\item-v Inverse
+\end{itemize}
+\paragraph{Example:}
 The following command line extracts the number of samples/variation and only keep the variation carried by 5 to 9 samples.
 \begin{quote}
 \begin{verbatim}
@@ -475,7 +527,18 @@ $ cat list.tsv | scanvcf  |\
 
 \subsection{groupbygene}
 transposes a VCF table with a "GENE" and a "SAMPLE" column and ouput a new table: count(Gene)=f(SAMPLE)
-
+\paragraph{Options:}
+\begin{itemize}
+\item--delim (char) delimiter default:tab
+\item--norefalt : don't look at REF and ALT
+\item--sample SAMPLE column index
+\item--gene GENE column index
+\item--chrom CHROM column index: default 1
+\item--pos POS position column index: default 2
+\item-ref REF reference allele column index: default 4
+\item--alt ALT alternate allele column index: default 5
+\end{itemize}
+\paragraph{Example:}
 The following command line extracts the name of the GENE, sort the data on CHROM/POS/REF/ALT/SAMPLE and group the data by gene.
 
 \begin{quote}
@@ -499,7 +562,14 @@ A4GNT	3	137843106	137850003	4	3	3	3	3	3	0
 
 \subsection{normalizechrom}
 Normalizes the name of a chromosome to/from UCSC/ENSEMBL.
-
+\paragraph{Options:}
+\begin{itemize}
+\item-i (string) ignore lines starting with this string.
+\item-d (string) column delimiter (default:tab).
+\item-c (int) column index (+1) (default:1).
+\item-E convert to ENSEMBL syntax (default is UCSC).
+\end{itemize}
+\paragraph{Example:}
 \begin{quote}
 \begin{verbatim}
 $ echo -e "1\t10\nX\t20\nMT\t30" | normalizechrom 
@@ -518,7 +588,15 @@ MT	30
 
 \subsection{ranges}
 Chromosomes region below/above a given values:
-
+\paragraph{Options:}
+\begin{itemize}
+\item-c (chrom Column) (1)
+\item-p (pos Column) (2)
+\item-v (value Column) (0)
+\item-d (column-delimiter) (default:tab)
+\item-L (double: treshold) (default:0)
+\end{itemize}
+\paragraph{Example:}
 The following command lines prints the ranges of QUAL (column 6) below/abouve "50.0".
 
 \begin{quote}
@@ -543,7 +621,17 @@ $ gunzip -c data.vcf.gz |\
 \end{quote}
 
 \subsection{dnacontext}
-Print the DNA context of a variation using a genome indexed with samtools.
+Prints the DNA context of a variation using a genome indexed with samtools.
+\paragraph{Options:}
+\begin{itemize}
+\item-c (chrom Column) (1)
+\item-p (pos Column) (2)
+\item-d (column-delimiter) (default:tab)
+\item-x (segment-size) (default:10)
+\item-f (genome file indexed with tabix.
+\end{itemize}
+\paragraph{Example:}
+
 \begin{quote}
 \begin{verbatim}
 $ gunzip -c data.vcf.gz |\
@@ -564,7 +652,21 @@ chr1 887560 rs3748595 A C 99 0 . GT:GQ:DP:FLT 1/1:99:40:0 CCAGGCTGAC A AGTCAGGCT
 
 \subsection{prediction}
 variation predictor.
-
+\paragraph{Options:}
+\begin{itemize}
+\item-d (column-delimiter) (default:tab)
+\item-f genome file indexed with samtools faidx.
+\item-c (CHROM col) (default:0)
+\item-p (POS col) (default:1)
+\item-r (REF col) (default:3)
+\item-a (ALT col) (default:4)
+\item--host (mysql host) default:genome-mysql.cse.ucsc.edu
+\item--user (mysql user) default:genome
+\item--password (mysql password) default:
+\item--database (mysql database) default:hg19
+\item--port (mysql password) default:0
+\end{itemize}
+\paragraph{Example:}
 \begin{quote}
 \begin{verbatim}
 $ mysql -e 'select chrom as "#CHROM",cdsStart+1 as "POS","." as "ID","A" as "REF" ,"G" as "ALT" from knownGene where strand="+" and cdsStart<cdsEnd limit 10' -D hg19 |\
@@ -722,7 +824,14 @@ $ evince result.ps
 
 \subsection{ncbiesearch}
 Search NCBI/Entrez:
-
+\paragraph{Options:}
+\begin{itemize}
+\item-D (database) (default pubmed)
+\item-q (query) [required]
+\item-d (delimiter) (default:tab)
+\item-L (limit=int) (default:10)
+\end{itemize}
+\paragraph{Example:}
 The following example creates a sequence of 3 names, we search the NCBi for each name and the word "Rotavirus" in the title, limit to 2 record, we fetch each record (the PMID is in the 2nd column) and we cut the result down to 80 characters.
  
 \begin{quote}
@@ -746,24 +855,21 @@ Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
 \subsection{vcfttview}
 Prints the BAM context around variations.
 Original code from samtools ttview : Heng Li, Bob Handsaker, Jue Ruan, Colin Hercus, Petr Danecek
-
-\begin{quote}
-\begin{verbatim}
-Options:
-  -c <chrom Column> (1)
-  -p <pos Column> (2)
-  -s <sample Column> (0) [optional]
-  -d <column-delimiter> (default:tab)
-  -B <bam-file> [defines one main bam for all data]
-  -f <file> loads a file tab delimited with SAMPLE-NAME\tPATH-TO-BAM
-  -F <SAMPLE> <FILE>  push a SAMPLE-NAME/PATH-TO-BAM in the current list
-  -a for one position, print all BAM
-  -x <int> shift x bases to the right: default:10
-  -w <int> screen width default:80
-  -R <fasta> reference file indexed with samtools faidx 
-\end{verbatim}
-\end{quote}
-Example:
+\paragraph{Options:}
+\begin{itemize}
+\item-c (chrom Column) (1)
+\item-p (pos Column) (2)
+\item-s (sample Column) (0) [optional]
+\item-d (column-delimiter) (default:tab)
+\item-B (bam-file) [defines one main bam for all data]
+\item-f (file) loads a file tab delimited with SAMPLE-NAME\\tPATH-TO-BAM
+\item-F (SAMPLE) (FILE)  push a SAMPLE-NAME/PATH-TO-BAM in the current list
+\item-a for one position, print all BAM
+\item-x (int) shift x bases to the right: default10
+\item-w (int) screen width default:80
+\item-R (fasta) reference file indexed with samtools faidx 
+\end{itemize}
+\paragraph{Example:}
 \begin{quote}
 \begin{verbatim}
 
@@ -798,7 +904,18 @@ aggttttataaaac****aattaagtctacagagcaactacgcgNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 
 \subsection{vcftabix}
 Intersection VCF/Tabix
-Example: download some 1000G data:
+\paragraph{Options:}
+\begin{itemize}
+\item-d (char) column delimiter. default: TAB
+\item-c (int) chromosome column (1).
+\item-p (int) pos column (2).
+\item-f (filename) tabix file (required).
+\item-1 remove 1 to the VCF coodinates.
+\item-S (NOT-FOUND-String) default:!N/A.
+\item-m  (int=mode) 0)=all 1:only-matching  2:only-non-matching default:0.
+\end{itemize}
+\paragraph{Example:}
+ download some 1000G data:
 \begin{quote}
 \begin{verbatim}
  curl  -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of4intersection.20100804.sites.vcf.gz" |\
@@ -836,8 +953,19 @@ $ gunzip -c data.vcf.gz |\
 
 
 \subsection{mysqlquery}
-Ask a mysql query for each row:
-
+Sends a mysql query for each row:
+\paragraph{Options:}
+\begin{itemize}
+\item-d (char) delimiter default:tab
+\item--host mysql host ( genome-mysql.cse.ucsc.edu)
+\item--user mysql user ( genome)
+\item--password mysql password ( )
+\item--database mysql db ( hg19)
+\item--port (int) mysql port ( default)
+\item-e or -q (SQL query)
+\item-L (int) limit number or rows returned
+\end{itemize}
+\paragraph{Example:}
 
 \begin{quote}
 \begin{verbatim}
@@ -867,7 +995,25 @@ $3	description	Homo sapiens cDNA FLJ31670 fis, clone NT2RI2004984.
 
 \subsection{mysqlucsc}
 Intersection VCF/UCSC mysql data.
-
+\paragraph{Options:}
+\begin{itemize}
+\item--delim (char) delimiter default:tab
+\item--host mysql host ( genome-mysql.cse.ucsc.edu)
+\item--user mysql user ( genome)
+\item--password mysql password ( )
+\item--database mysql db ( hg19)
+\item--port (int) mysql port ( default)
+\item--table or -T (string)
+\item-C (int) chromosome column (first is 1).
+\item-S (int)start column (first is 1).
+\item-E (int) end column (first is 1).
+\item-f first column is not header.
+\item-1 data are +1 based.
+\item--limit (int) limit number or rows returned
+\item--field (string) set custom field. Can be used several times
+\item--type (int) type of selection: 0 any (default), 1 user data IN mysql data,2 user data embrace mysql data. (stdin|files)
+\end{itemize}
+\paragraph{Example:}
 Compute the intersection of our data with ucsc.snp132 keep the lines containing the word 'syn'.
 \begin{quote}
 \begin{verbatim}
@@ -892,7 +1038,15 @@ chr1 110709719 rs7527375 T C 99 0 . GT:GQ:DP:FLT 1/0:99:31:0 1429 chr1 110709719
 
 \subsection{vcfbigwig}
 Intersection VCF/BigWig
-
+\paragraph{Options:}
+\begin{itemize}
+\item-f (bigwig file)
+\item-d (delimiter) (default:tab)
+\item-c (CHROM column=int) (default:1)
+\item-p (POS column=int) (default:2)
+\item-x (extend=int) extends window size (default:0)
+\end{itemize}
+\paragraph{Example:}
 What's in the Big wig ?
 \begin{quote}
 \begin{verbatim}
@@ -934,7 +1088,18 @@ chrX	1001	nan	nan	nan	nan	nan
 
 \subsection{vcfbigbed}
 Intersection VCF/BigBed
-
+\paragraph{Options:}
+\begin{itemize}
+\item-f (BigBed file)
+\item-d (delimiter) (default:tab)
+\item-c (CHROM column=int) (default:1)
+\item-p (POS column=int) (default:2)
+\item-x (extend=int) extends window size (default:0)
+\item-L (limit=int) limit to L records in bed (default:unbound)
+\item-S (NOT-FOUND-String) default:!N/A.
+\item-m  (int=mode) 0)=all 1:only-matching  2:only-non-matching default:0.
+\end{itemize}
+\paragraph{Example:}
 What's in the Big BED ?
 \begin{quote}
 \begin{verbatim}
@@ -981,7 +1146,13 @@ chrX	1	!N/A	!N/A	!N/A
 \end{quote}
 
 \subsection{verticalize}
-Verticalize a table:
+Verticalize a table.
+\paragraph{Options:}
+\begin{itemize}
+\item-d or --delim (char) delimiter default:tab
+\item-n first line is NOT the header.
+\end{itemize}
+\paragraph{Example:}
 \begin{quote}
 \begin{verbatim}
 $ gunzip -c file.vcf.gz | grep -v "##" |\
@@ -1008,7 +1179,13 @@ $1	#CHROM   	1
 
 \subsection{uniprot}
 Take as input a position on a protein and an uniprot ACN, connect to uniprot.org and answers wether a amino acid is contained in a 'feature'.
-
+\paragraph{Options:}
+\begin{itemize}
+\item-d (char) delimiter default:tab
+\item-p (column-index) column containing the amino acid index.
+\item-s (spId-index) column containing the swissprot-acn  (e.g.: Q04721 or  NOTC2\_HUMAN).
+\end{itemize}
+\paragraph{Example:}
 
 \begin{quote}
 \begin{verbatim}
@@ -1116,6 +1293,19 @@ $9	uniprot.ref     	.
 
 \subsection{vcf2bed}
 Generates a BED file from a VCF.
+
+\paragraph{Options:}
+\begin{itemize}
+\item-d (column-delimiter) (default:tab)
+\item-c (CHROM col) (default:0)
+\item-p (POS col) (default:1)
+\item-S (bed score col) (default:-1)
+\item-N (col) adds this column for the 'name'
+\item-D (char) name separator.
+\item-t print ucsc custom track header.
+\end{itemize}
+\paragraph{Example:}
+
 \begin{quote}
 \begin{verbatim}
 $ gunzip -c file.vcf.gz |\
@@ -1139,6 +1329,16 @@ chr1	889157	889158	rs56262069_G_C	51	+
 
 \subsection{emblstringresolve}
 Calls the service: EMBL String resolve ( \url{http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html} ).
+
+\paragraph{Options:}
+\begin{itemize}
+\item-d (char) delimiter default:tab
+\item-c column identifier
+\item-t (int) taxon id
+\end{itemize}
+\paragraph{Example:}
+
+
 \begin{quote}
 \begin{verbatim}
 $ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" |\
@@ -1169,6 +1369,15 @@ $4	annotation   	poly(A) binding protein, cytoplasmic 1; Binds the...
 
 \subsection{emblstringinteractors}
 Calls the service: EMBL String interactors ( \url{http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html} ).
+
+
+\paragraph{Options:}
+\begin{itemize}
+\item-d (char) delimiter default:tab
+\item-c column identifier
+\end{itemize}
+\paragraph{Example:}
+
 \begin{quote}
 \begin{verbatim}
 $ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" |\
@@ -1214,6 +1423,12 @@ $7	preferredName	DLL1
 
 \subsection{emblstringinteractions}
 Calls the service: EMBL String interactions ( \url{http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html} ).
+\paragraph{Options:}
+\begin{itemize}
+\item-d (char) delimiter default:tab
+\item-c column identifier
+\end{itemize}
+\paragraph{Example:}
 \begin{quote}
 \begin{verbatim}
 $ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" | \
@@ -1282,6 +1497,19 @@ $ curl -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of
 \subsection{ucscgenesps}
 Reads an ordered VCF (ordered by CHROM/POS and optionaly by SAMPLE) , connect to an UCSC database a print the
 variation in postscript.
+\paragraph{Options:}
+\begin{itemize}
+\item-c (int) CHROM column default:1
+\item-p (int) POS column default:2
+\item-s (int) SAMPLE column (optional) 
+\item-r (int) COLOR column (optional)
+\item--host (mysql host) default:genome-mysql.cse.ucsc.edu
+\item--user (mysql user) default:genome
+\item--password (mysql password) default:
+\item--database (mysql database) default:hg19
+\item--port (mysql password) default:0
+\end{itemize}
+\paragraph{Example:}
 \begin{figure}
 \includegraphics[keepaspectratio=true,scale=0.45]{ucscgenes.eps}
 \caption{Structure of a gene}
