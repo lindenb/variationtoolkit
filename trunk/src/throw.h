@@ -3,14 +3,14 @@
 
 #include <stdexcept>
 #include <sstream>
-
+#include "varkitversion.h"
 #ifdef __GNUC__
 #include <execinfo.h> /* compile with -rdynamic */
 #include <cstdlib>
 
 
 #define THROW(a) do{std::ostringstream _os;\
-	_os << "\nFile : "<<  __FILE__ << "\nLine  : "<< __LINE__ << "\nMethod : " << __FUNCTION__ << "\nWhat : " << a << std::endl;\
+	_os << "\nRevision:" <<   VARKIT_REVISION << "\nFile : "<<  __FILE__ << "\nLine  : "<< __LINE__ << "\nMethod : " << __FUNCTION__ << "\nWhat : " << a << std::endl;\
 	 void   *_array[30];\
 	std::size_t  _size = ::backtrace(_array, 30);\
 	char    **_trace_strings = ::backtrace_symbols(_array, _size);\
@@ -29,7 +29,7 @@
 #else
 
 #define THROW(a) do{std::ostringstream _os;\
-	_os << "\nFile : "<<  __FILE__ << "\nLine  : "<< __LINE__ << "\nMethod : " << __FUNCTION__ << "\nWhat : " << a << std::endl;\
+	_os << "\nRevision:" <<   VARKIT_REVISION << "\nFile : "<<  __FILE__ << "\nLine  : "<< __LINE__ << "\nMethod : " << __FUNCTION__ << "\nWhat : " << a << std::endl;\
 	throw std::runtime_error(_os.str());\
 	}while(0)
 
