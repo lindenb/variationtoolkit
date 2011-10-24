@@ -29,6 +29,8 @@
 #include "zstreambuf.h"
 #include "tokenizer.h"
 #include "bin.h"
+#include "where.h"
+#include "mysqlapplication.h"
 
 using namespace std;
 
@@ -50,10 +52,10 @@ class Table
 	vector<string> columns;
     };
 
-class MysqlUcsc
+class MysqlUcsc:public MysqlApplication
     {
     public:
-	 MYSQL* mysql;
+
 	 Table* table;
 	 bool first_line_header;
 	 int chromcol;
@@ -62,19 +64,17 @@ class MysqlUcsc
 	 int limit;
 	 bool data_are_plus1_based;
 	 int select_type;
-	 Tokenizer tokenizer;
+
 	 MysqlUcsc():
-		 mysql(NULL),
 		 table(NULL),
 		 first_line_header(true),
 		 limit(-1),
 		 data_are_plus1_based(false),
 		 select_type(select_any)
 	     {
-	     chromcol=-1;
-	     startcol=-1;
-	     endcol=-1;
-	     if((mysql=::mysql_init(NULL))==NULL) THROW("Cannot init mysql");
+	     chromcol=0;
+	     startcol=1;
+	     endcol=1;
 	     }
 
 
@@ -82,12 +82,12 @@ class MysqlUcsc
 	 ~MysqlUcsc()
 	     {
 	     if(table!=NULL) delete table;
-	     ::mysql_close(mysql);
 	     }
 
 
 	 Table* schema(const char* tableName)
 	     {
+		 WHERE(tableName);
 	     Table* table=new Table;
 	     table->hasBin=false;
 	     table->name.assign(tableName);
@@ -95,14 +95,19 @@ class MysqlUcsc
 	     ostringstream os;
 	     os << "desc "<< tableName;
 	     string query=os.str();
+
 	     mysql_real_query( mysql, query.c_str(),query.size());
+	     WHERE(query);
 	     MYSQL_RES*	res=mysql_use_result( mysql );
+	     if(res==NULL) THROW("mysql_use_result failed");
 	     //int num_fields = mysql_num_fields(res);
 	     while(( row = mysql_fetch_row( res ))!=NULL )
 		     {
+	    	 WHERE("");
 		     unsigned long *lengths= mysql_fetch_lengths(res);
 		     if(lengths==NULL) THROW("cannot fetch length");
 		     string colName(row[0],lengths[0]);
+		     WHERE(colName);
 		     table->columns.push_back(colName);
 		     if(colName.compare("bin")==0)
 			 {
@@ -120,6 +125,14 @@ class MysqlUcsc
 			 {
 			 table->chromEnd=colName;
 			 }
+		     else if(colName.compare("txStart")==0)
+				 {
+				 table->chromStart=colName;
+				 }
+		    else if(colName.compare("txEnd")==0)
+				 {
+				 table->chromEnd=colName;
+				 }
 		     }
 	     mysql_free_result( res );
 	     if(table->chrom.empty())
@@ -140,6 +153,7 @@ class MysqlUcsc
 		 delete table;
 		 return 0;
 		 }
+	     WHERE(tableName);
 	     return table;
 	     }
 
@@ -161,6 +175,7 @@ class MysqlUcsc
 
 	     while(getline(in,line,'\n'))
 			 {
+	    	 WHERE(line);
 			 ++nLine;
 			 tokenizer.split(line,tokens);
 			 if(nLine==1 && first_line_header)
@@ -306,13 +321,11 @@ int main(int argc,char** argv)
     {
     MysqlUcsc app;
     int optind=1;
-    string host("genome-mysql.cse.ucsc.edu");
-    string username("genome");
-    string password;
-    string database("hg19");
+    int n_optind;
+
     vector<string> custom_fields;
     char* tablename=NULL;
-    int port=0;
+
     while(optind < argc)
 	    {
 	    if(std::strcmp(argv[optind],"-h")==0)
@@ -321,23 +334,24 @@ int main(int argc,char** argv)
 		    cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 		    cerr << "Options:\n";
 		    cerr << "  --delim (char) delimiter default:tab\n";
-		    cerr << "  --host mysql host ( " << host << ")\n";
-		    cerr << "  --user mysql user ( " << username << ")\n";
-		    cerr << "  --password mysql password ( " << password << ")\n";
-		    cerr << "  --database mysql db ( " << database << ")\n";
-		    cerr << "  --port (int) mysql port ( default)\n";
 		    cerr << "  --table or -T (string)\n";
-		    cerr << "  -C (int) chromosome column (first is 1).\n";
-		    cerr << "  -S (int)start column (first is 1).\n";
-		    cerr << "  -E (int) end column (first is 1).\n";
+		    cerr << "  -C (int) chromosome column (first is 1). default:"<< (app.chromcol+1)<< "\n";
+		    cerr << "  -S (int)start column (first is 1). default:"<< (app.startcol+1)<< "\n";
+		    cerr << "  -E (int) end column (first is 1). default:"<< (app.endcol+1)<< "\n";
 		    cerr << "  -f first column is not header.\n";
 		    cerr << "  -1 data are +1 based.\n";
 		    cerr << "  --limit (int) limit number or rows returned\n";
 		    cerr << "  --field <string> set custom field. Can be used several times\n";
 		    cerr << "  --type (int) type of selection: 0 any (default), 1 user data IN mysql data,2 user data embrace mysql data.\n";
 		    cerr << "(stdin|files)\n\n";
+		    app.printConnectOptions(cerr);
 		    exit(EXIT_FAILURE);
 		    }
+	    else if((n_optind=app.argument(optind,argc,argv))!=-1)
+	    	{
+	    	if(optind==-2) return EXIT_FAILURE;
+	    	optind=n_optind;
+	    	}
 	    else if(std::strcmp(argv[optind],"--type")==0 && optind+1<argc)
 		{
 		char* p2;
@@ -407,22 +421,6 @@ int main(int argc,char** argv)
 		{
 		tablename=(argv[++optind]);
 		}
-	    else if(std::strcmp(argv[optind],"--host")==0 && optind+1<argc)
-		{
-		host.assign(argv[++optind]);
-		}
-	    else if(std::strcmp(argv[optind],"--user")==0 && optind+1<argc)
-		{
-		username.assign(argv[++optind]);
-		}
-	    else if(std::strcmp(argv[optind],"--password")==0 && optind+1<argc)
-		{
-		password.assign(argv[++optind]);
-		}
-	    else if(std::strcmp(argv[optind],"--port")==0 && optind+1<argc)
-		{
-		port=atoi(argv[++optind]);
-		}
 	    else if(std::strcmp(argv[optind],"--delim")==0 && optind+1< argc)
 			{
 			char* p=argv[++optind];
@@ -434,10 +432,10 @@ int main(int argc,char** argv)
 			app.tokenizer.delim=p[0];
 			}
 	    else if(argv[optind][0]=='-')
-		{
-		fprintf(stderr,"unknown option '%s'\n",argv[optind]);
-		exit(EXIT_FAILURE);
-		}
+			{
+			fprintf(stderr,"unknown option '%s'\n",argv[optind]);
+			exit(EXIT_FAILURE);
+			}
 	    else
 		{
 		break;
@@ -461,15 +459,7 @@ int main(int argc,char** argv)
 	return EXIT_FAILURE;
 	}
     if(app.endcol<0) app.endcol=app.startcol;
-    if(mysql_real_connect(
-	    app. mysql,
-	    host.c_str(),
-	    username.c_str(),
-	    password.c_str(),
-	    database.c_str(), port,NULL, 0 )==NULL)
-	{
-	THROW("mysql_real_connect failed.");
-	}
+    app.connect();
     app.table=app.schema(tablename);
     if(app.table==NULL) THROW("Cannot get schema for "<< tablename);
     if(!custom_fields.empty())
@@ -481,10 +471,10 @@ int main(int argc,char** argv)
 			}
 		}
     if(app.table==NULL)
-	{
-	cerr << "Cannot get table "<< database<<"."<< tablename << endl;
-	return EXIT_FAILURE;
-	}
+		{
+		cerr << "Cannot get table "<< app.database<<"."<< tablename << endl;
+		return EXIT_FAILURE;
+		}
     if(optind==argc)
 	    {
     	igzstreambuf buf;
