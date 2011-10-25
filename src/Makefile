@@ -1,5 +1,6 @@
 include ../config.mk
 BINDIR=../bin
+INSTALLDIR=/usr/local/bin
 CPP=g++
 CFLAGS=-O3 -Wall
 COLOR_O=parsecolor.tab.o lex.parsecolor.o color.o
@@ -171,6 +172,15 @@ parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o
 	$(CPP) $(CFLAGS) -c -o lex.parsecolor.o lex.parsecolor.c
 	$(CPP) $(CFLAGS) -c -o parsecolor.tab.o parsecolor.tab.c
 
+install:all
+	cp $(TARGET_BINARIES) $(INSTALLDIR)
+
+uninstall:
+	rm -f $(subst $(BINDIR),$(INSTALLDIR),$(TARGET_BINARIES))
+
 clean:
 	rm -f $(TARGET_BINARIES) *.o a.out lex.segparser.c \
 		segparser.tab.c segparser.tab.h segparser.output
+
+clean-all:clean uninstall
+	
