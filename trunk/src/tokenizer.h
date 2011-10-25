@@ -11,6 +11,10 @@ class Tokenizer
 			{
 			}
 		
+		Tokenizer(char d):delim(d)
+			{
+			}
+
 		std::vector<std::string>::size_type
 		split(const std::string& line,std::vector<std::string>& tokens)
 		    {
