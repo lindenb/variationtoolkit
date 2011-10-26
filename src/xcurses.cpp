@@ -180,15 +180,12 @@ int Window::set(int y,int x,Window::pixel_t c)
     }
 
 
-Window::pixel_t Window::get(int y,int x)
+Window::pixel_t Window::getch(int y,int x)
     {
-    return moveto(y,x)?get():-1;
+    return moveto(y,x)?getch():-1;
     }
 
-Window::pixel_t Window::get()
-    {
-    return ::wgetch(CASTWIN(ptr()));
-    }
+
 int Window::x()
     {
     return getbegx(CASTWIN(ptr()));

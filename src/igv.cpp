@@ -73,7 +73,7 @@ class IGVBrowser:public AbstractApplication
 		     os << p;
 		     }
 		 string line=os.str();
-		 for(int i=0;i< screen->width() && i<line.size();++i)
+		 for(int i=0;i< screen->width() && i<(int)line.size();++i)
 		     {
 		     screen->set(y,i,line[i]);
 		     }
@@ -145,6 +145,7 @@ class IGVBrowser:public AbstractApplication
 
 	    Screen* screen=Screen::startup();
 	    screen->refresh();
+
 	    repaint();
 	    for(;;)
 		{
@@ -172,8 +173,8 @@ class IGVBrowser:public AbstractApplication
 		    }
 		else if(c=='z' ||c==Screen::K_DOWN)
 		    {
-		    if( row_y+1< screen->height() &&
-			(top_y+row_y)<screen->height()
+		    if( (int)row_y+1< screen->height() &&
+			((int)top_y+(int)row_y+1)<screen->height()
 			)
 			{
 			row_y++;
