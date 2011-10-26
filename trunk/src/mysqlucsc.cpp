@@ -24,6 +24,7 @@
 #include <cassert>
 #include <stdint.h>
 #include <mysql.h>
+#define NOWHERE
 #include "where.h"
 #include "throw.h"
 #include "zstreambuf.h"
@@ -69,7 +70,7 @@ class MysqlUcsc:public MysqlApplication
 		 table(NULL),
 		 first_line_header(true),
 		 limit(-1),
-		 data_are_plus1_based(false),
+		 data_are_plus1_based(true),
 		 select_type(select_any)
 	     {
 	     chromcol=0;
@@ -234,22 +235,22 @@ class MysqlUcsc:public MysqlApplication
 				 {
 				 case select_user_IN_sql:
 				 {
-				 sql << table->chromStart << " <= " << tokens[startcol]
-					<< " and "<< table->chromEnd << " >= " << tokens[endcol];
+				 sql << table->chromStart << " <= " << chromStart
+					<< " and "<< table->chromEnd << " >= " << chromEnd;
 
 				 break;
 				 }
 				 case select_user_OUT_sql:
 				 {
-				 sql << table->chromStart << " >= " << tokens[startcol]
-					<< " and "<< table->chromEnd << " <= " << tokens[endcol]
+				 sql << table->chromStart << " >= " << chromStart
+					<< " and "<< table->chromEnd << " <= " << chromEnd
 					 ;
 				 break;
 				 }
 				 default:
 				 {
-				 sql << " NOT(" << table->chromEnd << " <= " << tokens[startcol]
-					<< " or "<< table->chromStart << " > " << tokens[endcol]
+				 sql << " NOT(" << table->chromEnd << " <= " << chromStart
+					<< " or "<< table->chromStart << " > " << chromEnd
 					<< ")";
 				 break;
 				 }
@@ -339,7 +340,7 @@ int main(int argc,char** argv)
 		    cerr << "  -S (int)start column (first is 1). default:"<< (app.startcol+1)<< "\n";
 		    cerr << "  -E (int) end column (first is 1). default:"<< (app.endcol+1)<< "\n";
 		    cerr << "  -f first column is not header.\n";
-		    cerr << "  -1 data are +1 based.\n";
+		    cerr << "  -1 data are '0' based.\n";
 		    cerr << "  --limit (int) limit number or rows returned\n";
 		    cerr << "  --field <string> set custom field. Can be used several times\n";
 		    cerr << "  --type (int) type of selection: 0 any (default), 1 user data IN mysql data,2 user data embrace mysql data.\n";
@@ -368,7 +369,7 @@ int main(int argc,char** argv)
 		}
 	    else if(std::strcmp(argv[optind],"-1")==0 && optind+1<argc)
 		{
-		app.data_are_plus1_based=true;
+		app.data_are_plus1_based=false;
 		}
 	    else if(std::strcmp(argv[optind],"--limit")==0 && optind+1<argc)
 		{
