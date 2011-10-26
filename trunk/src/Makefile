@@ -163,7 +163,7 @@ kentBigBed.o: kentBigBed.cpp kentBigBed.h
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
 
-$(BINDIR)/angelheart: angelheart.cpp application.o xcurses.cpp segments.o
+$(BINDIR)/igv: igv.cpp application.o xcurses.cpp 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses
 
 parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o
