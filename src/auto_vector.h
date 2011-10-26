@@ -71,11 +71,11 @@ class auto_vector
         	}
 
         T* release(size_type i)
-			{
-			T* v=delegate.at(i);
-			delegate.erase(delegate.begin()+i);
-			return v;
-			}
+		{
+		T* v=delegate.at(i);
+		delegate.erase(delegate.begin()+i);
+		return v;
+		}
 
         void assign(size_type i,T* item)
             {
