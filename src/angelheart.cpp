@@ -135,7 +135,15 @@ class AngelHeart:public AbstractApplication
 	screen->refresh();
 	for(;;)
 	    {
-	    if(screen->getch()=='q') break;
+	    int c=screen->getch();
+	    switch(c)
+		{
+		case 'q':
+		    {
+		    break;
+		    }
+		case
+		}
 	    }
 
 	Screen::shutdown();

@@ -34,8 +34,92 @@ using namespace std;
 
 Screen* Screen::INSTANCE=NULL;
 
-
-
+const Window::pixel_t Window::K_A1 = KEY_A1;
+const Window::pixel_t Window::K_A3 = KEY_A3;
+const Window::pixel_t Window::K_B2 = KEY_B2;
+const Window::pixel_t Window::K_BACKSPACE = KEY_BACKSPACE;
+const Window::pixel_t Window::K_BEG = KEY_BEG;
+const Window::pixel_t Window::K_BTAB = KEY_BTAB;
+const Window::pixel_t Window::K_C1 = KEY_C1;
+const Window::pixel_t Window::K_C3 = KEY_C3;
+const Window::pixel_t Window::K_CANCEL = KEY_CANCEL;
+const Window::pixel_t Window::K_CATAB = KEY_CATAB;
+const Window::pixel_t Window::K_CLEAR = KEY_CLEAR;
+const Window::pixel_t Window::K_CLOSE = KEY_CLOSE;
+const Window::pixel_t Window::K_COMMAND = KEY_COMMAND;
+const Window::pixel_t Window::K_COPY = KEY_COPY;
+const Window::pixel_t Window::K_CREATE = KEY_CREATE;
+const Window::pixel_t Window::K_CTAB = KEY_CTAB;
+const Window::pixel_t Window::K_DC = KEY_DC;
+const Window::pixel_t Window::K_DL = KEY_DL;
+const Window::pixel_t Window::K_DOWN = KEY_DOWN;
+const Window::pixel_t Window::K_EIC = KEY_EIC;
+const Window::pixel_t Window::K_END = KEY_END;
+const Window::pixel_t Window::K_EOL = KEY_EOL;
+const Window::pixel_t Window::K_EOS = KEY_EOS;
+const Window::pixel_t Window::K_EXIT = KEY_EXIT;
+const Window::pixel_t Window::K_FIND = KEY_FIND;
+const Window::pixel_t Window::K_HELP = KEY_HELP;
+const Window::pixel_t Window::K_HOME = KEY_HOME;
+const Window::pixel_t Window::K_IC = KEY_IC;
+const Window::pixel_t Window::K_IL = KEY_IL;
+const Window::pixel_t Window::K_LEFT = KEY_LEFT;
+const Window::pixel_t Window::K_LL = KEY_LL;
+const Window::pixel_t Window::K_MARK = KEY_MARK;
+const Window::pixel_t Window::K_MAX = KEY_MAX;
+const Window::pixel_t Window::K_MESSAGE = KEY_MESSAGE;
+const Window::pixel_t Window::K_MOUSE = KEY_MOUSE;
+const Window::pixel_t Window::K_MOVE = KEY_MOVE;
+const Window::pixel_t Window::K_NEXT = KEY_NEXT;
+const Window::pixel_t Window::K_NPAGE = KEY_NPAGE;
+const Window::pixel_t Window::K_OPEN = KEY_OPEN;
+const Window::pixel_t Window::K_OPTIONS = KEY_OPTIONS;
+const Window::pixel_t Window::K_PPAGE = KEY_PPAGE;
+const Window::pixel_t Window::K_PREVIOUS = KEY_PREVIOUS;
+const Window::pixel_t Window::K_PRINT = KEY_PRINT;
+const Window::pixel_t Window::K_REDO = KEY_REDO;
+const Window::pixel_t Window::K_REFERENCE = KEY_REFERENCE;
+const Window::pixel_t Window::K_REFRESH = KEY_REFRESH;
+const Window::pixel_t Window::K_REPLACE = KEY_REPLACE;
+const Window::pixel_t Window::K_RESET = KEY_RESET;
+const Window::pixel_t Window::K_RESTART = KEY_RESTART;
+const Window::pixel_t Window::K_RESUME = KEY_RESUME;
+const Window::pixel_t Window::K_RIGHT = KEY_RIGHT;
+const Window::pixel_t Window::K_SAVE = KEY_SAVE;
+const Window::pixel_t Window::K_SBEG = KEY_SBEG;
+const Window::pixel_t Window::K_SCANCEL = KEY_SCANCEL;
+const Window::pixel_t Window::K_SCOMMAND = KEY_SCOMMAND;
+const Window::pixel_t Window::K_SCOPY = KEY_SCOPY;
+const Window::pixel_t Window::K_SCREATE = KEY_SCREATE;
+const Window::pixel_t Window::K_SDC = KEY_SDC;
+const Window::pixel_t Window::K_SDL = KEY_SDL;
+const Window::pixel_t Window::K_SELECT = KEY_SELECT;
+const Window::pixel_t Window::K_SEND = KEY_SEND;
+const Window::pixel_t Window::K_SEOL = KEY_SEOL;
+const Window::pixel_t Window::K_SEXIT = KEY_SEXIT;
+const Window::pixel_t Window::K_SF = KEY_SF;
+const Window::pixel_t Window::K_SFIND = KEY_SFIND;
+const Window::pixel_t Window::K_SHELP = KEY_SHELP;
+const Window::pixel_t Window::K_SHOME = KEY_SHOME;
+const Window::pixel_t Window::K_SIC = KEY_SIC;
+const Window::pixel_t Window::K_SLEFT = KEY_SLEFT;
+const Window::pixel_t Window::K_SMESSAGE = KEY_SMESSAGE;
+const Window::pixel_t Window::K_SMOVE = KEY_SMOVE;
+const Window::pixel_t Window::K_SNEXT = KEY_SNEXT;
+const Window::pixel_t Window::K_SOPTIONS = KEY_SOPTIONS;
+const Window::pixel_t Window::K_SPREVIOUS = KEY_SPREVIOUS;
+const Window::pixel_t Window::K_SPRINT = KEY_SPRINT;
+const Window::pixel_t Window::K_SR = KEY_SR;
+const Window::pixel_t Window::K_SREDO = KEY_SREDO;
+const Window::pixel_t Window::K_SREPLACE = KEY_SREPLACE;
+const Window::pixel_t Window::K_SRESET = KEY_SRESET;
+const Window::pixel_t Window::K_SRIGHT = KEY_SRIGHT;
+const Window::pixel_t Window::K_SRSUME = KEY_SRSUME;
+const Window::pixel_t Window::K_SSAVE = KEY_SSAVE;
+const Window::pixel_t Window::K_SSUSPEND = KEY_SSUSPEND;
+const Window::pixel_t Window::K_STAB = KEY_STAB;
+const Window::pixel_t Window::K_UNDO = KEY_UNDO;
+const Window::pixel_t Window::K_UP = KEY_UP;
 
 Window::Window()
     {
@@ -85,6 +169,16 @@ int Window::getch()
     {
     return ::wgetch(CASTWIN(ptr()));
     }
+
+int Window::set(Window::pixel_t ch)
+    {
+    return ::waddch(CASTWIN(ptr()),ch);
+    }
+int Window::set(int y,int x,Window::pixel_t c)
+    {
+    return moveto(y,x)?set(c):-1;
+    }
+
 
 Window::pixel_t Window::get(int y,int x)
     {
@@ -150,7 +244,8 @@ Screen* Screen::getInstance()
     ::nonl();        /* tell curses not to do NL->CR/NL on output */
     ::cbreak();      /* take input chars one at a time, no wait for \n */
     ::noecho();      /* don't echo input */
-
+    ::nodelay(stdscr,TRUE);
+    ::keypad(stdscr, TRUE);
     if (has_colors())
 	{
 	start_color();
