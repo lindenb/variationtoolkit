@@ -83,6 +83,9 @@ std::ostream& operator << (std::ostream& out,const StartEnd& cp)
 	return out;
 	}
 
+ChromStartEnd::ChromStartEnd(const std::string& s,int32_t start,int32_t end):StartEnd(start,end),chrom(s)
+	{
+	}
 
 ChromStartEnd::ChromStartEnd(const char* s,int32_t start,int32_t end):StartEnd(start,end),chrom(s)
 	{

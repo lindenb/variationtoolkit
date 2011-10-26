@@ -31,7 +31,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/emblstringinteractions \
 	$(BINDIR)/emblstringinteractors \
 	$(BINDIR)/vcfcut \
-	$(BINDIR)/ucscgenesps
+	$(BINDIR)/ucscgenesps \
+	$(BINDIR)/vcfintersect
 
 
 
@@ -96,6 +97,9 @@ $(BINDIR)/vcfcut:vcfcut.cpp segparser.tab.o lex.segparser.o application.o segmen
 	$(CPP) $(CFLAGS) -o $@ $^ -lz
 $(BINDIR)/ucscgenesps: ucscgenesps.cpp application.o knowngene.o $(COLOR_O)
 	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz 
+$(BINDIR)/vcfintersect : vcfintersect.cpp application.o segments.o netstreambuf.o 
+	$(CPP) -o $@ $^ $(CFLAGS) `curl-config --cflags --libs` -lz
+	
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
 pubmedxsl.o:pubmed.xsl $(BINDIR)/embbedC
@@ -180,7 +184,11 @@ uninstall:
 
 clean:
 	rm -f $(TARGET_BINARIES) *.o a.out lex.segparser.c \
-		segparser.tab.c segparser.tab.h segparser.output
+		segparser.tab.c segparser.tab.h segparser.output \
+		lex.selectset.c parsecolor.tab.c lex.parsecolor.c  lex.yy.c  \
+		selectset.tab.c parsecolor.tab.h selectset.tab.h \
+		dbsnpxsl.cpp  genexsl.cpp  nuccorexsl.cpp  \
+		pubmedxsl.cpp  taxonomyxsl.cpp
 
 clean-all:clean uninstall
 	

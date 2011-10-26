@@ -38,6 +38,7 @@ class ChromStartEnd:public StartEnd
 	{
 	public:
 		std::string chrom;
+		ChromStartEnd(const std::string& s,int32_t start,int32_t end);
 		ChromStartEnd(const char* s,int32_t start,int32_t end);
 		ChromStartEnd(const ChromStartEnd& cp);
 		~ChromStartEnd();
