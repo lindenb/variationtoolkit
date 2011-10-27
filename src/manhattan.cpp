@@ -545,6 +545,7 @@ class Manhattan:public AbstractApplication
 		out << endl;
 		out << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
 		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+		out << VARKIT_REVISION << endl;
 		out << " -c <int> CHROM column default:"<< (chromCol+1) << endl;
 		out << " -p <int> POS column default:"<< (posCol+1) << endl;
 		out << " -v <int> value column default:"<< (valueCol+1) << endl;
@@ -552,6 +553,9 @@ class Manhattan:public AbstractApplication
 		out << " -s <int> SAMPLE column (optional)" << endl;
 		out << " -m <double> optional user's min value" << endl;
 		out << " -M <double> optional user's max value" << endl;
+		out<< "Page otpions:\n";
+		out << " --x-width (int) x-axis size: "<< this->x_axis_width << endl;
+		out << " --y-height (int) y-axis size: "<< this->y_axis_height << endl;
 		out << endl;
 		}
 
@@ -577,17 +581,39 @@ class Manhattan:public AbstractApplication
 			    usage(cerr,argc,argv);
 			    return (EXIT_FAILURE);
 			    }
+		    else if(strcmp(argv[optind],"--x-width")==0 && optind+1<argc)
+		    	{
+		    	char* p2;
+		    	this->x_axis_width=strtod(argv[++optind],&p2);
+		    	if(this->x_axis_width==0 || errno!=0 || *p2!=0)
+		    		{
+		    		cerr << "Bad value for x axis.\n";
+		    		 usage(cerr,argc,argv);
+		    		return EXIT_FAILURE;
+		    		}
+		    	}
+		    else if(strcmp(argv[optind],"--y-height")==0 && optind+1<argc)
+				{
+				char* p2;
+				this->y_axis_height=strtod(argv[++optind],&p2);
+				if(this->y_axis_height==0 || errno!=0 || *p2!=0)
+					{
+					cerr << "Bad value for y axis.\n";
+					 usage(cerr,argc,argv);
+					return EXIT_FAILURE;
+					}
+				}
 		    else if(std::strcmp(argv[optind],"-m")==0)
-			{
-			char* p2;
-			my_min_value=strtod(argv[++optind],&p2);
-			if(*p2!=0 || errno!=0 || isnan(my_min_value))
-			    {
-			    cerr << "Bad min value "<< argv[optind] << endl;
-			    return (EXIT_FAILURE);
-			    }
-			this->user_min_value=&my_min_value;
-			}
+				{
+				char* p2;
+				my_min_value=strtod(argv[++optind],&p2);
+				if(*p2!=0 || errno!=0 || isnan(my_min_value))
+					{
+					cerr << "Bad min value "<< argv[optind] << endl;
+					return (EXIT_FAILURE);
+					}
+				this->user_min_value=&my_min_value;
+				}
 		    else if(std::strcmp(argv[optind],"-M")==0)
 			{
 			char* p2;
