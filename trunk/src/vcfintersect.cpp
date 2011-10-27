@@ -67,9 +67,10 @@ class VcfIntersection:public AbstractApplication
 		    }
 	    };
 
-	JoinType joinType;
+	int joinType;
 	Config config1;
 	Config config2;
+	string notFound;
 	class Record
 		{
 		public:
@@ -84,7 +85,8 @@ class VcfIntersection:public AbstractApplication
 
 
 	VcfIntersection():
-		joinType(PRINT_ALL)
+		joinType(PRINT_ALL),
+		notFound("NO_MATCH")
 	    {
 	    config1.halfOpen=false;
 	    config1.zeroBased=false;
@@ -116,6 +118,7 @@ class VcfIntersection:public AbstractApplication
 		return NULL;
 		}
 	    int chromEnd=chromStart;
+
 	    if(cfg->startColumn!=cfg->endColumn)
 		{
 		chromEnd=(int)strtol(tokens[cfg->endColumn].c_str(),&p2,10);
@@ -150,9 +153,17 @@ class VcfIntersection:public AbstractApplication
 		{
 		if(AbstractApplication::stopping()) return NULL;
 		if(!getline(in,line,'\n')) return NULL;
+		if(line.empty()) continue;
+		if(line[0]=='#' && cfg==&config1)
+		    {
+		    cout << line << endl;
+		    continue;
+		    }
+
 		tokenizer.split(line,tokens);
 		rec=parseRecord(line,tokens,cfg);
 		if(rec!=NULL) break;
+
 		}
 	    return rec;
 	    }
@@ -173,11 +184,13 @@ class VcfIntersection:public AbstractApplication
 
 		for(size_t i=0;i< rec1->tokens.size();++i)
 		    {
-		    if(i>0) cout << tokenizer.delim;
+		    if(i>0) cout << config1.delim;
 		    cout << rec1->tokens[i];
 		    }
+
 		for(size_t i=0;i< rec2->tokens.size();++i)
 		    {
+		    cout << config1.delim;
 		    cout << rec2->tokens[i];
 		    }
 		cout << endl;
@@ -252,6 +265,7 @@ class VcfIntersection:public AbstractApplication
 			    break;
 			    }
 			echo(rec,rec2);
+			buffer.push_back(rec2);
 			foundMatch=true;
 			}
 		    }
@@ -262,6 +276,8 @@ class VcfIntersection:public AbstractApplication
 			if(i>0) cout << tokenizer.delim;
 			cout << rec->tokens[i];
 			}
+		    cout << tokenizer.delim;
+		    cout << notFound;
 		    cout << endl;
 		    }
 		delete rec;
@@ -276,6 +292,8 @@ class VcfIntersection:public AbstractApplication
 		out << VARKIT_REVISION << endl;
 		out << "Options:\n";
 		out << "   -f <external url/file> [required]" << endl;
+		out << "   -m (mode) "<< PRINT_ALL << ":all "<< PRINT_MATCHING << ":matching " << PRINT_UMATCHING << ":unmatching default:"<< joinType << endl;
+		out << "   -n (string) no-match string default"<< notFound<< endl;
 		out << " Input Stream/File\n";
 		out << "   -c1 <CHROM col> (default:"<< (config1.chromColumn+1) <<")" << endl;
 		out << "   -s1 <START col> (default:"<<  (config1.startColumn+1) <<")" << endl;
@@ -290,23 +308,26 @@ class VcfIntersection:public AbstractApplication
 		out << "   -d2 <delimiter> (default:tab)" << endl;
 		out << "   -h2  toggle: input is half open (default:"<< config2.halfOpen<<")" << endl;
 		out << "   -z2  toggle: input zero-based (default:"<< config2.zeroBased<<")" << endl;
+		out << "   --http  force database is a URL " << endl;
+		out << "   --gunzip  force database is a gzipped stream " << endl;
 		out << "\n\n";
 		}
 
 	#define ARGVCOL(flag,var) else if(std::strcmp(argv[optind],flag)==0 && optind+1<argc)\
 		{\
 		char* p2;\
-		app.var=(int)strtol(argv[++optind],&p2,10);\
-		if(app.var<1 || *p2!=0)\
-			{cerr << "Bad column for "<< flag << ".\n";app.usage(cerr,argc,argv);return EXIT_FAILURE;}\
-		app.var--;\
+		this->var=(int)strtol(argv[++optind],&p2,10);\
+		if(this->var<1 || *p2!=0)\
+			{cerr << "Bad column for "<< flag << ".\n";this->usage(cerr,argc,argv);return EXIT_FAILURE;}\
+		this->var--;\
 		}
 
 
 	int main(int argc,char** argv)
 		{
+		bool force_http=false;
+		bool force_gunzip=false;
 		char* dbName=NULL;
-		VcfIntersection app;
 		int optind=1;
 		while(optind < argc)
 			{
@@ -314,6 +335,29 @@ class VcfIntersection:public AbstractApplication
 			    {
 			    this->usage(cerr,argc,argv);
 			    return(EXIT_FAILURE);
+			    }
+			else if(strcmp(argv[optind],"-n")==0 && optind+1< argc)
+			    {
+			    notFound.assign(argv[++optind]);
+			    }
+			else if(strcmp(argv[optind],"-m")==0 && optind+1< argc)
+			    {
+			    joinType=atoi(argv[++optind]);
+			    if(joinType<0 || joinType>2)
+				{
+				cerr << "Bad mode "<< argv[optind] << endl;
+				usage(cerr,argc,argv);
+				return EXIT_FAILURE;
+				}
+
+			    }
+			else if(strcmp(argv[optind],"--http")==0)
+			    {
+			    force_http=true;
+			    }
+			else if(strcmp(argv[optind],"--gunzip")==0)
+			    {
+			    force_gunzip=true;
 			    }
 			else if(strcmp(argv[optind],"-f")==0 && optind+1< argc)
 			    {
@@ -349,7 +393,7 @@ class VcfIntersection:public AbstractApplication
 				    cerr<< "bad delimiter \"" << p << "\"\n";
 				    return (EXIT_FAILURE);
 				    }
-			    app.config1.delim=p[0];
+			    this->config1.delim=p[0];
 			    }
 			else if(strcmp(argv[optind],"-d2")==0 && optind+1< argc)
 			    {
@@ -359,7 +403,7 @@ class VcfIntersection:public AbstractApplication
 				    cerr<< "bad delimiter \"" << p << "\"\n";
 				    return (EXIT_FAILURE);
 				    }
-			    app.config2.delim=p[0];
+			    this->config2.delim=p[0];
 			    }
 			else if(strcmp(argv[optind],"--")==0)
 				{
@@ -378,35 +422,37 @@ class VcfIntersection:public AbstractApplication
 				}
 			++optind;
 			}
-
+		assert(config2.startColumn!=config2.endColumn);
 		if(dbName==NULL)
 			{
 			cerr << "Undefined database name.\n";
 			this->usage(cerr,argc,argv);
 			return EXIT_FAILURE;
 			}
-		istream* in2;
-		netstreambuf* buf1=0;
-
-		if(	strncmp(dbName,"http://",7)==0 ||
+		istream* in2=NULL;
+		netstreambuf* netbuf=0;
+		fstream* fstream1=0;
+		deflatestreambuf* unzipbuf=0;
+		if(	force_http ||
+			strncmp(dbName,"http://",7)==0 ||
 			strncmp(dbName,"ftp://",6)==0 ||
 			strncmp(dbName,"https://",8)==0)
 		    {
-		    buf1=new netstreambuf;
-		    buf1->open(dbName);
-		    in2=new istream(buf1);
+		    netbuf=new netstreambuf;
+		    netbuf->open(dbName);
+		    in2=new istream(netbuf);
 		    }
 		else
 		    {
-		    fstream* f=new fstream(dbName);
-		    if(f->is_open()) THROW("Cannot open "<< dbName);
-		    in2=f;
+		    fstream1=new fstream(dbName);
+		    if(!fstream1->is_open()) THROW("Cannot open "<< dbName);
+		    in2=fstream1;
 		    }
 
 		if(strlen(dbName)>2 && strncmp(&dbName[strlen(dbName)-3],".gz",3)==0)
 		    {
-		    deflatestreambuf* buf2=new deflatestreambuf(in2);
-		    in2=new istream(buf2);
+		    unzipbuf=new deflatestreambuf(in2);
+		    in2=new istream(unzipbuf);
 		    }
 
 
@@ -429,6 +475,19 @@ class VcfIntersection:public AbstractApplication
 			cerr << "Illegal number of arguments.\n";
 			return EXIT_FAILURE;
 			}
+		if(unzipbuf!=0)
+		    {
+		    unzipbuf->close();
+		    delete unzipbuf;
+		    }
+		if(netbuf!=0)
+		    {
+		    delete netbuf;
+		    }
+		if(in2!=0)
+		    {
+		    delete in2;
+		    }
 		return EXIT_SUCCESS;
 		}
     };
