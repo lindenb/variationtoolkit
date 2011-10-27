@@ -18,10 +18,11 @@ class IGVBrowser:public AbstractApplication
     {
     public:
 	DefaultTableModel* model;
+	Window* win;
 	vector<size_t> columns_length;
 	size_t top_y;
 	size_t row_y;
-	IGVBrowser()
+	IGVBrowser():win(NULL)
 	    {
 	    model=new DefaultTableModel;
 	    top_y=0;
@@ -59,9 +60,8 @@ class IGVBrowser:public AbstractApplication
 	    }
 	 void repaint()
 	     {
-	     Screen* screen=Screen::getInstance();
-	     screen->clear();
-	     for(int y=0;y< screen->height();++y)
+	     win->clear();
+	     for(int y=0;y< win->height();++y)
 		 {
 		 if((y+top_y)>=model->rows()) continue;
 		 ostringstream os;
@@ -73,12 +73,12 @@ class IGVBrowser:public AbstractApplication
 		     os << p;
 		     }
 		 string line=os.str();
-		 for(int i=0;i< screen->width() && i<(int)line.size();++i)
+		 for(int i=0;i< win->width() && i<(int)line.size();++i)
 		     {
-		     screen->set(y,i,line[i]);
+		     win->set(y,i,line[i]);
 		     }
 		 }
-	     screen->refresh();
+	     Screen::getInstance()->refresh();
 	     }
 
 	int main(int argc,char** argv)
@@ -144,12 +144,13 @@ class IGVBrowser:public AbstractApplication
 
 
 	    Screen* screen=Screen::startup();
-	    screen->refresh();
+	    win=new DefaultWindow(screen->height(),screen->width(),0,0);
+	    win->refresh();
 
 	    repaint();
 	    for(;;)
 		{
-		int c=screen->getch();
+		int c=win->getch();
 		if(c==-1)
 		    {
 		    continue;
@@ -190,7 +191,7 @@ class IGVBrowser:public AbstractApplication
 		    cerr << c << endl;
 		    }
 		}
-
+	    delete win;
 	    Screen::shutdown();
 	    return EXIT_SUCCESS;
 	    }
