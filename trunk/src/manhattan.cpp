@@ -116,6 +116,7 @@ class Manhattan:public AbstractApplication
 	pixel_t margin_right;
 	pixel_t margin_top;
 	pixel_t margin_bottom;
+	pixel_t point_size;
 	int chromCol;
 	int posCol;
 	int valueCol;
@@ -145,7 +146,7 @@ class Manhattan:public AbstractApplication
 	    margin_right=100;
 	    x_axis_width=841.89 -(margin_left+margin_right);
 	    y_axis_height=595.28-(margin_top+margin_bottom);
-
+	    point_size=5;
 	    }
 
 	~Manhattan()
@@ -399,10 +400,10 @@ class Manhattan:public AbstractApplication
 			"  /y exch def\n"
 			"  /x exch def\n"
 			" newpath "
-			"   x y 5 add moveto\n"
-			"   x 5 add y lineto\n"
-			"   x y 5 sub lineto\n"
-			"   x 5 sub y lineto\n"
+			"   x y "<< point_size <<" add moveto\n"
+			"   x "<< point_size <<" add y lineto\n"
+			"   x y "<< point_size <<" sub lineto\n"
+			"   x "<< point_size <<" sub y lineto\n"
 			" closepath" << (colorCol==-1?" 0.1 0.1 0.5 setrgbcolor ":"") << " fill\n"
 			"   end } bind def\n"
 		    "/box { 4 dict begin\n"
@@ -553,9 +554,10 @@ class Manhattan:public AbstractApplication
 		out << " -s <int> SAMPLE column (optional)" << endl;
 		out << " -m <double> optional user's min value" << endl;
 		out << " -M <double> optional user's max value" << endl;
-		out<< "Page otpions:\n";
+		out<< "Page options:\n";
 		out << " --x-width (int) x-axis size: "<< this->x_axis_width << endl;
 		out << " --y-height (int) y-axis size: "<< this->y_axis_height << endl;
+		out << " --point (int) point size: "<< this->point_size << endl;
 		out << endl;
 		}
 
@@ -581,6 +583,17 @@ class Manhattan:public AbstractApplication
 			    usage(cerr,argc,argv);
 			    return (EXIT_FAILURE);
 			    }
+		    else if(strcmp(argv[optind],"--point")==0 && optind+1<argc)
+				{
+				char* p2;
+				this->point_size=strtod(argv[++optind],&p2);
+				if(this->point_size<1 || errno!=0 || *p2!=0)
+					{
+					cerr << "Bad value for point_size.\n";
+					 usage(cerr,argc,argv);
+					return EXIT_FAILURE;
+					}
+				}
 		    else if(strcmp(argv[optind],"--x-width")==0 && optind+1<argc)
 		    	{
 		    	char* p2;
