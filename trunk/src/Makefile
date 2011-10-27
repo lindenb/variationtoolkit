@@ -26,6 +26,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfbigbed \
 	$(BINDIR)/vcfbigwig \
 	$(BINDIR)/uniprot \
+	$(BINDIR)/pfamscan \
 	$(BINDIR)/vcf2bed \
 	$(BINDIR)/emblstringresolve \
 	$(BINDIR)/emblstringinteractions \
@@ -79,7 +80,9 @@ $(BINDIR)/mysqlucsc: mysqlucsc.cpp  bin.o application.o
 $(BINDIR)/mysqlquery: mysqlquery.cpp  tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 $(BINDIR)/uniprot: uniprot.cpp  application.o netstreambuf.o
-	$(CPP) -o $@ $< application.o netstreambuf.o $(CFLAGS) `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
+	$(CPP) -o $@ $^ $(CFLAGS) `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
+$(BINDIR)/pfamscan: pfam.cpp  application.o netstreambuf.o
+	$(CPP) -o $@ $^ $(CFLAGS) `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz

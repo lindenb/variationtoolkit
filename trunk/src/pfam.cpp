@@ -37,6 +37,7 @@
 #include "tokenizer.h"
 #include "smartcmp.h"
 #include "netstreambuf.h"
+#include "where.h"
 
 using namespace std;
 
@@ -44,23 +45,20 @@ using namespace std;
 typedef int column_t;
 
 
-
-
-
-class UniProt:public AbstractApplication
+class PfamProt:public AbstractApplication
     {
     public:
 		int32_t column_aa_pos;
 		int32_t column_spId;
 		xmlDocPtr record;
 		string current_recordid;
-		UniProt():column_aa_pos(-1),column_spId(-1),record(NULL)
+		PfamProt():column_aa_pos(-1),column_spId(-1),record(NULL)
 			{
 			 LIBXML_TEST_VERSION
 			xmlInitParser();
 			}
 
-		virtual ~UniProt()
+		virtual ~PfamProt()
 			{
 			if(record!=NULL) ::xmlFreeDoc(record);
 			record=NULL;
@@ -105,6 +103,7 @@ class UniProt:public AbstractApplication
 
 	void run(std::istream& in)
 	    {
+	    const int NUM_COLS=6;
 	    vector<string> tokens;
 	    string line;
 
@@ -121,13 +120,12 @@ class UniProt:public AbstractApplication
 			continue;
 			}
 		    cout << line << tokenizer.delim
-			    << "uniprot.beg"  << tokenizer.delim
-			    << "uniprot.end"  << tokenizer.delim
-			    << "uniprot.type"  << tokenizer.delim
-			    << "uniprot.status"  << tokenizer.delim
-			    << "uniprot.desc"  << tokenizer.delim
-			    << "uniprot.evidence"  << tokenizer.delim
-			    << "uniprot.ref"
+			    << "pfam.beg"  << tokenizer.delim
+			    << "pfam.end"  << tokenizer.delim
+			    << "pfam.acn"  << tokenizer.delim
+			    << "pfam.id"  << tokenizer.delim
+			    << "pfam.type"  << tokenizer.delim
+			   <<  "pfam.class"
 			    << endl;
 		    continue;
 		    }
@@ -149,7 +147,7 @@ class UniProt:public AbstractApplication
 		if(swissprotId.empty() || swissprotId.compare(".")==0)
 		    {
 		    cout << line;
-		    for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
+		    for(int i=0;i< NUM_COLS;++i) cout << tokenizer.delim << ".";
 		    cout << endl;
 		    continue;
 		    }
@@ -166,8 +164,9 @@ class UniProt:public AbstractApplication
 		    record=NULL;
 
 		    ostringstream urlos;
-		    urlos << "http://www.uniprot.org/uniprot/" << swissprotId << ".xml";
+		    urlos << "http://pfam.sanger.ac.uk/protein?id=" << swissprotId << "&output=xml";
 		    string url(urlos.str());
+
 		    netstreambuf in;
 		    in.open(url.c_str());
 		    string xml=in.content();
@@ -181,88 +180,77 @@ class UniProt:public AbstractApplication
 			{
 			cerr << "#warning: Cannot find record for "<< swissprotId << endl;
 			cout << line ;
-			for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
+			for(int i=0;i< NUM_COLS;++i) cout << tokenizer.delim << ".";
 			cout << endl;
 			continue;
 			}
 		    current_recordid.assign(swissprotId);
 		    }
 		bool found=false;
-		xmlNodePtr uniprot=xmlDocGetRootElement(record);
-		xmlNodePtr entry=first(uniprot,"entry");
-		if(entry!=NULL)
+		xmlNodePtr pfam=xmlDocGetRootElement(record);
+
+		xmlNodePtr entry=first(pfam,"entry");
+
+		xmlNodePtr matches=first(entry,"matches");
+
+		if(matches!=NULL)
 		    {
-		    for(xmlNodePtr feature = entry->children; feature!=NULL; feature = feature->next)
+
+		    for(xmlNodePtr match = matches->children;
+				match!=NULL; match = match->next)
 			{
-			if (feature->type != XML_ELEMENT_NODE) continue;
-			if(!::xmlStrEqual(feature->name,BAD_CAST "feature"))
+			if (match->type != XML_ELEMENT_NODE) continue;
+			if(!::xmlStrEqual(match->name,BAD_CAST "match"))
 			    {
 			    continue;
 			    }
-			bool match=false;
-			xmlNodePtr location=first(feature,"location");
-			if(location==NULL) continue;
 
-			int featBeg;
-			int featEnd;
-			xmlNodePtr locpos=first(location,"position");
-			if(locpos!=NULL)
+			for(xmlNodePtr location = match->children;
+				location!=NULL; location = location->next)
 			    {
-			    featBeg=parseAttInt(locpos,"position");
-			    featEnd=featBeg;
-			    if(featBeg==posAA) match=true;
-			    }
-			else
-			    {
-			    xmlNodePtr locbegin=first(location,"begin");
-			    xmlNodePtr locend=first(location,"end");
-			    if(locbegin!=NULL && locend!=NULL)
+			    if(!::xmlStrEqual(location->name,BAD_CAST "location"))
 				{
-				featBeg=parseAttInt(locbegin,"position");
-				featEnd=parseAttInt(locend,"position");
-				if(featBeg<=featEnd && featBeg<=posAA && posAA<=featEnd)
-				    {
-				    match=true;
-				    }
+				continue;
+				}
+			    int featBeg=parseAttInt(location,"start");
+			    int featEnd=parseAttInt(location,"end");
+
+			    if(featBeg<=featEnd && featBeg<=posAA && posAA<=featEnd)
+				{
+				cout << line << tokenizer.delim
+					<< featBeg  << tokenizer.delim
+					<< featEnd  << tokenizer.delim
+					<< parseAttStr(match,"accession")  << tokenizer.delim
+					<< parseAttStr(match,"id")  << tokenizer.delim
+					<< parseAttStr(match,"type")  << tokenizer.delim
+					<< parseAttStr(match,"class")
+					<< endl
+					;
+				found=true;
 				}
 			    }
-			if(!match) continue;
-			cout << line << tokenizer.delim
-				<< featBeg  << tokenizer.delim
-				<< featEnd  << tokenizer.delim
-				<< parseAttStr(feature,"type")  << tokenizer.delim
-				<< parseAttStr(feature,"status")  << tokenizer.delim
-				<< parseAttStr(feature,"description")  << tokenizer.delim
-				<< parseAttStr(feature,"evidence")  << tokenizer.delim
-				<< parseAttStr(feature,"ref")
-				<< endl
-				;
-
-			found=true;
 			}
 		    }
 		if(!found)
 		    {
 		    cout << line;
-		    for(int i=0;i< 7;++i) cout << tokenizer.delim << ".";
+		    for(int i=0;i< NUM_COLS;++i) cout << tokenizer.delim << ".";
 		    cout << endl;
 		    }
 		}
 	    }
 
     virtual void usage(ostream& out,int argc,char** argv)
-		{
-    		out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
-    		out << VARKIT_REVISION << endl;
-		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-		out << "Options:\n";
-		out << "  -d (char) delimiter default:tab\n";
-		out << "  -p <column-index> column containing the amino acid index.\n";
-		out << "  -s <spId-index> column containing the swissprot-acn (e.g.: Q04721 or  NOTC2_HUMAN).\n";
-		out << "(stdin|vcf|vcf.gz)\n\n";
-		}
-
-
+	{
+	out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
+	out << VARKIT_REVISION << endl;
+	out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+	out << "Options:\n";
+	out << "  -d (char) delimiter default:tab\n";
+	out << "  -p <column-index> column containing the amino acid index.\n";
+	out << "  -a <acn> column containing the protein-acn (e.g.: Q04721 or  NOTC2\_HUMAN).\n";
+	out << "(stdin|vcf|vcf.gz)\n\n";
+	}
 
 
 
@@ -288,7 +276,7 @@ class UniProt:public AbstractApplication
 				}
 			this->column_aa_pos--;
 			}
-		else if(strcmp(argv[optind],"-s")==0 && optind+1<argc)
+		else if(strcmp(argv[optind],"-a")==0 && optind+1<argc)
 			{
 			char* p2;
 			this->column_spId=strtol(argv[++optind],&p2,10);
@@ -324,17 +312,17 @@ class UniProt:public AbstractApplication
 		++optind;
 		}
 	if(this->column_aa_pos==-1)
-		    {
-		    cerr << "Undefined amino-acid column."<< endl;
-		    app.usage(cerr,argc,argv);
-		    return (EXIT_FAILURE);
-		    }
+	    {
+	    cerr << "Undefined amino-acid column."<< endl;
+	    this->usage(cerr,argc,argv);
+	    return (EXIT_FAILURE);
+	    }
 	if(this->column_spId==-1)
-		    {
-		    cerr << "Undefined spId column."<< endl;
-		    this->usage(cerr,argc,argv);
-		    return (EXIT_FAILURE);
-		    }
+	    {
+	    cerr << "Undefined spId column."<< endl;
+	    this->usage(cerr,argc,argv);
+	    return (EXIT_FAILURE);
+	    }
 
 	if(optind==argc)
 		{
@@ -363,6 +351,6 @@ class UniProt:public AbstractApplication
 
 int main(int argc,char** argv)
     {
-    UniProt app;
+    PfamProt app;
     return app.main(argc,argv);
     }

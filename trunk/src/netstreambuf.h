@@ -20,6 +20,8 @@ class netstreambuf:public std::streambuf
 	void* curl_handle;
 	void* multi_handle;
 	bool callback_was_called;
+	/** got data */
+	std::size_t total_read;
 	/**  number of CURL running */
 	int still_running;
 	/** called by the CURL  callback */
@@ -33,6 +35,7 @@ class netstreambuf:public std::streambuf
 	virtual int underflow ();
 	virtual std::streamsize read(char* s,std::size_t len);
 	std::string content();
+	std::size_t gcount() const;
     };
 
 
