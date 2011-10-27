@@ -65,10 +65,10 @@ void netstreambuf::open(const char* url)
     check_error(ret);
     ret=::curl_easy_setopt(this->curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
     check_error(ret);
-    ret=::curl_easy_setopt(this->curl_handle, CURLOPT_HTTP_CONTENT_DECODING, 1);
-    check_error(ret);
-    ret=::curl_easy_setopt(this->curl_handle, CURLOPT_HTTP_TRANSFER_DECODING, 1);
-    check_error(ret);
+    //ret=::curl_easy_setopt(this->curl_handle, CURLOPT_HTTP_CONTENT_DECODING, 1);
+    //check_error(ret);
+    //ret=::curl_easy_setopt(this->curl_handle, CURLOPT_HTTP_TRANSFER_DECODING, 1);
+    //check_error(ret);
 
 
     ret=::curl_easy_setopt(this->curl_handle, CURLOPT_WRITEFUNCTION,

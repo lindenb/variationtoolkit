@@ -122,8 +122,8 @@ class VcfCut:public AbstractApplication
 		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 		out << "Options:\n";
 		out << "  -e <ranges> (chr:start-end)*" << endl;
-		out << "  -c <CHROM col> (default:"<< chromColumn <<")" << endl;
-		out << "  -p <POS col> (default:"<< posColumn <<")" << endl;
+		out << "  -c <CHROM col> (default:"<< (1+chromColumn) <<")" << endl;
+		out << "  -p <POS col> (default:"<< (1+posColumn) <<")" << endl;
 		out << "  -d delimiter, default:tab" << endl;
 		out << "  -v inverse" << endl;
 		}
