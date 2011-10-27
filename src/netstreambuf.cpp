@@ -25,7 +25,8 @@ static void check_error(CURLMcode code)
 
 netstreambuf::netstreambuf():buffer_size(0),
 	curl_handle(NULL),
-	multi_handle(NULL)
+	multi_handle(NULL),
+	total_read(0UL)
     {
 
     buffer=(char*)malloc(NETSIZE*sizeof(char));
@@ -49,16 +50,18 @@ void netstreambuf::open(const char* url)
     CURLcode ret;
     CURLMcode ret2;
     close();
+    this->total_read=0UL;
     /* init curl */
+    ::curl_global_init(CURL_GLOBAL_ALL);
     this->curl_handle=::curl_easy_init( );
     if(this->curl_handle==NULL) THROW("::curl_easy_init failed");
 
     ret=::curl_easy_setopt(this->curl_handle, CURLOPT_URL,url);
     check_error(ret);
-    ret=::curl_easy_setopt(this->curl_handle, CURLOPT_VERBOSE, 0);
+    ret=::curl_easy_setopt(this->curl_handle, CURLOPT_VERBOSE,0);
     check_error(ret);
 
-    ret=::curl_easy_setopt(this->curl_handle, CURLOPT_FAILONERROR, 1);
+    ret=::curl_easy_setopt(this->curl_handle, CURLOPT_FAILONERROR,true);
     check_error(ret);
 
     ret=::curl_easy_setopt(this->curl_handle, CURLOPT_WRITEDATA, this);
@@ -80,13 +83,13 @@ void netstreambuf::open(const char* url)
     	proxy=getenv("http_proxy");
     	}
     else if(strncmp(url,"https://",7)==0)
-		{
-		proxy=getenv("https_proxy");
-		}
+	{
+	proxy=getenv("https_proxy");
+	}
     else if(strncmp(url,"ftp://",7)==0)
-		{
-		proxy=getenv("ftp_proxy");
-		}
+	{
+	proxy=getenv("ftp_proxy");
+	}
 
     if(proxy!=NULL)
     	{
@@ -99,7 +102,7 @@ void netstreambuf::open(const char* url)
 	{
 	:: curl_easy_cleanup(this->curl_handle);
 	this->curl_handle=NULL;
-	throw std::runtime_error("curl_multi_init failed");
+	THROW("curl_multi_init failed");
 	}
 
     ret2=::curl_multi_add_handle(
@@ -161,6 +164,9 @@ size_t netstreambuf::call(void *ptr, size_t size, size_t nmemb)
     {
     this->callback_was_called=true;
     this->buffer_size = size*nmemb;
+
+    this->total_read+=this->buffer_size;
+
     char *array=(char*)std::realloc(this->buffer,this->buffer_size);
     if(array==NULL) THROW("out of memory");
     this->buffer=array;
@@ -170,6 +176,11 @@ size_t netstreambuf::call(void *ptr, size_t size, size_t nmemb)
 	    (char*)&this->buffer[this->buffer_size]
 	    );
     return this->buffer_size;
+    }
+
+std::size_t netstreambuf::gcount() const
+    {
+    return this->total_read;
     }
 
 streamsize netstreambuf::read(char* s,std::size_t len)
@@ -194,10 +205,20 @@ std::string netstreambuf::content()
 #ifdef TEST_THIS_CODE
 int main(int argc,char** argv)
     {
-    netstreambuf buf;
-    istream in(&buf);
-    buf.open("http://en.wikipedia.org/wiki/Main_page");
-    cout << buf.content();
+    for(int i=1;i< argc;++i)
+	{
+	cout << argv[i]<< endl;
+	netstreambuf buf;
+	istream in(&buf);
+	buf.open( argv[i]);
+	char t[BUFSIZ];
+	streamsize nRead;
+	    while((nRead=buf.read(t,BUFSIZ))!=0)
+	    {
+
+	    }
+	cout << "done " <<buf.gcount() << "\n";
+	}
     return 0;
     }
 #endif
