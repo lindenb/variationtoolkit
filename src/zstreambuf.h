@@ -206,9 +206,7 @@ class deflatestreambuf:public std::streambuf
 			sizeof(char)*have
 			);
 		    total+=have;
-		    std::cerr.write(buffer,total);
-
-		    } while (strm.avail_out == 0);
+		} while (strm.avail_out == 0);
 
 
 		setg(	buffer,
