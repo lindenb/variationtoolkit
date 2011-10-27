@@ -495,6 +495,17 @@ class VcfIntersection:public AbstractApplication
 
 int main(int argc,char** argv)
 	{
+	try {
 	VcfIntersection app;
 	return app.main(argc,argv);
+	} catch(exception& err)
+	    {
+	    cerr << "An execption occured:"<< err.what()<< endl;
+	    return EXIT_FAILURE;
+	    }
+	catch(...)
+	    {
+	    cerr << "An execption occured."<< endl;
+	    return EXIT_FAILURE;
+	    }
 	}
