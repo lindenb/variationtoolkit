@@ -144,6 +144,8 @@ class Screen:public Window
 	static Screen* getInstance();
 	static Screen* startup();
 	static bool shutdown();
+	static void beep();
+	static void flash();
     private:
 	static Screen* INSTANCE;
     };

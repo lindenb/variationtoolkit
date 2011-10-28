@@ -338,7 +338,15 @@ bool Screen::shutdown()
     return b;
     }
 
+void Screen::beep()
+    {
+    ::beep();
+    }
 
+void Screen::flash()
+    {
+    ::flash();
+    }
 
 DelegateWindow::DelegateWindow(void* ptr,bool owner):_ptr(ptr),owner(owner)
     {

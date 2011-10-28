@@ -7,8 +7,15 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
 #include "xcurses.h"
-#include "tablemodel.h"
 #include "application.h"
 #include "zstreambuf.h"
 #include "varkitversion.h"
@@ -17,60 +24,122 @@
 using namespace std;
 
 
-#define WIDTH 80
-#define HEIGHT 10
 
-int startx = 0;
-int starty = 0;
-
-char *choices[] = {
-			"Choice 1",
-			"Choice 2",
-			"Choice 3",
-			"Choice 4",
-			"Exit",
-		  };
-int n_choices = sizeof(choices) / sizeof(char *);
 
 class IGVBrowser:public AbstractApplication
     {
     public:
-	 DefaultTableModel* model;
-
 	Window* menu_win;
 	vector<size_t> columns_length;
-	size_t top_y;
-	size_t row_y;
+	vector<vector<string> > table;
+	int top_y;
+	int sel_row;
+	int igvport;
+	string igvhost;
+
 	IGVBrowser():menu_win(NULL)
 	    {
-		model=new DefaultTableModel;
 	    top_y=0;
-	    row_y=0;
+	    sel_row=0;
+	    igvhost.assign("127.0.0.1");
+	    igvport=60151;
 	    }
 	~IGVBrowser()
 	    {
-		delete model;
 	    }
 
-	void print_menu(int highlight)
+	int selecty()
 	    {
-		int x, y, i;
-		 x = 2;
-		y = 2;
-		menu_win->border();
+	    return sel_row-top_y;
+	    }
 
-			for(i = 0; i < n_choices; ++i)
-			{	if(highlight == i + 1) /* High light the present choice
-		*/
-				{	menu_win->attron(Window::ATTR_REVERSE);
-					menu_win->printf(y, x, "%s", choices[i]);
-					menu_win->attroff(Window::ATTR_REVERSE);
-				}
-				else
-					menu_win->printf(y, x, "%s", choices[i]);
-				++y;
+
+	void call(const char* chromosome,int position)
+		{
+		struct sockaddr_in serv_addr;
+		struct hostent *server;
+
+		int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+		if (sockfd < 0)
+		    {
+		    Screen::beep();
+		    return;
+		    }
+		server = ::gethostbyname(igvhost.c_str());
+		if (server == NULL)
+		    {
+		    Screen::beep();
+		    return;
+		    }
+		::bzero((char *) &serv_addr, sizeof(serv_addr));
+		serv_addr.sin_family = AF_INET;
+		::bcopy((char *)server->h_addr,
+		     (char *)&serv_addr.sin_addr.s_addr,
+		     server->h_length
+		     );
+		serv_addr.sin_port = htons(igvport);
+		if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
+		    {
+		    Screen::beep();
+		    return;
+		    }
+		char buffer[255];
+		snprintf(buffer,255,"goto %s:%d",
+			chromosome,
+			position
+			);
+		int n = write(sockfd,buffer,strlen(buffer));
+		if (n < 0)
+		    {
+		    Screen::beep();
+		    return;
+		    }
+		bzero(buffer,255);
+		n = read(sockfd,buffer,255);
+		if (n < 0)
+		    {
+		    Screen::beep();
+		    return;
+		    }
+		close(sockfd);
+		}
+
+
+	void repaint()
+	    {
+	    menu_win->clear();
+	    for(int y=0;y< menu_win->height();++y)
+		{
+		int row_y=top_y+y;
+		if(row_y>=(int)table.size()) break;
+		const vector<string>& tokens=table[row_y];
+		ostringstream os;
+		for(size_t t=0;t< tokens.size();++t)
+		    {
+		    if(t>0) os << " ";
+		    const string& s=tokens[t];
+		    os << s;
+		    for(size_t L=s.size();L<columns_length[t];++L)
+			{
+			os << " ";
 			}
-			menu_win->refresh();
+		    }
+		string row(os.str());
+		if(sel_row==row_y)
+		    {
+		    menu_win->attron(Window::ATTR_REVERSE);
+		    }
+		for(size_t t=0;t< row.size() && (int)t < menu_win->width();++t)
+		    {
+		    menu_win->set(y,t,row[t]);
+		    }
+		if(sel_row==row_y)
+		    {
+		    menu_win->attroff(Window::ATTR_REVERSE);
+		    }
+		}
+
+	    menu_win->refresh();
 	    }
 
 
@@ -78,145 +147,149 @@ class IGVBrowser:public AbstractApplication
 		{
 		vector<string> tokens;
 		string line;
-		size_t nLine=0;
 		while(getline(in,line,'\n'))
+		    {
+		    tokenizer.split(line,tokens);
+		    while(columns_length.size() < tokens.size())
 			{
-			++nLine;
-			tokenizer.split(line,tokens);
-			if(nLine==1)
-				{
-				model->header=tokens;
-				continue;
-				}
-			model->table.push_back(tokens);
+			columns_length.push_back(0);
 			}
+		    for(size_t i=0;i< tokens.size();++i)
+			{
+			if(columns_length[i]<tokens[i].size())
+			    {
+			    columns_length[i]=tokens[i].size();
+			    }
+			}
+		    table.push_back(tokens);
+		    }
 		}
 
 
 	 void usage(ostream& out,int argc,char** argv)
-		{
-		out << endl;
-		out << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
-		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-		out << VARKIT_REVISION <<".\n";
-		out << endl;
-		}
+	    {
+	    out << endl;
+	    out << argv[0] << "Pierre Lindenbaum PHD. 2011.\n";
+	    out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+	    out << VARKIT_REVISION <<".\n";
+	    out << endl;
+	    }
 
 
 	int main(int argc,char** argv)
 	    {
-		int optind=1;
-		 while(optind < argc)
+	    int optind=1;
+	     while(optind < argc)
+		{
+		if(std::strcmp(argv[optind],"-h")==0)
 			{
-			if(std::strcmp(argv[optind],"-h")==0)
-				{
-				usage(cerr,argc,argv);
-				return (EXIT_FAILURE);
-				}
-			else if(std::strcmp(argv[optind],"-d")==0 && optind+1< argc)
-				{
-				char* p=argv[++optind];
-				if(strlen(p)!=1)
-					{
-					cerr << "Bad delimiter \""<< p << "\"\n";
-					usage(cerr,argc,argv);
-					return(EXIT_FAILURE);
-					}
-				tokenizer.delim=p[0];
-				}
-			else if(argv[optind][0]=='-')
-				{
-				cerr << "unknown option '"<< argv[optind]<< "'"<< endl;
-				usage(cerr,argc,argv);
-				return (EXIT_FAILURE);
-				}
-			else
-				{
-				break;
-				}
-			++optind;
+			usage(cerr,argc,argv);
+			return (EXIT_FAILURE);
 			}
-		if(optind==argc)
-				{
-				igzstreambuf buf;
-				istream in(&buf);
-				run(in);
-				buf.close();
-				}
-		   else if(optind+1==argc)
-				{
-				char* filename=argv[optind++];
-				igzstreambuf buf(filename);
-				istream in(&buf);
-				run(in);
-				buf.close();
-				}
-		   else
-				{
-				cerr << "Illegal number of arguments" << endl;
-				usage(cerr,argc,argv);
-				return EXIT_FAILURE;
-				}
-
-		if(model->rows()==0)
+		else if(std::strcmp(argv[optind],"-d")==0 && optind+1< argc)
 			{
-			cerr << "No data."<< endl;
-			return EXIT_FAILURE;
+			char* p=argv[++optind];
+			if(strlen(p)!=1)
+				{
+				cerr << "Bad delimiter \""<< p << "\"\n";
+				usage(cerr,argc,argv);
+				return(EXIT_FAILURE);
+				}
+			tokenizer.delim=p[0];
 			}
+		else if(argv[optind][0]=='-')
+			{
+			cerr << "unknown option '"<< argv[optind]<< "'"<< endl;
+			usage(cerr,argc,argv);
+			return (EXIT_FAILURE);
+			}
+		else
+			{
+			break;
+			}
+		++optind;
+		}
 
-		int highlight = 1;
+	    if(optind+1==argc)
+		{
+		char* filename=argv[optind++];
+		igzstreambuf buf(filename);
+		istream in(&buf);
+		run(in);
+		buf.close();
+		}
+	    else
+		{
+		cerr << "Illegal number of arguments" << endl;
+		usage(cerr,argc,argv);
+		return EXIT_FAILURE;
+		}
+
+	    if(table.size()==0)
+		{
+		cerr << "No data."<< endl;
+		return EXIT_FAILURE;
+		}
+
+
 	    Screen* screen=Screen::startup();
-	    int choice=0;
+	    screen->border();
+	    screen->refresh();
+	    menu_win = new DefaultWindow(screen->height()-2,screen->width()-2, 1, 1);
+	    menu_win->keypad(true);
+	    menu_win->scroll(false);
 
-	    /* initscr();
-	    	clear();
-	    	noecho();
-	    	cbreak();	  */
-	    	startx = (80 - WIDTH) / 2;
-	    	starty = (24 - HEIGHT) / 2;
+	    repaint();
+	    for(;;)
+		{
+		int c = menu_win->getch();
+		if(c==Window::K_UP)
+		    {
+		    if(selecty()>0)
+			{
+			sel_row--;
+			}
+		    else if(top_y>0)
+			{
+			top_y--;
+			sel_row--;
+			}
+		    }
+		else if(c==Window::K_DOWN)
+		    {
+		    if(selecty()+1 < (int)menu_win->height() &&
+			sel_row+1< (int)table.size())
+			{
+			sel_row++;
+			}
+		    else if(
+			selecty()+1== (int)menu_win->height() &&
+			sel_row+1 < (int)table.size())
+			{
+			top_y++;
+			sel_row++;
+			}
+		    }
+		else if(c=='\n' || c=='\r' ||
+			c==Window::K_LEFT ||
+			c==Window::K_RIGHT
+			)
+		    {
+		    //TODO
+		    Screen::beep();
+		    }
+		else if(c=='q')
+		    {
+		    break;
+		    }
+		else
+		    {
+		    Screen::flash();
+		    }
 
-	    	menu_win = new DefaultWindow(screen->height(),screen->width(), 0, 0);
-	    	menu_win->keypad(true);
-	    	menu_win->scroll(false);
-	    	menu_win->printf(1,1, "Use arrow keys to go up and down, Press enter to select a choice");
-	    	menu_win->refresh();
-	    	print_menu(highlight);
-	    	while(1)
-	    	{
-	    		int c = menu_win->getch();
-	    		if(c=='a' || c==Window::K_UP)
-					{
-					if(highlight == 1)
-						highlight = n_choices;
-					else
-						--highlight;
-					}
-	    		else if(c=='z' || c==Window::K_DOWN)
-					{
-					if(highlight == n_choices)
-						highlight = 1;
-					else
-						++highlight;
-					}
-	    		else if(c==10 || c=='q')
-	    			{
-	    			choice = highlight;
-	    			}
-	    		else
-	    			{
-	    			screen->printf(24, 0, "Character pressed is = %d Hopefully it can be printed as '%c'", c, c);
-	    			screen->refresh();
-	    			}
+		repaint();
+		}
 
-	    		print_menu(highlight);
-	    		if(choice != 0)	/* User did a choice come out of the
-	    infinite loop */
-	    			break;
-	    	}
-	    	screen->printf(23, 0, "You chose choice %d with choice string %s\n", choice, choices[choice - 1]);
-	    	/*clrtoeol();
-	    	refresh();
-	    	endwin();*/
 	    delete menu_win;
 	    Screen::shutdown();
 	    return EXIT_SUCCESS;
