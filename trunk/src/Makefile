@@ -127,6 +127,8 @@ knowngene.o: knowngene.cpp knowngene.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 xfaidx.o: xfaidx.cpp xfaidx.h
 	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR)
+xbgzf.o: xbgzf.cpp xbgzf.h
+	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR)
 xtabix.o: xtabix.cpp xtabix.h
 	$(CPP) -c -o $@ $< $(CFLAGS) -I $(TABIXDIR)
 ttview.o: ttview.cpp ttview.h xbam.h xfaidx.h

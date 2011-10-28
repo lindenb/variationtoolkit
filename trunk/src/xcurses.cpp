@@ -26,6 +26,15 @@
 #undef border
 #endif
 
+#ifdef attron
+#undef attron
+#endif
+
+#ifdef attroff
+#undef attroff
+#endif
+
+#include "throw.h"
 #include "xcurses.h"
 
 #define CASTWIN(a) ((WINDOW*)a)
@@ -121,6 +130,8 @@ const Window::pixel_t Window::K_STAB = KEY_STAB;
 const Window::pixel_t Window::K_UNDO = KEY_UNDO;
 const Window::pixel_t Window::K_UP = KEY_UP;
 
+const int Window::ATTR_REVERSE=A_REVERSE;
+
 Window::Window()
     {
     }
@@ -165,7 +176,7 @@ bool Window::erase()
     return ::wdelch(CASTWIN(ptr()))!=ERR;
     }
 
-int Window::getch()
+int32_t Window::getch()
     {
     return ::wgetch(CASTWIN(ptr()));
     }
@@ -180,7 +191,7 @@ int Window::set(int y,int x,Window::pixel_t c)
     }
 
 
-Window::pixel_t Window::getch(int y,int x)
+int Window::getch(int y,int x)
     {
     return moveto(y,x)?getch():-1;
     }
@@ -206,6 +217,51 @@ int Window::height()
     return getmaxy(CASTWIN(ptr()));
     }
 
+int Window::keypad(bool sel)
+    {
+    return ::keypad(CASTWIN(ptr()), sel);
+    }
+
+int Window::nodelay(bool sel)
+    {
+    return ::nodelay(CASTWIN(ptr()), sel);
+    }
+
+int Window::printf(const char * fmt,...)
+	{
+	va_list vl;
+	va_start(vl,fmt);
+	int n= ::vwprintw(CASTWIN(ptr()),fmt,vl);
+	va_end(vl);
+	return n;
+	}
+
+int Window::printf(int y,int x,const char * fmt,...)
+	{
+	moveto(y,x);
+	va_list vl;
+	va_start(vl,fmt);
+	int n= ::vw_printw(CASTWIN(ptr()),fmt,vl);
+	va_end(vl);
+	return n;
+	}
+
+int Window::attron(int att)
+	{
+	return ::wattron(CASTWIN(ptr()), att);
+	}
+
+int Window::attroff(int att)
+	{
+	return ::wattroff(CASTWIN(ptr()), att);
+	}
+
+int Window::attroff(int att,bool sel)
+	{
+	return sel?attron(att):attroff(att);
+	}
+
+
 Screen::Screen()
     {
 
@@ -225,40 +281,42 @@ void* Screen::ptr()
 Screen* Screen::getInstance()
     {
     if(INSTANCE==NULL)
-	{
-	INSTANCE=new Screen;
-	}
+		{
+		INSTANCE=new Screen;
+		}
     return INSTANCE;
     }
+
+int Screen::getch()
+	{
+	return ::getch();
+	}
 
  Screen* Screen::startup()
     {
     if(::initscr()==NULL)
-	{
-	cerr << "Cannot initialize curses" << endl;
-	return false;
-	}
-    ::nonl();        /* tell curses not to do NL->CR/NL on output */
-    ::cbreak();      /* take input chars one at a time, no wait for \n */
+		{
+		cerr << "Cannot initialize curses" << endl;
+		return NULL;
+		}
+    ::wclear(stdscr);
+    //::nonl();        /* tell curses not to do NL->CR/NL on output */
     ::noecho();      /* don't echo input */
+    ::cbreak();      /* take input chars one at a time, no wait for \n */
     ::nodelay(stdscr,TRUE);
-    ::keypad(stdscr, TRUE);
-    if (has_colors())
-	{
-	start_color();
 
-	/*
-	 * Simple color assignment, often all we need.
-	 */
-	init_pair(COLOR_BLACK, COLOR_BLACK, COLOR_BLACK);
-	init_pair(COLOR_GREEN, COLOR_GREEN, COLOR_BLACK);
-	init_pair(COLOR_RED, COLOR_RED, COLOR_BLACK);
-	init_pair(COLOR_CYAN, COLOR_CYAN, COLOR_BLACK);
-	init_pair(COLOR_WHITE, COLOR_WHITE, COLOR_BLACK);
-	init_pair(COLOR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
-	init_pair(COLOR_BLUE, COLOR_BLUE, COLOR_BLACK);
-	init_pair(COLOR_YELLOW, COLOR_YELLOW, COLOR_BLACK);
-	}
+    if(has_colors())
+		{
+		start_color();
+		init_pair(COLOR_BLACK, COLOR_BLACK, COLOR_BLACK);
+		init_pair(COLOR_GREEN, COLOR_GREEN, COLOR_BLACK);
+		init_pair(COLOR_RED, COLOR_RED, COLOR_BLACK);
+		init_pair(COLOR_CYAN, COLOR_CYAN, COLOR_BLACK);
+		init_pair(COLOR_WHITE, COLOR_WHITE, COLOR_BLACK);
+		init_pair(COLOR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
+		init_pair(COLOR_BLUE, COLOR_BLUE, COLOR_BLACK);
+		init_pair(COLOR_YELLOW, COLOR_YELLOW, COLOR_BLACK);
+		}
     return getInstance();
     }
 
@@ -286,9 +344,10 @@ void* DelegateWindow::ptr()
     return _ptr;
     }
 
-DefaultWindow::DefaultWindow(int nlines, int ncols, int begin_y, int begin_x)
+DefaultWindow::DefaultWindow(int nlines, int ncols, int begin_y, int begin_x):_ptr(
+		::newwin(nlines, ncols, begin_y, begin_x))
     {
-
+	if(_ptr==NULL) THROW("Cannot create window");
     }
 
 DefaultWindow::~DefaultWindow()
