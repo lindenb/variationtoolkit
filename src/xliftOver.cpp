@@ -5,11 +5,20 @@
  *      Author: lindenb
  */
 
-#include <cstdio>
+
 #include "common.h"
 #include "hash.h"
 #include "liftOver.h"
 #include "xliftOver.h"
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
+#include <cstdio>
 
 using namespace std;
 
@@ -29,6 +38,7 @@ LiftOver::~LiftOver()
 
 void LiftOver::convert(const char* chrom,int start,int end, char* strand)
 	{
+
 	char *error = ::liftOverRemapRange(
 			CAST_HASH(chainHash),
 			minMatch, (char*)chrom, start, end, *strand,

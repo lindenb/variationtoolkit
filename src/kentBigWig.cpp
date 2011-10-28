@@ -4,9 +4,7 @@
  *  Created on: Oct 13, 2011
  *      Author: lindenb
  */
-#include <cerrno>
-#include <cstring>
-#include <limits>
+
 #ifdef NOKENTSRC
 #warning "variable $KENTDIR hasn't been defined.";
 enum { bbiSumMean,bbiSumMax,bbiSumMin,bbiSumStandardDeviation,bbiSumCoverage};
@@ -21,6 +19,17 @@ extern "C" {
 	#include "bigWig.h"
 }
 #endif
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
+#include <cerrno>
+#include <cstring>
+#include <limits>
 #include "kentBigWig.h"
 #include "throw.h"
 

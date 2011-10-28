@@ -4,9 +4,7 @@
  *  Created on: Oct 13, 2011
  *      Author: lindenb
  */
-#include <cerrno>
-#include <cstring>
-#include <limits>
+
 #ifndef NOKENTSRC
 extern "C" {
 	#include "common.h"
@@ -19,6 +17,17 @@ extern "C" {
 	#include "bigBed.h"
 }
 #endif
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
+#include <cerrno>
+#include <cstring>
+#include <limits>
 #include "kentBigBed.h"
 #include "throw.h"
 

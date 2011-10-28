@@ -6,3 +6,7 @@ Motivation:
 	tool handling VCF files.
 WWW:
 	http://code.google.com/p/variationtoolkit/
+
+Compilation:
+	before compiling, edit the file config.mk and
+	change the path to samtools, tabix, etc...

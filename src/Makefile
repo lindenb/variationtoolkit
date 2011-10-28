@@ -159,9 +159,9 @@ segparser.tab.o lex.segparser.o: parsereg.l parsereg.y
 	
 #UCSC
 $(BINDIR)/vcfbigwig: vcfbigwig.cpp kentBigWig.o
-	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigWig.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigWig.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl; fi
+	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigWig.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigWig.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl3; fi
 $(BINDIR)/vcfbigbed: vcfbigbed.cpp kentBigBed.o
-	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigBed.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigBed.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl; fi
+	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $< kentBigBed.o $(CFLAGS) -lz; else $(CPP)  -o $@ $< kentBigBed.o $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl3; fi
 
 kentBigWig.o: kentBigWig.cpp kentBigWig.h
 	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
@@ -174,6 +174,9 @@ $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 
 $(BINDIR)/igv: igv.cpp application.o xcurses.cpp 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses
+
+xliftOver.o:xliftOver.cpp xliftOver.h
+	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc -I $(KENTDIR)/src/hg/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
 
 parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o
 	flex -B -i -Pparsecolor $<
