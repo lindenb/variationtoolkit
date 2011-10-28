@@ -50,5 +50,28 @@ class ChromStartEnd:public StartEnd
 std::ostream& operator << (std::ostream& out,const ChromStartEnd& cp);
 
 
+class ChromStrandStartEnd:public ChromStartEnd
+	{
+	public:
+		ChromStrandStartEnd(const ChromStartEnd& seg,char strand);
+		ChromStrandStartEnd(const std::string& s,int32_t start,int32_t end,char strand);
+		ChromStrandStartEnd(const char* s,int32_t start,int32_t end,char strand);
+		ChromStrandStartEnd(const ChromStrandStartEnd& cp);
+		~ChromStrandStartEnd();
+		ChromStrandStartEnd& operator=(const ChromStrandStartEnd& cp);
+		bool operator==(const ChromStrandStartEnd& cp);
+		bool operator<(const ChromStrandStartEnd& cp);
+		bool isForward() const;
+		bool isReverse() const;
+		char strand() const;
+	private:
+		char orient;
+	};
+
+std::ostream& operator << (std::ostream& out,const ChromStrandStartEnd& cp);
+
+
+
+
 #endif
 

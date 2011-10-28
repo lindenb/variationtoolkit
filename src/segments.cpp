@@ -125,9 +125,88 @@ bool ChromStartEnd::operator<(const ChromStartEnd& cp)
 
 
 std::ostream& operator << (std::ostream& out,const ChromStartEnd& cp)
-	{
-	out << cp.chrom << ":" << cp.start << "-" << cp.end;
-	return out;
-	}
+    {
+    out << cp.chrom << ":" << cp.start << "-" << cp.end;
+    return out;
+    }
 
+ChromStrandStartEnd::ChromStrandStartEnd(const ChromStartEnd& seg,char strand):
+	ChromStartEnd(seg),
+	orient(strand)
+    {
+    }
+
+ChromStrandStartEnd::ChromStrandStartEnd(const std::string& s,int32_t start,int32_t end,char strand):
+	ChromStartEnd(s,start,end),
+	orient(strand)
+    {
+
+    }
+
+ChromStrandStartEnd::ChromStrandStartEnd(const char* s,int32_t start,int32_t end,char strand):
+	ChromStartEnd(s,start,end),
+	orient(strand)
+    {
+
+    }
+ChromStrandStartEnd::ChromStrandStartEnd(const ChromStrandStartEnd& cp):
+    ChromStartEnd(cp),
+    orient(cp.orient)
+    {
+    }
+
+ChromStrandStartEnd::~ChromStrandStartEnd()
+    {
+
+    }
+
+ChromStrandStartEnd& ChromStrandStartEnd::operator=(const ChromStrandStartEnd& cp)
+    {
+    if(this!=&cp)
+	    {
+	    chrom.assign(cp.chrom);
+	    start=cp.start;
+	    end=cp.end;
+	    orient=cp.orient;
+	    }
+    return (*this);
+    }
+
+bool ChromStrandStartEnd::operator==(const ChromStrandStartEnd& cp)
+    {
+    return start==cp.start &&
+	    cp.end==end &&
+	    _SMART(chrom,cp.chrom)==0 &&
+	    orient==cp.orient;
+    }
+
+bool ChromStrandStartEnd::operator<(const ChromStrandStartEnd& cp)
+    {
+    int i=_SMART(chrom,cp.chrom);
+    if(i!=0) return i;
+    i= start-cp.start;
+    if(i!=0) return i;
+    return end-cp.end;
+    }
+
+bool ChromStrandStartEnd::isForward() const
+    {
+    return strand()=='+';
+    }
+bool ChromStrandStartEnd::isReverse() const
+    {
+    return strand()=='-';
+    }
+
+char ChromStrandStartEnd::strand() const
+    {
+    return orient;
+    }
+
+
+std::ostream& operator << (std::ostream& out,const ChromStrandStartEnd& cp)
+    {
+    out << cp.chrom << ":" << cp.start << "-" << cp.end << '('<< cp.strand() << ")";
+    return out;
+    }
 
