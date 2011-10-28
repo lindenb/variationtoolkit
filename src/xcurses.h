@@ -7,7 +7,7 @@
 #ifndef XCURSES_H
 #define XCURSES_H
 #include <stdint.h>
-
+#include <cstdarg>
 
 
 class Window
@@ -103,6 +103,7 @@ class Window
 	static const pixel_t K_STAB;
 	static const pixel_t K_UNDO;
 	static const pixel_t K_UP;
+	static const int ATTR_REVERSE;
 
 	virtual ~Window();
 	bool moveto(int y,int x);
@@ -113,7 +114,7 @@ class Window
 	virtual int y();
 	virtual int width();
 	virtual int height();
-	virtual pixel_t getch(int y,int x);
+	virtual int getch(int y,int x);
 	virtual int set(Window::pixel_t c);
 	virtual int set(int y,int x,Window::pixel_t c);
 	virtual void* ptr()=0;
@@ -121,7 +122,14 @@ class Window
 	virtual void scroll(bool b);
 	virtual void clear();
 	virtual int getch();
+	virtual int keypad(bool sel);
+	virtual int nodelay(bool sel);
 	virtual void refresh();
+	virtual int attron(int att);
+	virtual int attroff(int att);
+	virtual int attroff(int att,bool sel);
+	virtual int printf(const char * fmt,...);
+	virtual int printf(int y,int x,const char * fmt,...);
     };
 
 class Screen:public Window
@@ -130,7 +138,7 @@ class Screen:public Window
 	Screen();
 	virtual ~Screen();
 	virtual void* ptr();
-
+	virtual int getch();
 	static Screen* getInstance();
 	static Screen* startup();
 	static bool shutdown();
@@ -142,22 +150,22 @@ class Screen:public Window
 class DelegateWindow:public Window
     {
     public:
-	DelegateWindow(void* ptr,bool owner);
-	virtual ~DelegateWindow();
-	virtual void* ptr();
+		DelegateWindow(void* ptr,bool owner);
+		virtual ~DelegateWindow();
+		virtual void* ptr();
     private:
-	void* _ptr;
-	bool owner;
+		void* _ptr;
+		bool owner;
     };
 
 class DefaultWindow:public Window
     {
     public:
-	DefaultWindow(int nlines, int ncols, int begin_y, int begin_x);
-	virtual ~DefaultWindow();
-	virtual void* ptr();
+		DefaultWindow(int nlines, int ncols, int begin_y, int begin_x);
+		virtual ~DefaultWindow();
+		virtual void* ptr();
     private:
-	void* _ptr;
+		void* _ptr;
     };
 
 #endif

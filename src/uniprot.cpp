@@ -326,7 +326,7 @@ class UniProt:public AbstractApplication
 	if(this->column_aa_pos==-1)
 		    {
 		    cerr << "Undefined amino-acid column."<< endl;
-		    app.usage(cerr,argc,argv);
+		    this->usage(cerr,argc,argv);
 		    return (EXIT_FAILURE);
 		    }
 	if(this->column_spId==-1)

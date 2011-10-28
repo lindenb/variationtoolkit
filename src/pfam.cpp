@@ -241,109 +241,109 @@ class PfamProt:public AbstractApplication
 	    }
 
     virtual void usage(ostream& out,int argc,char** argv)
-	{
-	out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
-	out << VARKIT_REVISION << endl;
-	out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-	out << "Options:\n";
-	out << "  -d (char) delimiter default:tab\n";
-	out << "  -p <column-index> column containing the amino acid index.\n";
-	out << "  -a <acn> column containing the protein-acn (e.g.: Q04721 or  NOTC2\_HUMAN).\n";
-	out << "(stdin|vcf|vcf.gz)\n\n";
-	}
+		{
+		out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
+		out << VARKIT_REVISION << endl;
+		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
+		out << "Options:\n";
+		out << "  -d (char) delimiter default:tab\n";
+		out << "  -p <column-index> column containing the amino acid index.\n";
+		out << "  -a <acn> column containing the protein-acn (e.g.: Q04721 or  NOTC2_HUMAN).\n";
+		out << "(stdin|vcf|vcf.gz)\n\n";
+		}
 
 
 
     int main(int argc,char** argv)
-	{
-	int optind=1;
-	while(optind < argc)
 		{
-		if(std::strcmp(argv[optind],"-h")==0)
+		int optind=1;
+		while(optind < argc)
 			{
-			this->usage(cerr,argc,argv);
-			return (EXIT_FAILURE);
-			}
-		else if(strcmp(argv[optind],"-p")==0 && optind+1<argc)
-			{
-			char* p2;
-			this->column_aa_pos=strtol(argv[++optind],&p2,10);
-			if(*p2!=0 || this->column_aa_pos<1)
+			if(std::strcmp(argv[optind],"-h")==0)
 				{
-				cerr << "bad value for option -p" << endl;
 				this->usage(cerr,argc,argv);
 				return (EXIT_FAILURE);
 				}
-			this->column_aa_pos--;
-			}
-		else if(strcmp(argv[optind],"-a")==0 && optind+1<argc)
-			{
-			char* p2;
-			this->column_spId=strtol(argv[++optind],&p2,10);
-			if(*p2!=0 || this->column_spId<1)
+			else if(strcmp(argv[optind],"-p")==0 && optind+1<argc)
 				{
-				cerr << "bad value for option -s" << endl;
+				char* p2;
+				this->column_aa_pos=strtol(argv[++optind],&p2,10);
+				if(*p2!=0 || this->column_aa_pos<1)
+					{
+					cerr << "bad value for option -p" << endl;
+					this->usage(cerr,argc,argv);
+					return (EXIT_FAILURE);
+					}
+				this->column_aa_pos--;
+				}
+			else if(strcmp(argv[optind],"-a")==0 && optind+1<argc)
+				{
+				char* p2;
+				this->column_spId=strtol(argv[++optind],&p2,10);
+				if(*p2!=0 || this->column_spId<1)
+					{
+					cerr << "bad value for option -s" << endl;
+					this->usage(cerr,argc,argv);
+					return (EXIT_FAILURE);
+					}
+				this->column_spId--;
+				}
+			else if(std::strcmp(argv[optind],"-d")==0 && optind+1< argc)
+				{
+				char* p=argv[++optind];
+				if(strlen(p)!=1)
+					{
+					cerr << "Bad delimiter \""<< p << "\"\n";
+					this->usage(cerr,argc,argv);
+					return(EXIT_FAILURE);
+					}
+				this->tokenizer.delim=p[0];
+				}
+			else if(argv[optind][0]=='-')
+				{
+				cerr << "unknown option '"<< argv[optind]<<"'\n";
 				this->usage(cerr,argc,argv);
 				return (EXIT_FAILURE);
 				}
-			this->column_spId--;
+			else
+				{
+				break;
+				}
+			++optind;
 			}
-		else if(std::strcmp(argv[optind],"-d")==0 && optind+1< argc)
+		if(this->column_aa_pos==-1)
 			{
-			char* p=argv[++optind];
-			if(strlen(p)!=1)
-			    {
-			    cerr << "Bad delimiter \""<< p << "\"\n";
-			    this->usage(cerr,argc,argv);
-			    return(EXIT_FAILURE);
-			    }
-			this->tokenizer.delim=p[0];
-			}
-		else if(argv[optind][0]=='-')
-			{
-			cerr << "unknown option '"<< argv[optind]<<"'\n";
+			cerr << "Undefined amino-acid column."<< endl;
 			this->usage(cerr,argc,argv);
 			return (EXIT_FAILURE);
+			}
+		if(this->column_spId==-1)
+			{
+			cerr << "Undefined spId column."<< endl;
+			this->usage(cerr,argc,argv);
+			return (EXIT_FAILURE);
+			}
+
+		if(optind==argc)
+			{
+			igzstreambuf buf;
+			istream in(&buf);
+			this->run(in);
 			}
 		else
 			{
-			break;
+			while(optind< argc)
+				{
+				if(AbstractApplication::stopping()) break;
+				char* filename=argv[optind++];
+				igzstreambuf buf(filename);
+				istream in(&buf);
+				this->run(in);
+				buf.close();
+				}
 			}
-		++optind;
+		return EXIT_SUCCESS;
 		}
-	if(this->column_aa_pos==-1)
-	    {
-	    cerr << "Undefined amino-acid column."<< endl;
-	    this->usage(cerr,argc,argv);
-	    return (EXIT_FAILURE);
-	    }
-	if(this->column_spId==-1)
-	    {
-	    cerr << "Undefined spId column."<< endl;
-	    this->usage(cerr,argc,argv);
-	    return (EXIT_FAILURE);
-	    }
-
-	if(optind==argc)
-		{
-		igzstreambuf buf;
-		istream in(&buf);
-		this->run(in);
-		}
-	else
-		{
-		while(optind< argc)
-		    {
-		    if(AbstractApplication::stopping()) break;
-		    char* filename=argv[optind++];
-		    igzstreambuf buf(filename);
-		    istream in(&buf);
-		    this->run(in);
-		    buf.close();
-		    }
-		}
-	return EXIT_SUCCESS;
-	}
 
 
     };

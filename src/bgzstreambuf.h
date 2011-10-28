@@ -3,9 +3,9 @@
 
 #include <iostream>
 #include <cstdio>
-#include <bgzf.h>
 #include <cerrno>
 #include <cstring>
+#include "xbgzf.h"
 #include "throw.h"
 
 #define BGZBUFSIZ BUFSIZ
@@ -13,12 +13,12 @@
 class ibgzstreambuf:public std::streambuf
 	{
 	private:
-		BGZF* in;
+		BgzFile* in;
 		char buffer[BGZBUFSIZ];
 		unsigned int buffer_size;
 		bool owner;
 	public:
-		ibgzstreambuf(BGZF* in):in(in),buffer_size(0),owner(false)
+		ibgzstreambuf(BgzFile* in):in(in),buffer_size(0),owner(false)
 			{
 			setg( &this->buffer[0],
 				&this->buffer[BGZBUFSIZ],
@@ -28,12 +28,7 @@ class ibgzstreambuf:public std::streambuf
 		
 		ibgzstreambuf():in(NULL),buffer_size(0),owner(false)
 			{
-			errno=0;
-			in=::bgzf_fdopen(fileno(stdin),"r");
-			if(in==NULL)
-			    {
-			    THROW("Cannot open gz file (stdin) " << strerror(errno));
-			    }
+			in=new BgzFile(fileno(stdin),"r");
 			setg( &this->buffer[0],
 				&this->buffer[BGZBUFSIZ],
 				&this->buffer[BGZBUFSIZ]
@@ -44,11 +39,7 @@ class ibgzstreambuf:public std::streambuf
 		ibgzstreambuf(const char* f):in(NULL),buffer_size(0),owner(true)
 			{
 			errno=0;
-			in=::bgzf_open(f,"r");
-			if(in==NULL)
-			    {
-			    THROW("Cannot open gz file \""<< f << "\" " << strerror(errno));
-			    }
+			in=new BgzFile(f,"r");
 			setg( &this->buffer[0],
 				&this->buffer[BGZBUFSIZ],
 				&this->buffer[BGZBUFSIZ]
@@ -59,7 +50,7 @@ class ibgzstreambuf:public std::streambuf
 			{
 			if(in!=NULL && owner)
 				{
-				::bgzf_close(in);
+				delete in;
 				}
 			in=NULL;
 			}
@@ -68,22 +59,21 @@ class ibgzstreambuf:public std::streambuf
 			{
 			if(in!=NULL && owner)
 				{
-				::bgzf_close(in);
+				delete in;
 				}
 			}
 	
 	    virtual int underflow ( )
 			{
 			if(in==NULL) return EOF;
-			int nRead= ::bgzf_read(this->in,(void*)this->buffer,BGZBUFSIZ);
+			int nRead=  this->in->read((void*)this->buffer,BGZBUFSIZ);
 			if(nRead<0)
 				{
 				THROW("I/O error");
 				}
 			else if(nRead==0)
 				{
-				if(owner) ::bgzf_close(in);
-				in=NULL;
+				close();
 				return EOF;
 				}
 			this->buffer_size=(unsigned int)nRead;

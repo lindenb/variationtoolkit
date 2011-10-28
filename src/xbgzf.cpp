@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <bgzf.h>
 #include "xbgzf.h"
+#include "throw.h"
 using namespace std;
 
 #define CASTPTR ((BGZF *)(this->_ptr))
@@ -19,21 +20,17 @@ BgzFile::BgzFile(const char* filename,const char* mode):_ptr(NULL)
     {
     _ptr=::bgzf_open(filename,mode);
     if(_ptr==NULL)
-	{
-	ostringstream os;
-	os << "Cannot open "<< filename << " " << strerror(errno);
-	throw runtime_error(os.str());
-	}
+		{
+		THROW("Cannot open "<< filename << " " << strerror(errno));
+		}
     }
 BgzFile::BgzFile(int fd,const char* mode):_ptr(NULL)
     {
     _ptr=::bgzf_fdopen(fd,mode);
     if(_ptr==NULL)
-   	{
-   	ostringstream os;
-   	os << "Cannot open fd " << strerror(errno);
-   	throw runtime_error(os.str());
-   	}
+		{
+    	THROW("Cannot open file descriptor " << strerror(errno));
+		}
     }
 BgzFile::~BgzFile()
     {
