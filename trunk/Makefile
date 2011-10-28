@@ -1,5 +1,3 @@
-TABIXVERSION=0.2.5
-SAMTOOLSVERSION=0.1.18
 .PHONY: all  ext manual doc clean
 all:
 	(cd src;make)
