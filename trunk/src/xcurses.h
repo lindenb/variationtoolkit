@@ -130,6 +130,8 @@ class Window
 	virtual int attroff(int att,bool sel);
 	virtual int printf(const char * fmt,...);
 	virtual int printf(int y,int x,const char * fmt,...);
+	virtual Window* sub();
+	virtual Window* sub(int nlines, int ncols, int begin_y, int begin_x);
     };
 
 class Screen:public Window
@@ -167,5 +169,16 @@ class DefaultWindow:public Window
     private:
 		void* _ptr;
     };
+
+class SubWindow:public Window
+    {
+    public:
+		SubWindow(Window* owner,int nlines, int ncols, int begin_y, int begin_x);
+		virtual ~SubWindow();
+		virtual void* ptr();
+    private:
+		void* _ptr;
+    };
+
 
 #endif
