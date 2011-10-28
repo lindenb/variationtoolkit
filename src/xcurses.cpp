@@ -191,7 +191,7 @@ int Window::set(int y,int x,Window::pixel_t c)
     }
 
 
-int Window::getch(int y,int x)
+int Window::get(int y,int x)
     {
     return moveto(y,x)?getch():-1;
     }
@@ -238,7 +238,7 @@ int Window::printf(const char * fmt,...)
 
 int Window::printf(int y,int x,const char * fmt,...)
 	{
-	moveto(y,x);
+	if(!moveto(y,x)) return -1;
 	va_list vl;
 	va_start(vl,fmt);
 	int n= ::vw_printw(CASTWIN(ptr()),fmt,vl);
