@@ -200,7 +200,7 @@ clean:
 		lex.selectset.c parsecolor.tab.c lex.parsecolor.c  lex.yy.c  \
 		selectset.tab.c parsecolor.tab.h selectset.tab.h \
 		dbsnpxsl.cpp  genexsl.cpp  nuccorexsl.cpp  \
-		pubmedxsl.cpp  taxonomyxsl.cpp
+		pubmedxsl.cpp  taxonomyxsl.cpp selectset.output parsecolor.output
 
 clean-all:clean uninstall
 	
