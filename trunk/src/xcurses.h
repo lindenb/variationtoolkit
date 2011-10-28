@@ -114,7 +114,7 @@ class Window
 	virtual int y();
 	virtual int width();
 	virtual int height();
-	virtual int getch(int y,int x);
+	virtual int get(int y,int x);
 	virtual int set(Window::pixel_t c);
 	virtual int set(int y,int x,Window::pixel_t c);
 	virtual void* ptr()=0;
