@@ -7,18 +7,28 @@
 
 #ifndef XLIFTOVER_H_
 #define XLIFTOVER_H_
+#include <memory>
+#include <string>
 #include "segments.h"
 
 class LiftOver
 	{
-	private:
-		void *chainHash;
-		double minMatch;
-		double minBlocks;
 	public:
 		LiftOver(const char* mapFile);
 		virtual ~LiftOver();
-		void convert(const char* chrom,int start,int end, char* strand);
+		void setMinMatch(double v);
+		void minBlocks(double v);
+		void minMatch(double v);
+		double minBlocks() const;
+		double minMatch() const;
+		const char* lastError() const;
+		std::auto_ptr<ChromStrandStartEnd> convert(const ChromStrandStartEnd* src);
+		std::auto_ptr<ChromStartEnd> convert(const ChromStartEnd* src);
+	private:
+		void *chainHash;
+		double _minMatch;
+		double _minBlocks;
+		std::auto_ptr<std::string> last_error;
 	};
 
 
