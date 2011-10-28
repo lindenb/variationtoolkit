@@ -261,6 +261,16 @@ int Window::attroff(int att,bool sel)
 	return sel?attron(att):attroff(att);
 	}
 
+Window* Window::sub()
+	{
+	return sub(height()-2,width()-2,1,1);
+	}
+Window* Window::sub(int nlines, int ncols, int begin_y, int begin_x)
+	{
+	return new SubWindow(this,nlines,ncols,begin_x,begin_y);
+	}
+
+
 
 Screen::Screen()
     {
@@ -359,3 +369,21 @@ void* DefaultWindow::ptr()
     {
     return _ptr;
     }
+
+
+SubWindow::SubWindow(Window* owner,int nlines, int ncols, int begin_y, int begin_x):_ptr(
+		::subwin(CASTWIN(owner->ptr()),nlines, ncols, begin_y, begin_x))
+    {
+	if(_ptr==NULL) THROW("Cannot create sub");
+    }
+
+SubWindow::~SubWindow()
+    {
+    ::delwin(CASTWIN(ptr()));
+    }
+
+void* SubWindow::ptr()
+    {
+    return _ptr;
+    }
+
