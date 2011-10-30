@@ -4,13 +4,13 @@
  *  Created on: Oct 28, 2011
  *      Author: lindenb
  */
-
+extern "C" {
 
 #include "common.h"
 #include "hash.h"
 #include "liftOver.h"
+}
 #include "xliftOver.h"
-
 #ifdef min
 #undef min
 #endif
@@ -24,7 +24,7 @@ using namespace std;
 
 #define CAST_HASH(h) ((struct hash *)h)
 
-LiftOver::LiftOver(const char* mapFile)
+LiftOver::LiftOver(const char* mapFile):_minMatch(LIFTOVER_MINMATCH),_minBlocks(LIFTOVER_MINBLOCKS)
     {
     chainHash = ::newHash(0);
     ::readLiftOverMap((char*)mapFile,CAST_HASH(chainHash));

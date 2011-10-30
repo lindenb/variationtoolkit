@@ -195,24 +195,25 @@ class VcfLiftOver:public AbstractApplication
 
 
 	    liftOver=new LiftOver(mapFile);
+
 	    if(optind==argc)
-		{
-		igzstreambuf buf;
-		istream in(&buf);
-		this->run(in);
-		buf.close();
-		}
+			{
+			igzstreambuf buf;
+			istream in(&buf);
+			this->run(in);
+			buf.close();
+			}
 	    else
-		{
-		while(optind< argc)
-		    {
-		    igzstreambuf buf(argv[optind++]);
-		    istream in(&buf);
-		    this->run(in);
-		    buf.close();
-		    ++optind;
-		    }
-		}
+			{
+			while(optind< argc)
+				{
+				igzstreambuf buf(argv[optind++]);
+				istream in(&buf);
+				this->run(in);
+				buf.close();
+				++optind;
+				}
+			}
 	    /* we're done */
 	    return EXIT_SUCCESS;
 	    }

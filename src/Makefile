@@ -164,7 +164,7 @@ $(BINDIR)/vcfbigwig: vcfbigwig.cpp kentBigWig.o
 $(BINDIR)/vcfbigbed: vcfbigbed.cpp kentBigBed.o
 	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl3; fi
 $(BINDIR)/vcfliftover: vcfliftover.cpp xliftOver.o application.o segments.o
-	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a ${KENTDIR}/src/lib/*/jkhgap.a -lz -lm -lssl3; fi
+	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/*.a  -lz -lm -lssl3 `mysql_config --libs`; fi
 
 kentBigWig.o: kentBigWig.cpp kentBigWig.h
 	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
