@@ -4,12 +4,14 @@
  *  Created on: Oct 28, 2011
  *      Author: lindenb
  */
+#ifndef NOKENTSRC
 extern "C" {
 
 #include "common.h"
 #include "hash.h"
 #include "liftOver.h"
 }
+#endif
 #include "xliftOver.h"
 #ifdef min
 #undef min
@@ -22,29 +24,47 @@ extern "C" {
 
 using namespace std;
 
+#ifndef NOKENTSRC
 #define CAST_HASH(h) ((struct hash *)h)
+#endif
 
-LiftOver::LiftOver(const char* mapFile):_minMatch(LIFTOVER_MINMATCH),_minBlocks(LIFTOVER_MINBLOCKS)
+LiftOver::LiftOver(const char* mapFile):
+#ifndef NOKENTSRC
+	_minMatch(LIFTOVER_MINMATCH),_minBlocks(LIFTOVER_MINBLOCKS)
+#else
+	_minMatch(0),_minBlocks(0)
+#endif
     {
+#ifndef NOKENTSRC
     chainHash = ::newHash(0);
     ::readLiftOverMap((char*)mapFile,CAST_HASH(chainHash));
+#endif
     }
 
 LiftOver::~LiftOver()
     {
+#ifndef NOKENTSRC
     struct hash *t=CAST_HASH(chainHash);
     ::freeHash(&t);
+#endif
     }
 
 const char* LiftOver::lastError() const
     {
+#ifndef NOKENTSRC
     return last_error.get()==NULL?NULL:last_error->c_str();
+#else
+    return "NOT COMPILED WITH UCSC SRC";
+#endif
     }
 
 std::auto_ptr<ChromStrandStartEnd> LiftOver::convert(
 	const ChromStrandStartEnd* src
 	)
     {
+#ifdef NOKENTSRC
+    return auto_ptr<ChromStrandStartEnd>();
+#else
     char* retChrom=NULL;
     int retStart;
     int retEnd;
@@ -80,6 +100,7 @@ std::auto_ptr<ChromStrandStartEnd> LiftOver::convert(
 	}
     if(retChrom!=NULL) freeMem(retChrom);
     return ret;
+#endif
     }
 
 

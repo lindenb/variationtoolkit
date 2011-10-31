@@ -33,8 +33,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/emblstringinteractors \
 	$(BINDIR)/vcfcut \
 	$(BINDIR)/ucscgenesps \
-	$(BINDIR)/vcfintersect 
-
+	$(BINDIR)/vcfintersect \
+	$(BINDIR)/igvcontrol
 
 
 all:$(TARGET_BINARIES)
@@ -102,7 +102,8 @@ $(BINDIR)/ucscgenesps: ucscgenesps.cpp application.o knowngene.o $(COLOR_O)
 	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 $(BINDIR)/vcfintersect : vcfintersect.cpp application.o segments.o netstreambuf.o 
 	$(CPP) -o $@ $^ $(CFLAGS) `curl-config --cflags --libs` -lz
-	
+$(BINDIR)/igvcontrol: igv.cpp application.o xcurses.cpp 
+	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses	
 	
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
@@ -178,8 +179,7 @@ xliftOver.o:xliftOver.cpp xliftOver.h
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
 
-$(BINDIR)/igv: igv.cpp application.o xcurses.cpp 
-	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses
+
 
 
 parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o
