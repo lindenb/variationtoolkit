@@ -11,12 +11,12 @@ class SmartComparator
     
    bool operator() (const char* s1, const char* s2) const
 	{
-	return compare(s1,std::strlen(s1),s2,std::strlen(s2))<0;
+	return compare(s1,s2)<0;
 	}
 
     bool operator() (const std::string& a, const std::string& b) const
 	{
-	return compare(a.c_str(),a.size(),b.c_str(),b.size())<0;
+	return compare(a,b)<0;
 	}
       
     bool operator()(
@@ -25,6 +25,20 @@ class SmartComparator
 		) const
 	{
 	return compare(s1,len1,s2,len2)<0;
+	}
+
+    int compare(const std::string& a, const std::string& b) const
+    	{
+    	return compare(a.c_str(),a.size(),b.c_str(),b.size())<0;
+    	}
+
+
+    int compare(
+    		const char* s1,
+    		const char* s2
+    		) const
+	{
+	return compare(s1,std::strlen(s1),s2,std::strlen(s2))<0;
 	}
 
     int compare(
