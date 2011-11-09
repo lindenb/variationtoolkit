@@ -16,7 +16,6 @@ class LiftOver
 	public:
 		LiftOver(const char* mapFile);
 		virtual ~LiftOver();
-		void setMinMatch(double v);
 		void minBlocks(double v);
 		void minMatch(double v);
 		double minBlocks() const;

@@ -34,6 +34,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfcut \
 	$(BINDIR)/ucscgenesps \
 	$(BINDIR)/vcfintersect \
+	$(BINDIR)/vcfliftover \
 	$(BINDIR)/igvcontrol
 
 
@@ -161,11 +162,11 @@ segparser.tab.o lex.segparser.o: parsereg.l parsereg.y
 	
 #UCSC
 $(BINDIR)/vcfbigwig: vcfbigwig.cpp kentBigWig.o
-	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl3; fi
+	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -Wl,--start-group -lz -lm -lssl3 -lssl -Wl,--end-group; fi
 $(BINDIR)/vcfbigbed: vcfbigbed.cpp kentBigBed.o
-	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -lz -lm -lssl3; fi
+	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/jkweb.a -Wl,--start-group -lz -lm -lssl3 -lssl -Wl,--end-group; fi
 $(BINDIR)/vcfliftover: vcfliftover.cpp xliftOver.o application.o segments.o
-	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/*.a  -lz -lm -lssl3 `mysql_config --libs`; fi
+	if [ -z "${KENTDIR}" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz; else $(CPP)  -o $@ $^ $(CFLAGS) ${KENTDIR}/src/lib/*/*.a  -Wl,--start-group -lz -lm -lssl3 -lssl -Wl,--end-group `mysql_config --libs`; fi
 
 kentBigWig.o: kentBigWig.cpp kentBigWig.h
 	if ! [ -z "${KENTDIR}" ] ;then $(CPP) -c -o $@ $< -I $(KENTDIR)/src/inc $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOKENTSRC $(CFLAGS)  ; fi
