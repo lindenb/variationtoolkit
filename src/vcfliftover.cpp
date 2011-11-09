@@ -83,7 +83,8 @@ class VcfLiftOver:public AbstractApplication
 				continue;
 				}
 
-			ChromStartEnd segment(tokens[chromCol],chromStart-shift,chromStart);
+			ChromStartEnd segment(tokens[chromCol],chromStart-shift,chromStart-shift+1);
+
 			std::auto_ptr<ChromStartEnd> seg = this->liftOver->convert(&segment);
 			if(seg.get()==NULL)
 				{
