@@ -29,7 +29,7 @@ class SmartComparator
 
     int compare(const std::string& a, const std::string& b) const
     	{
-    	return compare(a.c_str(),a.size(),b.c_str(),b.size())<0;
+    	return compare(a.c_str(),a.size(),b.c_str(),b.size());
     	}
 
 
@@ -38,7 +38,7 @@ class SmartComparator
     		const char* s2
     		) const
 	{
-	return compare(s1,std::strlen(s1),s2,std::strlen(s2))<0;
+	return compare(s1,std::strlen(s1),s2,std::strlen(s2));
 	}
 
     int compare(

@@ -47,7 +47,7 @@ char bam_aux_getCQi(bam1_t *b, int i);
 
 
 
-TTView::TTView():nLines(0),screen(NULL),lplbuf(NULL),bca(NULL)
+TTView::TTView():nLines(0),screen(NULL),lplbuf(NULL),bca(NULL),no_skip(0),show_name(0)
     {
     this->is_dot = 1;
     this->lplbuf = ::bam_lplbuf_init((bam_pileup_f)TTView::ttv_pl_func, this);
