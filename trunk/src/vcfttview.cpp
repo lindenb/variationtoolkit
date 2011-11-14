@@ -75,8 +75,8 @@ class VCFTTView
 	void pushSample2Bam(string sample,string path)
 	    {
 	    BamFile* bam=new BamFile(path.c_str());
-	    sample2bam.insert(make_pair(sample,bam));
-	    sample2file.insert(make_pair(sample,path));
+	    sample2bam.insert(make_pair<string,BamFile*>(sample,bam));
+	    sample2file.insert(make_pair<string,string>(sample,path));
 	    }
 	void loadSample2Bam(const char* fname)
 	    {
@@ -133,10 +133,12 @@ class VCFTTView
 		if(print_all_bam && !sample2bam.empty())
 		    {
 		    cout << ">>" << tokens[0] << ":" << pos << endl;
+
 		    for(sample2bam_map::iterator r=sample2bam.begin();
 		    		r!=sample2bam.end();
 		    		++r)
 			{
+			
 			cout << "> " << tokens[0] << ":" << pos << "\t" << sample2file[r->first]<< "\n\n";
 			tv.print(
 			   cout,
@@ -327,6 +329,7 @@ int main(int argc, char **argv)
 	    app.usage(argc,argv);
 	    return EXIT_FAILURE;
 	    }
+
 	if(optind==argc)
 	    {
 	    igzstreambuf buf;
