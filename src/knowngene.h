@@ -63,5 +63,8 @@ class KnownGene
 		std::auto_ptr<Intron> intron(int32_t  idx) const;
 		int32_t countExons() const;
 		bool isForward() const;
+		int32_t getExonStart(int32_t  idx) const;
+		int32_t getExonEnd(int32_t  idx) const;
+		std::auto_ptr<std::string> getExonNameFromGenomicIndex(int32_t genome) const;
 	};
 #endif
