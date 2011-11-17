@@ -175,3 +175,28 @@ std::auto_ptr<Intron> KnownGene::intron(int32_t  idx) const
     i->end = exon(idx+1)->start;
     return std::auto_ptr<Intron>(i);
     }
+
+
+int32_t KnownGene::getExonStart(int32_t  idx) const
+	{
+	return this->exon(idx)->start;
+	}
+int32_t KnownGene::getExonEnd(int32_t  idx) const
+	{
+	return this->exon(idx)->end;
+	}
+
+std::auto_ptr<std::string>
+KnownGene::getExonNameFromGenomicIndex(int32_t genome) const
+		{
+		std::auto_ptr<std::string> p;
+		for(int i=0;i< countExons();++i)
+			{
+			if(getExonStart(i)<=genome && genome< getExonEnd(i))
+				{
+				p.reset(new string(exon(i)->name()));
+				break;
+				}
+			}
+		return p;
+		}

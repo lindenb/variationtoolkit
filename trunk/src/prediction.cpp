@@ -24,169 +24,20 @@
 #include <memory>
 #include <stdint.h>
 #include "mysqlapplication.h"
-#include "geneticcode.h"
 #include "zstreambuf.h"
 #include "xfaidx.h"
 #include "tokenizer.h"
 #include "knowngene.h"
 #define NOWHERE
 #include "where.h"
-
+#include "genomicsequence.h"
+#include "mutatedsequence.h"
+#include "stringsequence.h"
+#include "proteincharsequence.h"
 using namespace std;
 
-/**
- * AbstractCharSequence
- */
-class AbstractCharSequence
-	{
-	public:
-	    AbstractCharSequence()
-		{
-		}
-	    virtual ~AbstractCharSequence()
-		{
-		}
-	    virtual char at(int32_t index) const=0;
-	    virtual int32_t size() const=0;
-	    char operator[](int32_t index) const
-		{
-		return at(index);
-		}
-	    virtual void print(std::ostream& out) const
-		{
-		for(int32_t i=0;i< size();++i)
-		    {
-		    out << at(i);
-		    }
-		}
-	};
 
-/**
- * GenomicSeq
- */
-class GenomicSeq:public AbstractCharSequence
-    {
-    private:
-	std::auto_ptr<std::string> array;
-	int chromStart;
-    public:
-     GenomicSeq(IndexedFasta* indexedFasta,
-	     const char* chrom,
-	     int32_t chromStart0,
-	     int32_t chromEnd0
-	     )
-	    {
-	    this->array = indexedFasta->fetch(chrom,chromStart0,chromEnd0);
-	    this->chromStart=chromStart0;
-	    }
 
-     virtual ~GenomicSeq()
-	{
-	}
-
-    int getChromStart() const
-	    {
-	    return chromStart;
-	    }
-    int getChromEnd() const
-	    {
-	    return getChromStart()+ (int32_t)array->size();
-	    }
-
-    virtual char at(int32_t index) const
-	    {
-	    if(index < getChromStart() || index>= getChromEnd() ) return '?';
-	    return std::toupper(array->at(index-getChromStart()));
-	    }
-    virtual int32_t size() const
-	    {
-	    return getChromEnd();
-	    }
-    };
-
-/**
- * ProteinCharSequence
- */
-class ProteinCharSequence:public AbstractCharSequence
-    {
-    private:
-	const GeneticCode* code;
-	const AbstractCharSequence* delegate;
-    public:
-	ProteinCharSequence(
-		const GeneticCode* code,
-		const AbstractCharSequence* delegate):
-		    code(code),delegate(delegate)
-	    {
-	    }
-
-	virtual ~ProteinCharSequence()
-	    {
-	    }
-
-	virtual char at(int32_t index) const
-		{
-		return code->translate(
-			delegate->at(index*3+0),
-			delegate->at(index*3+1),
-			delegate->at(index*3+2)
-			);
-		}
-
-	virtual int32_t size() const
-		{
-		return delegate->size()/3;
-		}
-	};
-
-/**
- * MutedSequence
- */
-class MutedSequence:public AbstractCharSequence
-    {
-    private:
-	    const AbstractCharSequence* delegate;
-    public:
-	    std::map<int32_t,char> mutations;
-	    MutedSequence(const AbstractCharSequence* delegate):delegate(delegate)
-		{
-		}
-	    virtual ~MutedSequence()
-		{
-		}
-	    virtual char at(int32_t index) const
-		{
-		std::map<int32_t,char>::const_iterator r= mutations.find(index);
-		return r==mutations.end()?delegate->at(index):r->second;
-		}
-	    virtual int32_t size() const
-		{
-		return delegate->size();
-		}
-	};
-
-/**
- * StringSequence
- */
-class StringSequence:public AbstractCharSequence
-    {
-    public:
-	std::string content;
-	StringSequence()
-	    {
-	    }
-	virtual ~StringSequence()
-	    {
-	    }
-	virtual char at(int32_t index) const
-	    {
-	    return content.at(index);
-	    }
-	virtual int32_t size() const
-	    {
-	    return (int32_t)content.size();
-	    }
-    };
 
 /**
  * StringSequence

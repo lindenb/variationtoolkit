@@ -4,6 +4,14 @@ INSTALLDIR=/usr/local/bin
 CPP=g++
 CFLAGS=-O3 -Wall
 COLOR_O=parsecolor.tab.o lex.parsecolor.o color.o
+CHARSEQ=abstractcharsequence.o \
+	genomicsequence.o \
+	mutatedsequence.o \
+	proteincharsequence.o \
+	stringsequence.o
+
+
+
 TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/verticalize \
 	$(BINDIR)/groupbygene \
@@ -35,6 +43,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/ucscgenesps \
 	$(BINDIR)/vcfintersect \
 	$(BINDIR)/vcfliftover \
+	$(BINDIR)/backlocate \
 	$(BINDIR)/igvcontrol
 
 
@@ -64,7 +73,9 @@ $(BINDIR)/ranges: ranges.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/manhattan: manhattan.cpp $(COLOR_O) application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
-$(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o application.o
+$(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o application.o $(CHARSEQ)
+	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
+$(BINDIR)/backlocate: backlocate.cpp knowngene.o xfaidx.o geneticcode.o application.o $(CHARSEQ)
 	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
 $(BINDIR)/dnacontext: dnacontext.cpp xfaidx.o
 	$(CPP) -o $@ $< $(CFLAGS) xfaidx.o  -L $(SAMDIR) -lz -lbam
@@ -149,6 +160,17 @@ segments.o:segments.cpp segments.h smartcmp.h
 xcurses.o: xcurses.cpp xcurses.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 color.o: color.cpp color.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+
+abstractcharsequence.o: abstractcharsequence.cpp abstractcharsequence.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+genomicsequence.o: genomicsequence.cpp genomicsequence.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+proteincharsequence.o:proteincharsequence.cpp proteincharsequence.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+mutatedsequence.o : mutatedsequence.cpp mutatedsequence.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+stringsequence.o : stringsequence.cpp stringsequence.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
