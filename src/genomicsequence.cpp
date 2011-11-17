@@ -30,6 +30,7 @@ char GenomicSeq::at(int32_t index) const
 	if(index < getChromStart() || index>= getChromEnd() ) return '?';
 	return std::toupper(array->at(index-getChromStart()));
 	}
+
 int32_t GenomicSeq::size() const
 	{
 	return getChromEnd();

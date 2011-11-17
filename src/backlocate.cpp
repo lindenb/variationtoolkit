@@ -21,6 +21,7 @@
 #include "knowngene.h"
 #include "xfaidx.h"
 #include "mysqlapplication.h"
+#define NOWHERE
 #include "where.h"
 #include "genomicsequence.h"
 #include "mutatedsequence.h"
@@ -168,7 +169,7 @@ class BackLocate:public MysqlApplication
 
 	        		}//end of if reverse
 
-	    	     if(wildProt.get())
+	    	     if(wildProt.get()==NULL)
 	    	    	 {
 	    	    	 cerr << "#no protein found for transcript:"<< gene->name << endl;
 	    	    	 return;
@@ -232,17 +233,19 @@ class BackLocate:public MysqlApplication
 	            	cout << gene->getExonNameFromGenomicIndex(wildRNA->genomicPositions.at(indexInRna))->c_str();
 	            	if(this->printSequences)
 	            		{
-	            		std::string s=*(wildRNA->toString());
+	            		auto_ptr<std::string> s;
+	            		s=(wildRNA->toString());
+
 	            		cout << '\t';
-	                	cout << s.substr(0,indexInRna) << "["
-	                		<< s.at(indexInRna)+"]"
-	                		<< (indexInRna+1<(int32_t)s.size()?s.substr(indexInRna+1):"");
-	                	s.assign(*(wildProt->toString()));
+	                	cout << s->substr(0,indexInRna) << "["
+	                		<< s->at(indexInRna)+"]"
+	                		<< (indexInRna+1<(int32_t)s->size()?s->substr(indexInRna+1):"");
+	                	s=wildProt->toString();
 	                	cout << '\t';
-	                	cout << s.substr(0,peptideIndex0)
+	                	cout << s->substr(0,peptideIndex0)
 	                		<< "["+aa1<<"/"<<aa2<<"/"
 	                		<< wildProt->at(peptideIndex0) << "]"
-	                		<< (peptideIndex0+1<(int32_t)s.size()?s.substr(peptideIndex0+1):"");
+	                		<< (peptideIndex0+1<(int32_t)s->size()?s->substr(peptideIndex0+1):"");
 	            		}
 	            	cout << endl;
 	            	}
@@ -277,7 +280,7 @@ class BackLocate:public MysqlApplication
 		  	    //int ncols=mysql_field_count(mysql);
 		  	    while(( row = mysql_fetch_row( res ))!=NULL )
 		  			{
-		  	    	WHERE("reading row");
+
 		  			KnownGene* g=new KnownGene;
 		  			genes.push_back(g);
 		  			g->chrom.assign(row[0]);
@@ -300,6 +303,7 @@ class BackLocate:public MysqlApplication
 		  				exon.end=atoi(exonEnds[i].c_str());
 		  				g->exons.push_back(exon);
 		  				}
+		  			WHERE(g->name);
 		  			}
 		  	    ::mysql_free_result( res );
 		  	    return genes;
@@ -353,12 +357,17 @@ class BackLocate:public MysqlApplication
 				char aa2= std::toupper(mut.at(mut.size()-1));
 				char* p2=0;
 				int position1=strtol(&(mut.c_str())[1],&p2,10);
-				if(position1==0 || p2+1!=0)
+				if(position1<1)
 					{
 					cerr << "Bad position in " << line << endl;
 					continue;
 					}
 				std::vector<KnownGene*> genes=getGenes(geneName.c_str());
+				if(genes.empty())
+					{
+					cout << "#no knownGene found for "<< geneName << endl;
+					continue;
+					}
 				for(size_t i=0;i< genes.size();++i)
 					{
 					KnownGene* gene=genes.at(i);
@@ -378,6 +387,7 @@ class BackLocate:public MysqlApplication
 		  		out << "  -g (column) gene name default:"<< (geneCol+1)<< "\n";
 		  		out << "  -m (column) mutation in protein default:"<< (mutCol+1)<< "\n";
 		  		out << "  -f (pasta to fasta reference indexed with faidx).\n";
+		  		out << "  -p print sequences.\n";
 		  		out << "Other options:\n";
 		  		out << "  -d delimiter. Default:tab\n";
 		  		out << "(stdin|vcf|vcf.gz)\n";
@@ -396,6 +406,10 @@ class BackLocate:public MysqlApplication
 					{
 					usage(cerr,argc,argv);
 					return EXIT_SUCCESS;
+					}
+				else if(strcmp(argv[optind],"-p")==0)
+					{
+					printSequences=true;
 					}
 				else if(strcmp(argv[optind],"-f")==0 && optind+1< argc)
 					{
