@@ -39,6 +39,7 @@ char complement(char c)
 			case 'T':case 't': return 'A';
 			case 'G':case 'g': return 'C';
 			case 'C':case 'c': return 'G';
+			case 'N':case 'n': return 'N';
 			default: THROW("bad base "<< c);
 			}
 		}
@@ -233,19 +234,16 @@ class BackLocate:public MysqlApplication
 	            	cout << gene->getExonNameFromGenomicIndex(wildRNA->genomicPositions.at(indexInRna))->c_str();
 	            	if(this->printSequences)
 	            		{
-	            		auto_ptr<std::string> s;
-	            		s=(wildRNA->toString());
+	            		cout << "\t";
+	            		wildRNA->print(cout,0,indexInRna);
+	            		cout << "["<< wildRNA->at(indexInRna)<<"]";
+	            		wildRNA->print(cout,indexInRna+1);
 
-	            		cout << '\t';
-	                	cout << s->substr(0,indexInRna) << "["
-	                		<< s->at(indexInRna)+"]"
-	                		<< (indexInRna+1<(int32_t)s->size()?s->substr(indexInRna+1):"");
-	                	s=wildProt->toString();
-	                	cout << '\t';
-	                	cout << s->substr(0,peptideIndex0)
-	                		<< "["+aa1<<"/"<<aa2<<"/"
-	                		<< wildProt->at(peptideIndex0) << "]"
-	                		<< (peptideIndex0+1<(int32_t)s->size()?s->substr(peptideIndex0+1):"");
+	                	cout << "\t";
+	                	wildProt->print(cout,0,peptideIndex0);
+	            	    cout << "["<<aa1<<"/"<<aa2<<"/" << wildProt->at(peptideIndex0) << "]";
+	                	wildProt->print(cout,peptideIndex0+1);
+
 	            		}
 	            	cout << endl;
 	            	}
@@ -387,7 +385,7 @@ class BackLocate:public MysqlApplication
 		  		out << "  -g (column) gene name default:"<< (geneCol+1)<< "\n";
 		  		out << "  -m (column) mutation in protein default:"<< (mutCol+1)<< "\n";
 		  		out << "  -f (pasta to fasta reference indexed with faidx).\n";
-		  		out << "  -p print sequences.\n";
+		  		out << "  -p print mRNA/prot sequences.\n";
 		  		out << "Other options:\n";
 		  		out << "  -d delimiter. Default:tab\n";
 		  		out << "(stdin|vcf|vcf.gz)\n";
