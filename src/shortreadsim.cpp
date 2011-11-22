@@ -17,6 +17,7 @@
 #include "segments.h"
 #include "application.h"
 #include "throw.h"
+#define NOWHERE
 #include "where.h"
 #include "tarball.h"
 
@@ -107,7 +108,7 @@ class ShortReadSim:public AbstractApplication
     public:
 	std::map<string,vector<StartEnd> > capture;
 	std::map<string,map<int32_t,UserDefinedSubstitution*> > user_defined_mutations;
-	uint64_t total_num_pairs;
+	int32_t coverage;
 	int32_t paired_end_size;
 	int32_t paired_end_stddev;
 	int32_t short_read_length;
@@ -124,18 +125,18 @@ class ShortReadSim:public AbstractApplication
 
 
 	ShortReadSim():
-	    total_num_pairs(10),
+	    coverage(20),
 	    paired_end_size(500),
 	    paired_end_stddev(50),
-	    short_read_length(70),
-	    base_error_rate(0.020),
+	    short_read_length(54),
+	    base_error_rate(0.0001),
 	    proba_mutation(0.0010),
 	    indel_fraction(0.1),
 	    proba_extend(0.3),
 	    outfq1(NULL),
 	    outfq2(NULL),
 	    outvcf(NULL),
-	    default_quality('2'),
+	    default_quality('Q'),
 	    pair_id_generator(0),
 	    tarball(NULL)
 	    {
@@ -180,12 +181,12 @@ class ShortReadSim:public AbstractApplication
 
 	void emit(const string& chrom,const string& amplicon)
 	    {
-	    if(amplicon.size()< short_read_length) return;
+	    if((int32_t)amplicon.size()< short_read_length) return;
 	    ++pair_id_generator;
 	    //first read
 	    fputc('@',outfq1);
 	    fputs(chrom.c_str(),outfq1);
-	    fprintf(outfq1,":%ld:1\n",pair_id_generator);
+	    fprintf(outfq1,"_%ld:1\n",pair_id_generator);
 
 	    for(int32_t i=0;i< short_read_length;++i)
 		{
@@ -196,13 +197,13 @@ class ShortReadSim:public AbstractApplication
 		{
 		fputc(default_quality,outfq1);
 		}
-	    fputs("\n",outfq1);
+	    fputc('\n',outfq1);
 
 	    //second read
 
 	    fputs("@",outfq2);
 	    fputs(chrom.c_str(),outfq2);
-	    fprintf(outfq2,":%ld:2\n",pair_id_generator);
+	    fprintf(outfq2,"_%ld:2\n",pair_id_generator);
 	    for(int32_t i=0;i< short_read_length;++i)
 		{
 		fputc(complement(amplicon[(amplicon.size()-1)-i]),outfq2);
@@ -212,7 +213,7 @@ class ShortReadSim:public AbstractApplication
 		{
 		fputc(default_quality,outfq2);
 		}
-	    fputs("\n",outfq2);
+	    fputc('\n',outfq2);
 	    }
 
 	void run(const char* hg)
@@ -305,7 +306,12 @@ class ShortReadSim:public AbstractApplication
 			    if(r2!=chrom_user_def_mut.end())
 				{
 				WHERE("Inserting custom mutation");
-				fprintf(this->outvcf,"%s\t%d\t%c\t%c\n",chrom.c_str(),(i+1),r2->second->base,r2->second->base2);
+				fprintf(this->outvcf,"%s\t%d\t%c\t%c,%c\n",
+					chrom.c_str(),
+					(i+1),
+					sequence.at(i),
+					r2->second->base,
+					r2->second->base2);
 				all_mutations.push_back(new Substitution(i,r2->second->base));
 				chrom1.insert(make_pair<int32_t,Mutation*>(i,all_mutations.back()));
 				all_mutations.push_back(new Substitution(i,r2->second->base2));
@@ -325,7 +331,7 @@ class ShortReadSim:public AbstractApplication
 					chrom.c_str(),
 					(i+1),
 					sequence.at(i),
-					r2->second->base
+					subst->base
 					);
 				mutation=subst;
 				}
@@ -349,7 +355,7 @@ class ShortReadSim:public AbstractApplication
 				Insertion* insertion=new Insertion;
 				insertion->sequence+=notIn(sequence.at(i));
 				while(drand48() < proba_extend) insertion->sequence+=anyOf("ATGC",4);
-				insertion->sequence+=sequence.at(i);
+
 				fprintf(this->outvcf,
 				    "%s\t%d\t%c\t%s\n",
 				    chrom.c_str(),
@@ -391,15 +397,16 @@ class ShortReadSim:public AbstractApplication
 			    WHERE(chromStart << "-" << chromEnd);
 			    //process the unmasked segment
 			    int32_t segLength=chromEnd-chromStart;
-			    if(paired_end_size<=segLength)
+			    if(paired_end_size<segLength)
 				{
-				uint64_t n_pairs = (uint64_t)((((double)segLength/(double)genome_size)+0.5) * total_num_pairs);
+				uint64_t n_pairs = ((uint64_t)this->coverage)*segLength;
 				WHERE(n_pairs);
+
 				/* generate all the pairs */
 				for(uint64_t i=0;i< n_pairs;++i)
 				    {
-				    int seq_index=chromStart+(int32_t)lrand48()%(segLength-paired_end_size);
-				    int paired_len= paired_end_size+(lrand48()%paired_end_stddev)*(::drand48()<0.5?1:-1);
+				    int32_t seq_index=chromStart+(int32_t)(lrand48()%(segLength-paired_end_size));
+				    int32_t paired_len= paired_end_size+(lrand48()%paired_end_stddev)*(::drand48()<0.5?1:-1);
 				    map<int32_t,Mutation*>* chrom2mut=(rand()%2==0?&chrom1:&chrom2);
 				    string amplicon;
 				    while(seq_index < (int32_t)sequence.size() &&
@@ -583,7 +590,7 @@ class ShortReadSim:public AbstractApplication
 	    out << "Options:\n";
 	    out << "  -f (file) limit by genomic region (optional) read file:chrom(TAB)start(TAB)end\n";
 	    out << "  -o (file.tar) save as TAR file\n";
-	    out << "  -N (int) approximate number of reads. default: "<< this->total_num_pairs << "\n";
+	    out << "  -N (int) exected coverage. default: "<< this->coverage << "\n";
 	    out << "  -e(float) base error rate. default: "<< this->base_error_rate << "\n";
 	    out << "  -r (float) rate of mutations. default: "<< this->proba_mutation << "\n";
 	    out << "  -d (int) distance between the two pairs default: "<< this->paired_end_size << "\n";
@@ -613,7 +620,7 @@ class ShortReadSim:public AbstractApplication
 		    }
 		else if(std::strcmp(argv[optind],"-N")==0 && optind+1< argc)
 		    {
-		    this->total_num_pairs=atol(argv[++optind]);
+		    this->coverage=atoi(argv[++optind]);
 		    }
 		else if(std::strcmp(argv[optind],"-e")==0 && optind+1< argc)
 		    {
@@ -661,7 +668,7 @@ class ShortReadSim:public AbstractApplication
 		    {
 		    readUserDefinedMutations(argv[++optind]);
 		    }
-		else if(std::strcmp(argv[optind],"-u")==0 && optind+4< argc)
+		else if(std::strcmp(argv[optind],"-m")==0 && optind+4< argc)
 		    {
 		    string chrom(argv[++optind]);
 		    int32_t pos=atoi(argv[++optind]);
@@ -689,7 +696,7 @@ class ShortReadSim:public AbstractApplication
 		    mut->chrom.assign(chrom);
 		    mut->pos=pos-1;
 		    mut->base=base1[0];
-		    mut->base2=base1[1];
+		    mut->base2=base2[0];
 		    if(user_defined_mutations[mut->chrom][mut->pos]!=NULL)
 			{
 			cerr << "error mutation at "<< mut->chrom<< ":"<< (mut->pos+1)<< "defined twice.\n";

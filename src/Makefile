@@ -118,7 +118,7 @@ $(BINDIR)/vcfintersect : vcfintersect.cpp application.o segments.o netstreambuf.
 $(BINDIR)/igvcontrol: igv.cpp application.o xcurses.cpp 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses	
 $(BINDIR)/shortreadsim: shortreadsim.cpp application.o  segments.o tarball.o
-	$(CPP) -o $@ $^ $(CFLAGS)  -L $(SAMDIR)  -lz -lbam
+	$(CPP) -g -o $@ $^ $(CFLAGS)  -L $(SAMDIR)  -lz -lbam
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^

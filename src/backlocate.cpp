@@ -384,7 +384,7 @@ class BackLocate:public MysqlApplication
 		  		out << "Options:\n";
 		  		out << "  -g (column) gene name default:"<< (geneCol+1)<< "\n";
 		  		out << "  -m (column) mutation in protein default:"<< (mutCol+1)<< "\n";
-		  		out << "  -f (pasta to fasta reference indexed with faidx).\n";
+		  		out << "  -f (path to fasta reference indexed with faidx).\n";
 		  		out << "  -p print mRNA/prot sequences.\n";
 		  		out << "Other options:\n";
 		  		out << "  -d delimiter. Default:tab\n";
