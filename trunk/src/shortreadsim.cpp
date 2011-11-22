@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <cstring>
+#include <cctype>
 #include <string>
 #include <iostream>
 #include <cerrno>
@@ -35,6 +36,7 @@ class Mutation
     public:
 	int32_t pos;
 	Mutation() {}
+	Mutation(int32_t pos):pos(pos) {}
 	virtual ~Mutation() {}
 	virtual VarType type() const=0;
 	virtual std::string toString() const=0;
@@ -46,6 +48,7 @@ class Substitution:public Mutation
     public:
 	char base;
 	Substitution() {}
+	Substitution(int32_t pos,char base):Mutation(pos),base(base) {}
 	virtual ~Substitution() {}
 	virtual VarType type() const { return SUBST;}
 	virtual std::string toString() const
@@ -103,15 +106,18 @@ class ShortReadSim:public AbstractApplication
     {
     public:
 	std::map<string,vector<StartEnd> > capture;
+	std::map<string,map<int32_t,UserDefinedSubstitution*> > user_defined_mutations;
 	uint64_t total_num_pairs;
 	int32_t paired_end_size;
 	int32_t paired_end_stddev;
 	int32_t short_read_length;
+	double base_error_rate;
 	double proba_mutation;
 	double indel_fraction;
 	double proba_extend;
 	FILE* outfq1;
 	FILE* outfq2;
+	FILE* outvcf;
 	char default_quality;
 	uint64_t pair_id_generator;
 	Tar* tarball;
@@ -122,11 +128,13 @@ class ShortReadSim:public AbstractApplication
 	    paired_end_size(500),
 	    paired_end_stddev(50),
 	    short_read_length(70),
-	    proba_mutation(0.0001),
+	    base_error_rate(0.020),
+	    proba_mutation(0.0010),
 	    indel_fraction(0.1),
-	    proba_extend(0.1),
+	    proba_extend(0.3),
 	    outfq1(NULL),
 	    outfq2(NULL),
+	    outvcf(NULL),
 	    default_quality('2'),
 	    pair_id_generator(0),
 	    tarball(NULL)
@@ -241,7 +249,7 @@ class ShortReadSim:public AbstractApplication
 			}
 		    continue;
 		    }
-		else if(isalpha(c))
+		else if(std::isalpha(c))
 		    {
 		    length++;
 		    }
@@ -286,10 +294,24 @@ class ShortReadSim:public AbstractApplication
 			    }
 			//generate the mutations
 			vector<Mutation*> all_mutations;
+			map<int32_t,UserDefinedSubstitution*>& chrom_user_def_mut=this->user_defined_mutations[chrom];
 			map<int32_t,Mutation*> chrom1;
 			map<int32_t,Mutation*> chrom2;
 			for(int32_t i=0;i< (int32_t)sequence.size();++i)
 			    {
+			    /* is there a user-defined mutation here ? */
+			    map<int32_t,UserDefinedSubstitution*>::iterator r2=chrom_user_def_mut.find(i);
+			    if(r2!=chrom_user_def_mut.end())
+				{
+				WHERE("Inserting custom mutation");
+				fprintf(this->outvcf,"%s\t%d\t%c\t%c\n",chrom.c_str(),(i+1),r2->second->base,r2->second->base2);
+				all_mutations.push_back(new Substitution(i,r2->second->base));
+				chrom1.insert(make_pair<int32_t,Mutation*>(i,all_mutations.back()));
+				all_mutations.push_back(new Substitution(i,r2->second->base2));
+				chrom2.insert(make_pair<int32_t,Mutation*>(i,all_mutations.back()));
+				continue;
+				}
+			    /* random : is there a mutation here ? */
 			    if(drand48()>= proba_mutation) continue;
 			    if(!mask[i]) continue;
 			    Mutation* mutation= NULL;
@@ -297,6 +319,13 @@ class ShortReadSim:public AbstractApplication
 				{
 				Substitution* subst=new Substitution;
 				subst->base=anyOf("ATGC",4);
+				fprintf(this->outvcf,
+					"%s\t%d\t%c\t%c\n",
+					chrom.c_str(),
+					(i+1),
+					sequence.at(i),
+					r2->second->base
+					);
 				mutation=subst;
 				}
 			    //create deletion
@@ -304,6 +333,13 @@ class ShortReadSim:public AbstractApplication
 				{
 				Deletion* deletion=new Deletion;
 				while(drand48() < proba_extend) deletion->length++;
+				fprintf(this->outvcf,
+				    "%s\t%d\t%c\td%d\n",
+				    chrom.c_str(),
+				    (i+1),
+				    sequence.at(i),
+				    deletion->length
+				    );
 				mutation=deletion;
 				}
 			    //create insertion
@@ -312,6 +348,14 @@ class ShortReadSim:public AbstractApplication
 				Insertion* insertion=new Insertion;
 				insertion->sequence+=notIn(sequence.at(i));
 				while(drand48() < proba_extend) insertion->sequence+=anyOf("ATGC",4);
+				insertion->sequence+=sequence.at(i);
+				fprintf(this->outvcf,
+				    "%s\t%d\t%c\t%s\n",
+				    chrom.c_str(),
+				    (i+1),
+				    sequence.at(i),
+				    insertion->sequence.c_str()
+				    );
 				mutation=insertion;
 				}
 			    mutation->pos=i;
@@ -364,7 +408,14 @@ class ShortReadSim:public AbstractApplication
 					map<int32_t,Mutation*>::iterator r=chrom2mut->find(seq_index);
 					if(r==chrom2mut->end())
 					    {
-					    amplicon+= sequence.at(seq_index);
+					    if(drand48()< this->base_error_rate)
+						{
+						amplicon+= notIn(sequence.at(seq_index));
+						}
+					    else
+						{
+						amplicon+= sequence.at(seq_index);
+						}
 					    seq_index++;
 					    continue;
 					    }
@@ -472,19 +523,76 @@ class ShortReadSim:public AbstractApplication
 	    buf.close();
 	    }
 
+	void readUserDefinedMutations(const char* filename)
+	    {
+	    Tokenizer tokenizer('\t');
+	    vector<string> tokens;
+	    string line;
+	    igzstreambuf buf(filename);
+	    istream in(&buf);
+	    while(getline(in,line,'\n'))
+		{
+		if(line.empty() || line.at(0)=='#') continue;
+		tokenizer.split(line,tokens);
+		if(tokens.size()<4)
+		    {
+		    cerr << "Bad number of tokens  in "
+			    << filename
+			    << " : "
+			    << line
+			    ;
+		    continue;
+		    }
+		int32_t pos=atoi(tokens[1].c_str());
+		if(pos<=0)
+		    {
+		    cerr << "Bad range in " << line << endl;
+		    continue;
+		    }
+		if(tokens[2].size()!=1 || !isalpha(tokens[2].at(0)))
+		    {
+		    cerr << "Bad base 1 in " << line << endl;
+		    continue;
+		    }
+		if(tokens[3].size()!=1 || !isalpha(tokens[3].at(0)))
+		    {
+		    cerr << "Bad base 2 in " << line << endl;
+		    continue;
+		    }
+		UserDefinedSubstitution* mut=new UserDefinedSubstitution;
+		mut->chrom.assign(tokens[0]);
+		mut->pos=pos-1;
+		mut->base=tokens[2].at(0);
+		mut->base2=tokens[3].at(0);
+		if(user_defined_mutations[mut->chrom][mut->pos]!=NULL)
+		    {
+		    THROW("error mutation at "<< mut->chrom<< ":"<< (mut->pos+1)<< "defined twice");
+		    }
+		user_defined_mutations[mut->chrom][mut->pos]=mut;
+		}
+	    buf.close();
+	    }
+
 	void usage(ostream& out,int argc,char** argv)
 	    {
 	    out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
 	    out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 	    out << "Usage" << endl
-		    << "   "<< argv[0]<< " [options] -f genome.fa reads1.fq reads2.fq out1.fq out2.fq"<< endl;
+		    << "   "<< argv[0]<< " [options] genome.fa"<< endl;
 	    out << "Options:\n";
 	    out << "  -f (file) limit by genomic region (optional) read file:chrom(TAB)start(TAB)end\n";
 	    out << "  -o (file.tar) save as TAR file\n";
-	    out << " ** Inserting a mutation (optional):\n";
-	    out << "    -p position (chrom:position) (optional)\n";
-	    out << "    -b base (char) base ATGC\n";
-	    out << "    -z inserted new mutation is heterozygous (optional)\n";
+	    out << "  -N (int) approximate number of reads. default: "<< this->total_num_pairs << "\n";
+	    out << "  -e(float) base error rate. default: "<< this->base_error_rate << "\n";
+	    out << "  -r (float) rate of mutations. default: "<< this->proba_mutation << "\n";
+	    out << "  -d (int) distance between the two pairs default: "<< this->paired_end_size << "\n";
+	    out << "  -s (int) pair length std deviation default: "<< this->paired_end_stddev << "\n";
+	    out << "  -L (int) read length default: "<< this->short_read_length << "\n";
+	    out << "  -R (float) fraction of indels default: "<< this->indel_fraction << "\n";
+	    out << "  -X (float)  probability an indel is extended default: "<< this->indel_fraction << "\n";
+	    out << " ** Inserting  User defined substitutions (optional):\n";
+	    out << "    -u (filename) read a file containing user-defined mutations (optional). Format: (CHROM)\\t(POS+1)\\t(BASE1)\\t(BASE2)\n";
+	    out << "    -m (chrom) (POS+1) (BASE1) (BASE2) insert user defined substitution.\n";
 	    out << endl;
 	    }
 
@@ -502,6 +610,38 @@ class ShortReadSim:public AbstractApplication
 		    usage(cerr,argc,argv);
 		    return (EXIT_FAILURE);
 		    }
+		else if(std::strcmp(argv[optind],"-N")==0 && optind+1< argc)
+		    {
+		    this->total_num_pairs=atol(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-e")==0 && optind+1< argc)
+		    {
+		    this->base_error_rate=atof(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-r")==0 && optind+1< argc)
+		    {
+		    this->proba_mutation=atof(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-d")==0 && optind+1< argc)
+		    {
+		    this->paired_end_size=atoi(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-s")==0 && optind+1< argc)
+		    {
+		    this->paired_end_stddev=atoi(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-L")==0 && optind+1< argc)
+		    {
+		    this->short_read_length=atoi(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-R")==0 && optind+1< argc)
+		    {
+		    this->indel_fraction=atof(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-X")==0 && optind+1< argc)
+		    {
+		    this->proba_extend=atof(argv[++optind]);
+		    }
 		else if(std::strcmp(argv[optind],"-o")==0 && optind+1< argc)
 		    {
 		    outfile=argv[++optind];
@@ -515,6 +655,46 @@ class ShortReadSim:public AbstractApplication
 		else if(std::strcmp(argv[optind],"-f")==0 && optind+1< argc)
 		    {
 		    readCapture(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-u")==0 && optind+1< argc)
+		    {
+		    readUserDefinedMutations(argv[++optind]);
+		    }
+		else if(std::strcmp(argv[optind],"-u")==0 && optind+4< argc)
+		    {
+		    string chrom(argv[++optind]);
+		    int32_t pos=atoi(argv[++optind]);
+		    if(pos<1)
+			{
+			usage(cerr,argc,argv);
+			cerr << "bad position in " << argv[optind] << endl;
+			return EXIT_FAILURE;
+			}
+		    char* base1=argv[++optind];
+		    if(strlen(base1)!=1 || !isalpha(base1[0]))
+			{
+			usage(cerr,argc,argv);
+			cerr << "bad base-1 in " << base1 << endl;
+			return EXIT_FAILURE;
+			}
+		    char* base2=argv[++optind];
+		    if(strlen(base2)!=1 || !isalpha(base2[0]))
+			{
+			usage(cerr,argc,argv);
+			cerr << "bad base-2 in " << base2 << endl;
+			return EXIT_FAILURE;
+			}
+		    UserDefinedSubstitution* mut=new UserDefinedSubstitution;
+		    mut->chrom.assign(chrom);
+		    mut->pos=pos-1;
+		    mut->base=base1[0];
+		    mut->base2=base1[1];
+		    if(user_defined_mutations[mut->chrom][mut->pos]!=NULL)
+			{
+			cerr << "error mutation at "<< mut->chrom<< ":"<< (mut->pos+1)<< "defined twice.\n";
+			return EXIT_FAILURE;
+			}
+		    user_defined_mutations[mut->chrom][mut->pos]=mut;
 		    }
 		/*
 		else if(std::strcmp(argv[optind],"-p")==0 && optind+1< argc)
@@ -601,19 +781,27 @@ class ShortReadSim:public AbstractApplication
 		cerr << "Cannot open tmpFile for fastq-2:" << strerror(errno)<< endl;
 		return EXIT_FAILURE;
 		}
-
+	    this->outvcf=tmpfile();
+	    if(outvcf==NULL)
+		{
+		cerr << "Cannot open tmpFile for VCF:" << strerror(errno)<< endl;
+		return EXIT_FAILURE;
+		}
 
 	    this->run(argv[optind]);
 
 	    std::fflush(this->outfq1);
 	    std::fflush(this->outfq2);
+	    std::fflush(this->outvcf);
 
-	    this->tarball->putFile(this->outfq1,"reads1.fastq");
-	    this->tarball->putFile(this->outfq2,"reads2.fastq");
+	    this->tarball->putFile(this->outfq1,"sim/reads1.fastq");
+	    this->tarball->putFile(this->outfq2,"sim/reads2.fastq");
+	    this->tarball->putFile(this->outvcf,"sim/mutations.txt");
 	    this->tarball->finish();
 
 	    std::fclose(this->outfq1);
 	    std::fclose(this->outfq2);
+	    std::fclose(this->outvcf);
 
 	    out->flush();
 	    if(fout!=NULL)

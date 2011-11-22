@@ -44,7 +44,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfintersect \
 	$(BINDIR)/vcfliftover \
 	$(BINDIR)/backlocate \
-	$(BINDIR)/igvcontrol
+	$(BINDIR)/igvcontrol \
+	$(BINDIR)/shortreadsim
 
 
 all:$(TARGET_BINARIES)
@@ -117,7 +118,7 @@ $(BINDIR)/vcfintersect : vcfintersect.cpp application.o segments.o netstreambuf.
 $(BINDIR)/igvcontrol: igv.cpp application.o xcurses.cpp 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses	
 $(BINDIR)/shortreadsim: shortreadsim.cpp application.o  segments.o tarball.o
-	$(CPP) -g -o $@ $^ $(CFLAGS)  -L $(SAMDIR)  -lz -lbam
+	$(CPP) -o $@ $^ $(CFLAGS)  -L $(SAMDIR)  -lz -lbam
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
