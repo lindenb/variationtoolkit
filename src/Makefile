@@ -116,7 +116,9 @@ $(BINDIR)/vcfintersect : vcfintersect.cpp application.o segments.o netstreambuf.
 	$(CPP) -o $@ $^ $(CFLAGS) `curl-config --cflags --libs` -lz
 $(BINDIR)/igvcontrol: igv.cpp application.o xcurses.cpp 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses	
-	
+$(BINDIR)/shortreadsim: shortreadsim.cpp application.o  segments.o tarball.o
+	$(CPP) -g -o $@ $^ $(CFLAGS)  -L $(SAMDIR)  -lz -lbam
+
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
 pubmedxsl.o:pubmed.xsl $(BINDIR)/embbedC
@@ -161,7 +163,8 @@ xcurses.o: xcurses.cpp xcurses.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 color.o: color.cpp color.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
-
+tarball.o: tarball.cpp tarball.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
 abstractcharsequence.o: abstractcharsequence.cpp abstractcharsequence.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 genomicsequence.o: genomicsequence.cpp genomicsequence.h
