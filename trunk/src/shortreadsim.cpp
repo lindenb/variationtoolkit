@@ -12,6 +12,7 @@
 #include <iostream>
 #include <cerrno>
 #include <fstream>
+#include <algorithm>
 #include <zlib.h>
 #include "zstreambuf.h"
 #include "segments.h"
@@ -120,7 +121,7 @@ class ShortReadSim:public AbstractApplication
 	FILE* outfq2;
 	FILE* outvcf;
 	char default_quality;
-	uint64_t pair_id_generator;
+	int64_t pair_id_generator;
 	Tar* tarball;
 
 
@@ -186,7 +187,7 @@ class ShortReadSim:public AbstractApplication
 	    //first read
 	    fputc('@',outfq1);
 	    fputs(chrom.c_str(),outfq1);
-	    fprintf(outfq1,"_%ld:1\n",pair_id_generator);
+	    fprintf(outfq1,"_%ld:1\n",(long int)pair_id_generator);
 
 	    for(int32_t i=0;i< short_read_length;++i)
 		{
@@ -203,7 +204,7 @@ class ShortReadSim:public AbstractApplication
 
 	    fputs("@",outfq2);
 	    fputs(chrom.c_str(),outfq2);
-	    fprintf(outfq2,"_%ld:2\n",pair_id_generator);
+	    fprintf(outfq2,"_%ld:2\n",(long int)pair_id_generator);
 	    for(int32_t i=0;i< short_read_length;++i)
 		{
 		fputc(complement(amplicon[(amplicon.size()-1)-i]),outfq2);

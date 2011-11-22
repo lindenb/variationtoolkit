@@ -165,7 +165,7 @@ xcurses.o: xcurses.cpp xcurses.h
 color.o: color.cpp color.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 tarball.o: tarball.cpp tarball.h
-	$(CPP) -c -o $@ $< $(CFLAGS)
+	$(CPP) -g -c -o $@ $< $(CFLAGS)
 abstractcharsequence.o: abstractcharsequence.cpp abstractcharsequence.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 genomicsequence.o: genomicsequence.cpp genomicsequence.h
