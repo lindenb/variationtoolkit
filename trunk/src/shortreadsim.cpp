@@ -180,6 +180,7 @@ class ShortReadSim:public AbstractApplication
 
 	void emit(const string& chrom,const string& amplicon)
 	    {
+	    if(amplicon.size()< short_read_length) return;
 	    ++pair_id_generator;
 	    //first read
 	    fputc('@',outfq1);
@@ -204,7 +205,7 @@ class ShortReadSim:public AbstractApplication
 	    fprintf(outfq2,":%ld:2\n",pair_id_generator);
 	    for(int32_t i=0;i< short_read_length;++i)
 		{
-		fputc(amplicon[amplicon.size()-short_read_length+i],outfq2);
+		fputc(complement(amplicon[(amplicon.size()-1)-i]),outfq2);
 		}
 	    fputs("\n+\n",outfq2);
 	    for(int32_t i=0;i< short_read_length;++i)
