@@ -44,7 +44,7 @@ struct PosixTarHeader
 void Tar::_init(void* header)
     {
     std::memset(header,0,sizeof(PosixTarHeader));
-    std::sprintf(TARHEADER->magic,"ustar  ");
+    std::memcpy((void*)(TARHEADER->magic),"ustar ",6);
     std::sprintf(TARHEADER->mtime,"%011lo",time(NULL));
     std::sprintf(TARHEADER->mode,"%07o",0644);
     char * s = ::getlogin();
@@ -172,7 +172,8 @@ void Tar::putFile(const char* filename,const char* nameInArchive)
     std::FILE* in=std::fopen(filename,"rb");
     if(in==NULL)
 		{
-		THROW("Cannot open " << filename << " "<< std::strerror(errno));
+		std::cerr << "Cannot open " << filename << " "<< std::strerror(errno) << std::endl;
+		THROW("I/O error abort");
 		}
     putFile(in,nameInArchive);
     std::fclose(in);
