@@ -400,7 +400,7 @@ class ShortReadSim:public AbstractApplication
 			    int32_t segLength=chromEnd-chromStart;
 			    if(paired_end_size<segLength)
 				{
-				uint64_t n_pairs = ((uint64_t)this->coverage)*segLength;
+				uint64_t n_pairs =(uint64_t) (((double)segLength/(double)short_read_length +0.5)*((uint64_t)this->coverage));
 				WHERE(n_pairs);
 
 				/* generate all the pairs */
