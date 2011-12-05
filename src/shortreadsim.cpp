@@ -18,7 +18,7 @@
 #include "segments.h"
 #include "application.h"
 #include "throw.h"
-#define NOWHERE
+//#define NOWHERE
 #include "where.h"
 #include "tarball.h"
 
@@ -395,19 +395,19 @@ class ShortReadSim:public AbstractApplication
 				{
 				chromEnd++;
 				}
-			    WHERE(chromStart << "-" << chromEnd);
+			    WHERE("Scanning segment:"<< chromStart << "-" << chromEnd);
 			    //process the unmasked segment
 			    int32_t segLength=chromEnd-chromStart;
-			    if(paired_end_size<segLength)
+			    if(short_read_length<segLength)
 				{
-				//uint64_t n_pairs =(uint64_t) (((double)segLength/(double)short_read_length +0.5)*((uint64_t)this->coverage));
-				uint64_t n_pairs =(uint64_t) ((segLength)*((uint64_t)this->coverage));
+				uint64_t n_pairs =(uint64_t) (((double)segLength/(double)short_read_length +0.5)*((uint64_t)this->coverage));
+				//uint64_t n_pairs =(uint64_t) ((segLength)*((uint64_t)this->coverage));
 				WHERE(n_pairs);
 
 				/* generate all the pairs */
 				for(uint64_t i=0;i< n_pairs;++i)
 				    {
-				    int32_t seq_index=chromStart+(int32_t)(lrand48()%(segLength-paired_end_size));
+				    int32_t seq_index=chromStart+(int32_t)(lrand48()%(segLength-short_read_length));
 				    int32_t paired_len= paired_end_size+(lrand48()%paired_end_stddev)*(::drand48()<0.5?1:-1);
 				    map<int32_t,Mutation*>* chrom2mut=(rand()%2==0?&chrom1:&chrom2);
 				    string amplicon;
@@ -457,7 +457,7 @@ class ShortReadSim:public AbstractApplication
 					    }
 					}
 
-				    WHERE(amplicon);
+				    //WHERE(amplicon);
 				    if(rand()%2==0)//use reverse complement
 					{
 					std::reverse(amplicon.begin(),amplicon.end());
@@ -469,6 +469,10 @@ class ShortReadSim:public AbstractApplication
 
 				    emit(chrom,amplicon);
 				    }
+				}
+			    else
+				{
+				 WHERE("No read for :"<< chromStart << "-" << chromEnd);
 				}
 			    chromStart=chromEnd;
 			    }
