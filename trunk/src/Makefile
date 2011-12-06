@@ -123,7 +123,7 @@ $(BINDIR)/shortreadsim: shortreadsim.cpp application.o  segments.o tarball.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -L $(SAMDIR)  -lz -lbam
 $(BINDIR)/bedmerge: bedmerge.cpp application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz 
-$(BINDIR)/genomesim: genomesim.cpp application.o
+$(BINDIR)/genomesim: genomesim.cpp application.o  segments.o tarball.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 
 $(BINDIR)/embbedC:embbedC.c
