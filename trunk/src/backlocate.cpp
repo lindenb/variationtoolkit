@@ -178,7 +178,7 @@ class BackLocate:public MysqlApplication
 	    	    int peptideIndex0= peptidePos1-1;
 	            if(peptideIndex0 >=wildProt->size())
 	            	{
-	            	cerr << "#index out of range for :"<< gene->name << " peptide length="<< wildProt->size() << endl;
+	            	cerr << "#index out of range for :"<< gene->name << " peptide pos "<< peptidePos1 << ">= length="<< wildProt->size() << endl;
 	    	    	return;
 	            	}
 
