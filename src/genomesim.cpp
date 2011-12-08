@@ -75,6 +75,7 @@ class GenomeSim:public AbstractApplication
 	FILE* outvcf;
 	Tar* tarball;
 	std::map<string,vector<StartEnd>* > capture;
+	std::map<string,vector<StartEnd>* > no_mutation;
 
 	GenomeSim():
 	    proba_mutation(0.0010),
@@ -146,10 +147,17 @@ class GenomeSim:public AbstractApplication
 	    if(chromStart>=chromEnd) return;
 
 	    map<int32_t,UserDefinedSubstitution*>* pos2mut=NULL;
+	    vector<StartEnd>* ignore_ranges=NULL;
 	    std::map<string,map<int32_t,UserDefinedSubstitution*>* >::iterator r_mut=user_defined_mutations.find(chrom);
 	    if(r_mut!=user_defined_mutations.end())
 		{
-		pos2mut= r_mut->second;
+		pos2mut = r_mut->second;
+		}
+
+	    map<string,vector<StartEnd>* >::const_iterator ri=no_mutation.find(chrom);
+	    if(ri!=no_mutation.end())
+		{
+		ignore_ranges = ri->second;
 		}
 
 
@@ -185,11 +193,29 @@ class GenomeSim:public AbstractApplication
 		    if(r_user_mut!=pos2mut->end())
 			{
 			fprintf(this->outvcf,"%s\t%d\t%c\t%c/%c\t1/1\n",chrom.c_str(),(chromStart+1),c,r_user_mut->second->base1,r_user_mut->second->base2);
-			seqout[0]->put(r_user_mut->second->base1);
-			seqout[1]->put(r_user_mut->second->base2);
+			seqout[0]->put(r_user_mut->second->base1!='.'?r_user_mut->second->base1:c);
+			seqout[1]->put(r_user_mut->second->base2!='.'?r_user_mut->second->base2:c);
 			continue;
 			}
 	            }
+
+	        if(ignore_ranges!=NULL)
+	            {
+	            size_t i=0;
+	            for(i= 0; i< ignore_ranges->size();++i)
+	        	{
+	        	StartEnd& range=ignore_ranges->at(i);
+	        	if(range.start<= chromStart && chromStart < range.end)
+	        	    {
+	        	    seqout[0]->put(c);
+	        	    seqout[1]->put(c);
+	        	    break;
+	        	    }
+	        	}
+	            if(i!=ignore_ranges->size()) continue;
+	            }
+
+
 
 		if(c=='N' )
 		    {
@@ -360,7 +386,7 @@ class GenomeSim:public AbstractApplication
 	    }
 
 
-	void readCapture(const char* filename)
+	void _readRanges(const char* filename,map<string,vector<StartEnd>* >& chrom2ranges)
 	    {
 	    Tokenizer tokenizer('\t');
 	    vector<string> tokens;
@@ -391,11 +417,11 @@ class GenomeSim:public AbstractApplication
 		    continue;
 		    }
 		vector<StartEnd>* v=NULL;
-		map<string,vector<StartEnd>* >::iterator r=capture.find(tokens[0]);
-		if(r== capture.end())
+		map<string,vector<StartEnd>* >::iterator r= chrom2ranges.find(tokens[0]);
+		if(r== chrom2ranges.end())
 		    {
 		    v=new vector<StartEnd>;
-		    capture.insert(make_pair<string,vector<StartEnd>* >(tokens[0],v));
+		    chrom2ranges.insert(make_pair<string,vector<StartEnd>* >(tokens[0],v));
 		    }
 		else
 		    {
@@ -405,6 +431,16 @@ class GenomeSim:public AbstractApplication
 		v->push_back(range);
 		}
 	    buf.close();
+	    }
+
+	void readCapture(const char* filename)
+	    {
+	    _readRanges(filename,capture);
+	    }
+
+	void readIgnore(const char* filename)
+	    {
+	    _readRanges(filename,no_mutation);
 	    }
 
 	void readUserDefinedMutations(const char* filename)
@@ -433,12 +469,12 @@ class GenomeSim:public AbstractApplication
 		    cerr << "Bad range in " << line << endl;
 		    continue;
 		    }
-		if(tokens[2].size()!=1 || !isalpha(tokens[2].at(0)))
+		if(tokens[2].size()!=1 || (!isalpha(tokens[2].at(0)) && tokens[2].at(0)!='.'))
 		    {
 		    cerr << "Bad base 1 in " << line << endl;
 		    continue;
 		    }
-		if(tokens[3].size()!=1 || !isalpha(tokens[3].at(0)))
+		if(tokens[3].size()!=1 || (!isalpha(tokens[3].at(0)) && tokens[3].at(0)!='.'))
 		    {
 		    cerr << "Bad base 2 in " << line << endl;
 		    continue;
@@ -456,6 +492,8 @@ class GenomeSim:public AbstractApplication
 		}
 	    buf.close();
 	    }
+
+
 
 	void _insert(UserDefinedSubstitution* mut)
 	    {
@@ -487,13 +525,15 @@ class GenomeSim:public AbstractApplication
 		    << "   "<< argv[0]<< " [options] genome.fa"<< endl;
 	    out << "Options:\n";
 	    out << "  -f (file) limit by genomic region (optional) read file:chrom(TAB)start(TAB)end\n";
+	    out << "  -i (file) no mutation in those genomic regions (optional) read file:chrom(TAB)start(TAB)end\n";
 	    out << "  -r (float) rate of mutations. default: "<< this->proba_mutation << "\n";
 	    out << "  -R (float) fraction of indels default: "<< this->indel_fraction << "\n";
 	    out << "  -X (float)  probability an indel is extended default: "<< this->indel_fraction << "\n";
 	    out << " ** Inserting  User defined substitutions (optional):\n";
 	    out << "    -u (filename) read a file containing user-defined mutations (optional). Format: (CHROM)\\t(POS+1)\\t(BASE1)\\t(BASE2)\n";
-	    out << "    -m (chrom) (POS+1) (BASE1) (BASE2) insert user defined substitution.\n";
+	    out << "    -m (chrom) (POS+1) (BASE1) (BASE2) insert user defined substitution. use dot('.') to not change the base.\n";
 	    out << endl;
+
 	    }
 
 	int main(int argc,char** argv)
@@ -502,6 +542,7 @@ class GenomeSim:public AbstractApplication
 	    const char* outfile=NULL;
 	    srand(time(0));
 	    srand48(time(0));
+	    string tarbase("gsim");
 
 	    while(optind < argc)
 		{
@@ -526,7 +567,10 @@ class GenomeSim:public AbstractApplication
 		    {
 		    this->proba_extend=atof(argv[++optind]);
 		    }
-
+		else if(std::strcmp(argv[optind],"-i")==0 && optind+1< argc)
+		    {
+		    readIgnore(argv[++optind]);
+		    }
 		else if(std::strcmp(argv[optind],"-u")==0 && optind+1< argc)
 		    {
 		    readUserDefinedMutations(argv[++optind]);
@@ -542,14 +586,14 @@ class GenomeSim:public AbstractApplication
 			return EXIT_FAILURE;
 			}
 		    char* base1=argv[++optind];
-		    if(strlen(base1)!=1 || !isalpha(base1[0]))
+		    if(strlen(base1)!=1 || (base1[0]!='.' && !isalpha(base1[0])))
 			{
 			usage(cerr,argc,argv);
 			cerr << "bad base-1 in " << base1 << endl;
 			return EXIT_FAILURE;
 			}
 		    char* base2=argv[++optind];
-		    if(strlen(base2)!=1 || !isalpha(base2[0]))
+		    if(strlen(base2)!=1 || (base2[0]!='.' && !isalpha(base2[0])))
 			{
 			usage(cerr,argc,argv);
 			cerr << "bad base-2 in " << base2 << endl;
@@ -570,6 +614,20 @@ class GenomeSim:public AbstractApplication
 			{
 			cerr << "output file should end with tar."<< endl;
 			return EXIT_FAILURE;
+			}
+		    char* p=strrchr(outfile,'/');
+		    if(p==NULL)
+			{
+			tarbase.assign(outfile);
+			}
+		    else
+			{
+			tarbase.assign(p+1);
+			}
+		    string::size_type d=tarbase.find_last_of('.');
+		    if(d!=string::npos)
+			{
+			tarbase=tarbase.substr(0,d);
 			}
 		    }
 		else if(argv[optind][0]=='-')
@@ -632,9 +690,13 @@ class GenomeSim:public AbstractApplication
 	    std::fflush(this->seqout[1]->out);
 	    std::fflush(this->outvcf);
 
-	    this->tarball->putFile(this->seqout[0]->out,"gsim/homologous1.fa");
-	    this->tarball->putFile(this->seqout[1]->out,"gsim/homologous2.fa");
-	    this->tarball->putFile(this->outvcf,"gsim/mutations.txt");
+	    string tarpath;
+	    tarpath.assign(tarbase).append("/homologous1.fa");
+	    this->tarball->putFile(this->seqout[0]->out,tarpath.c_str());
+	    tarpath.assign(tarbase).append("/homologous2.fa");
+	    this->tarball->putFile(this->seqout[1]->out,tarpath.c_str());
+	    tarpath.assign(tarbase).append("/mutations.txt");
+	    this->tarball->putFile(this->outvcf,tarpath.c_str());
 	    this->tarball->finish();
 
 	    std::fclose(this->seqout[0]->out);
