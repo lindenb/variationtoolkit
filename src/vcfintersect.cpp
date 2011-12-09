@@ -309,7 +309,7 @@ class VcfIntersection:public AbstractApplication
 		out << "   -h2  toggle: input is half open (default:"<< config2.halfOpen<<")" << endl;
 		out << "   -z2  toggle: input zero-based (default:"<< config2.zeroBased<<")" << endl;
 		out << "   --http  force database is a URL " << endl;
-		out << "   --gunzip  force database is a gzipped stream " << endl;
+		//out << "   --gunzip  force database is a gzipped stream " << endl;
 		out << "\n\n";
 		}
 
@@ -326,7 +326,7 @@ class VcfIntersection:public AbstractApplication
 	int main(int argc,char** argv)
 		{
 		bool force_http=false;
-		bool force_gunzip=false;
+		//bool force_gunzip=false;
 		char* dbName=NULL;
 		int optind=1;
 		while(optind < argc)
@@ -355,10 +355,10 @@ class VcfIntersection:public AbstractApplication
 			    {
 			    force_http=true;
 			    }
-			else if(strcmp(argv[optind],"--gunzip")==0)
+			/*else if(strcmp(argv[optind],"--gunzip")==0)
 			    {
 			    force_gunzip=true;
-			    }
+			    }*/
 			else if(strcmp(argv[optind],"-f")==0 && optind+1< argc)
 			    {
 			    dbName=argv[++optind];

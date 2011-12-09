@@ -524,6 +524,7 @@ class GenomeSim:public AbstractApplication
 	    out << "Usage" << endl
 		    << "   "<< argv[0]<< " [options] genome.fa"<< endl;
 	    out << "Options:\n";
+	    out << "  -o (file.tar) output tar file. contains chromosomes and mutations.\n";
 	    out << "  -f (file) limit by genomic region (optional) read file:chrom(TAB)start(TAB)end\n";
 	    out << "  -i (file) no mutation in those genomic regions (optional) read file:chrom(TAB)start(TAB)end\n";
 	    out << "  -r (float) rate of mutations. default: "<< this->proba_mutation << "\n";
@@ -615,7 +616,7 @@ class GenomeSim:public AbstractApplication
 			cerr << "output file should end with tar."<< endl;
 			return EXIT_FAILURE;
 			}
-		    char* p=strrchr(outfile,'/');
+		    const char* p=strrchr(outfile,'/');
 		    if(p==NULL)
 			{
 			tarbase.assign(outfile);
