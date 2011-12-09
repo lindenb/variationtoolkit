@@ -1,8 +1,6 @@
-.PHONY: all  ext manual doc clean
+.PHONY: all  ext manual doc clean archive
 all:
 	(cd src;make)
-manual:
-	(cd src;make man)
 doc:
 	(cd doc; make )
 
@@ -14,3 +12,4 @@ uninstall:
 clean:
 	(cd src; make clean)
 	(cd doc; make clean)
+
