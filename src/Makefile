@@ -182,6 +182,10 @@ mutatedsequence.o : mutatedsequence.cpp mutatedsequence.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 stringsequence.o : stringsequence.cpp stringsequence.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
+xstdio.o: xstdio.cpp xstdio.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+xstdlib.o: xstdlib.cpp xstdlib.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi

@@ -38,12 +38,14 @@ class GenomeIndex
 
 	GenomeIndex();
 	~GenomeIndex();
+	 void readIndex(const char* filename);
+	 void writeIndex(const char* filename);
+
 	const Chromosome* getChromsomeByIndex(uint8_t id) const;
 	void readGenome(const char* fasta);
 	void _createindex();
 
-
-	private:
+	int32_t short_read_max_size;
 	auto_vector<Chromosome> chromosomes;
 	std::vector<Reference> gIndex;
 
