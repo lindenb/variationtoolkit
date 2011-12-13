@@ -6,10 +6,11 @@
 #include "xstdio.h"
 #include "throw.h"
 #include "genomeindex.h"
+#include "where.h"
 
 using namespace std;
 
-GenomeIndex::Chromosome::Chromosome():length(0),sequence(NULL)
+GenomeIndex::Chromosome::Chromosome():non_N(0),heading_N(0),trailing_N(0),sequence(NULL)
     {
     }
 
@@ -20,12 +21,12 @@ GenomeIndex::Chromosome::~Chromosome()
 
 char GenomeIndex::Chromosome::at(int32_t index) const
     {
-    return sequence[index];
+    return index< heading_N || index>= (non_N+heading_N) ? 'N':sequence[heading_N+index];
     }
 
 int32_t GenomeIndex::Chromosome::size() const
     {
-    return length;
+    return non_N+heading_N+trailing_N;
     }
 
 GenomeIndex::GenomeIndex():short_read_max_size(100)
@@ -58,7 +59,7 @@ void GenomeIndex::readGenome(const char* fasta)
 		}
 	    curr=new GenomeIndex::Chromosome;
 	    curr->id=(uint8_t)this->chromosomes.size();
-	    curr->length=0;
+
 	    while((c=gzgetc(in))!=-1 && c!='\n')
 		{
 		if(c=='\r') continue;
@@ -70,11 +71,11 @@ void GenomeIndex::readGenome(const char* fasta)
 	if(!isalpha(c)) continue;
 
 	if(curr==NULL) THROW("Header missing for "<< (char)c);
-	if(curr->length== std::numeric_limits<int32_t>::max())
+	if(curr->non_N== std::numeric_limits<int32_t>::max())
 		{
 		THROW("sequence too large: "<< curr->name << " in "<< fasta);
 		}
-	curr->length++;
+	curr->non_N++;
 	}
     if(gzrewind(in)!=0)
 	{
@@ -92,9 +93,9 @@ void GenomeIndex::readGenome(const char* fasta)
     	     }
     	    curr= this->chromosomes.at(seqidx);
     	    seqidx++;
-    	    curr->sequence=(char*)::malloc(sizeof(char)*(curr->length+1));
-    	    if(curr->sequence==NULL) THROW("CAnnot alloc "<< curr->length);
-    	    curr->sequence[curr->length]=0;
+    	    curr->sequence=(char*)::malloc(sizeof(char)*(curr->size()+1));
+    	    if(curr->sequence==NULL) THROW("CAnnot alloc "<< (curr->size()+1));
+    	    curr->sequence[curr->size()]=0;
     	    curr_length=0;
     	    continue;
     	    }
@@ -116,48 +117,17 @@ class Sorter
 	Sorter():n_called(0)
 	    {
 	    }
-	bool lt( const GenomeIndex::Reference& o1,
-			 const GenomeIndex::Reference& o2
-			 ) const
-
-	    {
-	    if((++n_called)%1000000==0)
-		{
-		cerr << ".";
-		}
-	    const GenomeIndex::Chromosome* c1= this->genome->chromosomes.at(o1.chrom_id);
-	    const GenomeIndex::Chromosome* c2= this->genome->chromosomes.at(o2.chrom_id);
-	    int32_t i1=o1.pos;
-	    int32_t i2=o2.pos;
-	    int32_t n=0;
-	    for(;;)
-		{
-		if(i1>= c1->size())
-		    {
-		    if(i2>=c2->size()) return false;
-		    return true;
-		    }
-		if(i2>=c2->size())
-		    {
-		    return false;
-		    }
-		char b1= c1->at(i1);
-		char b2= c2->at(i2);
-		if(b1!=b2) return b1<b2;
-		++i1;
-		++i2;
-		++n;
-		if( n> this->genome->short_read_max_size ) return false;
-		}
-	    return false;
-	    }
 
 	bool operator()(
 		const GenomeIndex::Reference& o1,
 		const GenomeIndex::Reference & o2
 		) const
 	    {
-	    return lt(o1,o2);
+	    if((++n_called)%1000000==0)
+	   	{
+	   	cerr << ".";
+	   	}
+	    return genome->lt(o1,o2);
 	    }
     };
 
@@ -167,14 +137,17 @@ struct Merger
     Sorter* sorter;
     void merge(std::vector<GenomeIndex::Reference>& gIndex)
 	{
+	WHERE("Sorting "<< gIndex.size());
 	std::sort(gIndex.begin(),gIndex.end(),*sorter);
 	if(io==NULL)
 	    {
+	    WHERE("Simple save");
 	    io=safeTmpFile();
 	    safeFWrite((void*)&gIndex.front(),gIndex.size(),sizeof(GenomeIndex::Reference),io);
 	    safeFFlush(io);
 	    return;
 	    }
+	WHERE("opening new file");
 	FILE* out=safeTmpFile();
 	::safeRewind(io);
 	bool need_reload_file=true;
@@ -190,7 +163,7 @@ struct Merger
 		    break;
 		    }
 		}
-	    if(sorter->lt(gIndex[array_index],fReference))
+	    if(sorter->genome->lt(gIndex[array_index],fReference))
 		{
 		safeFWrite((void*)&gIndex[array_index],sizeof(GenomeIndex::Reference),1,out);
 		array_index++;
@@ -201,12 +174,14 @@ struct Merger
 		need_reload_file=true;
 		}
 	    }
+	WHERE("Saving array reminder");
 	while(array_index<gIndex.size())
 	    {
 	    safeFWrite((void*)&gIndex[array_index],sizeof(GenomeIndex::Reference),1,out);
 	    array_index++;
 	    }
 
+	WHERE("Saving io reminder");
 	while(fread((void*)&fReference,sizeof(GenomeIndex::Reference),1,io)==1)
 	    {
 	    safeFWrite((void*)&fReference,sizeof(GenomeIndex::Reference),1,out);
@@ -218,7 +193,7 @@ struct Merger
 	}
     };
 
-#define GINDEX_BUFFER_SIZE 100000
+#define GINDEX_BUFFER_SIZE 10000000
 void GenomeIndex::_createindex()
     {
     gIndex.clear();
@@ -235,38 +210,56 @@ void GenomeIndex::_createindex()
     	{
 	reference.chrom_id=(uint8_t)i;
 	const Chromosome* curr=chromosomes[i];
-    	for(int32_t j=0;j< curr->size();++j)
+    	for(int32_t j=0;
+    		j+this->short_read_max_size <= curr->size();
+    		++j)
     	    {
-    	    if(curr->at(j)=='N') continue;
+    	    int32_t k=0;
+
+    	    for(k=0;k< this->short_read_max_size;++k)
+    		{
+    		char c=curr->at(j+k);
+    		if(!(c=='A' || c=='T' || c=='G' || c=='C')) break;
+    		}
+
+    	    if(k!=this->short_read_max_size)
+    		{
+    		continue;
+    		}
     	    reference.pos=j;
     	    gIndex.push_back(reference);
     	    if(gIndex.size()>=GINDEX_BUFFER_SIZE)
     		{
+    		WHERE("merging " << curr->name << ":"<< j << "/"<< curr->size());
     		merger.merge(gIndex);
     		gIndex.clear();
     		gIndex.reserve(GINDEX_BUFFER_SIZE);
     		}
     	    }
+
     	if(!gIndex.empty())
     	    {
     	    merger.merge(gIndex);
     	    gIndex.clear();
     	    }
+
     	if(merger.io!=NULL)
     	    {
+    	    WHERE("Saving reminder from tmp file:");
     	    ::safeRewind(merger.io);
     	    GenomeIndex::Reference fReference;
     	    while(fread((void*)&fReference,sizeof(GenomeIndex::Reference),1,merger.io)==1)
-    		    {
-    		    gIndex.push_back(fReference);
-    		    }
-    	    fclose(merger.io);
+		{
+		gIndex.push_back(fReference);
+		}
     	    }
     	}
+    fclose(merger.io);
+    }
 
 void GenomeIndex::writeIndex(const char* filename)
     {
-    gzFile* out=gzopen(filename,"wb");
+    gzFile out=gzopen(filename,"wb");
     if(out==NULL) THROW("Cannot open "<< filename << " "<< strerror(errno));
 
 
@@ -292,7 +285,7 @@ void GenomeIndex::writeIndex(const char* filename)
 
  void GenomeIndex::readIndex(const char* filename)
     {
-    gzFile* in=gzopen(filename,"rb");
+     gzFile in=gzopen(filename,"rb");
     if(in==NULL) THROW("Cannot open "<< filename << " "<< strerror(errno));
 
 
@@ -310,7 +303,7 @@ void GenomeIndex::writeIndex(const char* filename)
 	::gzread(in,(void*)&n_len_name,sizeof(size_t)*1);
 	chrom->name.resize(n_len_name,'\0');
 	::gzread(in,(void*)chrom->name.data(),sizeof(char)*n_len_name);
-	::gzread(in,(void*)&(chrom->length),sizeof(int32_t));
+	::gzread(in,(void*)&(chrom->non_N),sizeof(int32_t));
 	}
 
     size_t n_gindex;
@@ -318,8 +311,43 @@ void GenomeIndex::writeIndex(const char* filename)
     gIndex.resize(n_gindex);
     ::gzread(in,(void*)&gIndex.front(),sizeof(GenomeIndex::Reference)*n_gindex);
 
-    gzclose(in);
+    ::gzclose(in);
     }
+
+ bool GenomeIndex::lt( const GenomeIndex::Reference& o1,
+ 			 const GenomeIndex::Reference& o2
+ 			 ) const
+
+    {
+
+    const Chromosome* c1= this->chromosomes.at(o1.chrom_id);
+    const Chromosome* c2= this->chromosomes.at(o2.chrom_id);
+    int32_t lentgth_1=c1->size();
+    int32_t lentgth_2=c2->size();
+    int32_t i1=o1.pos;
+    int32_t i2=o2.pos;
+    int32_t n=0;
+    for(;;)
+	{
+	if(i1>= lentgth_1)
+	    {
+	    if(i2>=lentgth_2) return false;
+	    return true;
+	    }
+	if(i2>=lentgth_2)
+	    {
+	    return false;
+	    }
+	char b1= c1->at(i1);
+	char b2= c2->at(i2);
+	if(b1!=b2) return b1<b2;
+	++i1;
+	++i2;
+	++n;
+	if( n> this->short_read_max_size ) return false;
+	}
+    if(o1.chrom_id!=o2.chrom_id) return o1.chrom_id<o2.chrom_id;
+    return o1.pos<o2.pos;
     }
 
 
@@ -329,5 +357,6 @@ int main(int argc,char** argv)
     test.readGenome(argv[1]);
     cerr << "sorting" << endl;
     test._createindex();
+    test.writeIndex("/tmp/jeter.idx.gz");
     return 0;
     }
