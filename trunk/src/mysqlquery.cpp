@@ -255,6 +255,10 @@ int main(int argc,char** argv)
 			{
 			password.assign(argv[++optind]);
 			}
+		else if(std::strcmp(argv[optind],"--database")==0 && optind+1<argc)
+			{
+			database.assign(argv[++optind]);
+			}
 	    else if(std::strcmp(argv[optind],"--port")==0 && optind+1<argc)
 			{
 			port=atoi(argv[++optind]);
