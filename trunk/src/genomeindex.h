@@ -22,7 +22,9 @@ class GenomeIndex
 		    public:
 			uint8_t id;
 			std::string name;
-			int32_t length;
+			int32_t non_N;
+			int32_t heading_N;
+			int32_t trailing_N;
 			char* sequence;
 			Chromosome();
 			virtual ~Chromosome();
@@ -38,9 +40,9 @@ class GenomeIndex
 
 	GenomeIndex();
 	~GenomeIndex();
-	 void readIndex(const char* filename);
-	 void writeIndex(const char* filename);
-
+	void readIndex(const char* filename);
+	void writeIndex(const char* filename);
+	bool lt(const Reference& o1,  const Reference& o2) const;
 	const Chromosome* getChromsomeByIndex(uint8_t id) const;
 	void readGenome(const char* fasta);
 	void _createindex();
