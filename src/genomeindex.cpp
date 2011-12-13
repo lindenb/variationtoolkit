@@ -29,7 +29,7 @@ int32_t GenomeIndex::Chromosome::size() const
     return non_N+heading_N+trailing_N;
     }
 
-GenomeIndex::GenomeIndex():short_read_max_size(100)
+GenomeIndex::GenomeIndex():short_read_max_size(100),merge_sort_buff_size(20000000)
     {
     }
 
@@ -114,7 +114,7 @@ class Sorter
     public:
 	GenomeIndex* genome;
 
-	Sorter():n_called(0)
+	Sorter(GenomeIndex* genome):n_called(0),genome(genome)
 	    {
 	    }
 
@@ -131,79 +131,94 @@ class Sorter
 	    }
     };
 
-struct Merger
+//#define GINDEX_BUFFER_SIZE 10000000
+std::FILE* GenomeIndex::merge(std::FILE* io,std::vector<Reference>& gIndex)
     {
-    FILE* io;
-    Sorter* sorter;
-    void merge(std::vector<GenomeIndex::Reference>& gIndex)
+    if(gIndex.empty()) return io;
+    Sorter sorter(this);
+    WHERE("Sorting "<< gIndex.size());
+    std::sort(gIndex.begin(),gIndex.end(),sorter);
+    if(io==NULL)
 	{
-	WHERE("Sorting "<< gIndex.size());
-	std::sort(gIndex.begin(),gIndex.end(),*sorter);
-	if(io==NULL)
-	    {
-	    WHERE("Simple save");
-	    io=safeTmpFile();
-	    safeFWrite((void*)&gIndex.front(),gIndex.size(),sizeof(GenomeIndex::Reference),io);
-	    safeFFlush(io);
-	    return;
-	    }
-	WHERE("opening new file");
-	FILE* out=safeTmpFile();
-	::safeRewind(io);
-	bool need_reload_file=true;
-	GenomeIndex::Reference fReference;
-	size_t array_index=0;
-	while(array_index<gIndex.size())
-	    {
-	    if(need_reload_file)
-		{
-		need_reload_file=false;
-		if(fread((void*)&fReference,sizeof(GenomeIndex::Reference),1,io)!=1)
-		    {
-		    break;
-		    }
-		}
-	    if(sorter->genome->lt(gIndex[array_index],fReference))
-		{
-		safeFWrite((void*)&gIndex[array_index],sizeof(GenomeIndex::Reference),1,out);
-		array_index++;
-		}
-	    else
-		{
-		safeFWrite((void*)&fReference,sizeof(GenomeIndex::Reference),1,out);
-		need_reload_file=true;
-		}
-	    }
-	WHERE("Saving array reminder");
-	while(array_index<gIndex.size())
-	    {
-	    safeFWrite((void*)&gIndex[array_index],sizeof(GenomeIndex::Reference),1,out);
-	    array_index++;
-	    }
-
-	WHERE("Saving io reminder");
-	while(fread((void*)&fReference,sizeof(GenomeIndex::Reference),1,io)==1)
-	    {
-	    safeFWrite((void*)&fReference,sizeof(GenomeIndex::Reference),1,out);
-	    }
-
-	fclose(io);
-	io=out;
-	gIndex.clear();
+	WHERE("Simple save");
+	io=safeTmpFile();
+	safeFWrite((void*)&gIndex.front(),gIndex.size(),sizeof(Reference),io);
+	safeFFlush(io);
+	return io;
 	}
-    };
+    WHERE("opening new file");
+    FILE* out=safeTmpFile();
+    ::safeRewind(io);
 
-#define GINDEX_BUFFER_SIZE 10000000
+    size_t array_index_1 = 0;
+    Reference* fReference=NULL;
+    while(array_index_1<gIndex.size())
+	{
+	if(fReference==NULL)
+	    {
+	    fReference=new Reference;
+	    if(fread((void*)fReference,sizeof(Reference),1,io)!=1)
+		{
+		delete fReference;
+		fReference=NULL;
+		break;
+		}
+	    }
+	if(lt(gIndex[array_index_1],*fReference))
+	    {
+	    safeFWrite((void*)&gIndex[array_index_1],sizeof(Reference),1,out);
+	    array_index_1++;
+	    }
+	else
+	    {
+	    safeFWrite((void*)fReference,sizeof(Reference),1,out);
+	    delete fReference;
+	    fReference=NULL;
+	    }
+	}
+    WHERE("Saving array reminder");
+    while(array_index_1 < gIndex.size())
+	{
+	safeFWrite((void*)&gIndex[array_index_1],sizeof(Reference),1,out);
+	array_index_1++;
+	}
+
+    WHERE("Saving io reminder");
+    if(fReference!=NULL)
+	{
+	delete fReference;
+	safeFWrite((void*)fReference,sizeof(Reference),1,out);
+	}
+    else
+	{
+	fReference=new Reference;
+	}
+
+    while(fread((void*)fReference,sizeof(Reference),1,io)==1)
+	{
+	safeFWrite((void*)fReference,sizeof(Reference),1,out);
+	}
+
+    if(fReference!=NULL)
+	{
+	delete fReference;
+	fReference=NULL;
+	}
+
+    fclose(io);
+    io=out;
+    gIndex.clear();
+    return io;
+    }
+
+
+
 void GenomeIndex::_createindex()
     {
     gIndex.clear();
-    gIndex.reserve(GINDEX_BUFFER_SIZE);
+    gIndex.reserve(merge_sort_buff_size);
 
-    Sorter sorter;
-    sorter.genome=this;
-    Merger merger;
-    merger.io=NULL;
-    merger.sorter=&sorter;
+    FILE* io=NULL;
 
     Reference reference;
     for(size_t i=0;i< chromosomes.size();++i)
@@ -228,40 +243,61 @@ void GenomeIndex::_createindex()
     		}
     	    reference.pos=j;
     	    gIndex.push_back(reference);
-    	    if(gIndex.size()>=GINDEX_BUFFER_SIZE)
+    	    if(gIndex.size()>=merge_sort_buff_size)
     		{
     		WHERE("merging " << curr->name << ":"<< j << "/"<< curr->size());
-    		merger.merge(gIndex);
+    		io=merge(io,gIndex);
     		gIndex.clear();
-    		gIndex.reserve(GINDEX_BUFFER_SIZE);
+    		gIndex.reserve(merge_sort_buff_size);
     		}
     	    }
 
     	if(!gIndex.empty())
     	    {
-    	    merger.merge(gIndex);
+    	    io=merge(io,gIndex);
     	    gIndex.clear();
     	    }
 
-    	if(merger.io!=NULL)
+    	if(io!=NULL)
     	    {
     	    WHERE("Saving reminder from tmp file:");
-    	    ::safeRewind(merger.io);
-    	    GenomeIndex::Reference fReference;
-    	    while(fread((void*)&fReference,sizeof(GenomeIndex::Reference),1,merger.io)==1)
+    	    ::safeRewind(io);
+    	    Reference fReference;
+    	    while(fread((void*)&fReference,sizeof(Reference),1,io)==1)
 		{
+    		print(cout,fReference);
 		gIndex.push_back(fReference);
 		}
     	    }
     	}
-    fclose(merger.io);
+    if(io!=NULL) fclose(io);
+    }
+
+void GenomeIndex::print(ostream& out,const Reference& ref) const
+    {
+    const Chromosome* curr=chromosomes[ref.chrom_id];
+    out << curr->name << "\t" << ref.pos << "\t";
+    for(int i=0;i< this->short_read_max_size;++i)
+	{
+	out << curr->at(ref.pos+i);
+	}
+    out << endl;
     }
 
 void GenomeIndex::writeIndex(const char* filename)
     {
+
     gzFile out=gzopen(filename,"wb");
     if(out==NULL) THROW("Cannot open "<< filename << " "<< strerror(errno));
 
+    char magic[4];
+    magic[0]='g';
+    magic[1]='\1';
+    magic[2]='d';
+    magic[3]='X';
+    ::gzwrite(out,(void*)magic,sizeof(char)*4);
+
+    ::gzwrite(out,(void*)&(this->short_read_max_size),sizeof(int32_t));
 
     uint8_t n_chrom=(uint8_t)chromosomes.size();
     ::gzwrite(out,(void*)&n_chrom,sizeof(uint8_t)*1);
@@ -272,8 +308,10 @@ void GenomeIndex::writeIndex(const char* filename)
 	size_t n_len_name=chrom->name.size();
 	::gzwrite(out,(void*)&n_len_name,sizeof(size_t)*1);
 	::gzwrite(out,(void*)chrom->name.data(),sizeof(char)*n_len_name);
-	int32_t chrom_len=chrom->size();
-	::gzwrite(out,(void*)&chrom_len,sizeof(int32_t));
+
+	::gzwrite(out,(void*)&(chrom->heading_N),sizeof(int32_t));
+	::gzwrite(out,(void*)&(chrom->non_N),sizeof(int32_t));
+	::gzwrite(out,(void*)&(chrom->trailing_N),sizeof(int32_t));
 	}
 
     size_t n_gindex=gIndex.size();
@@ -287,7 +325,14 @@ void GenomeIndex::writeIndex(const char* filename)
     {
      gzFile in=gzopen(filename,"rb");
     if(in==NULL) THROW("Cannot open "<< filename << " "<< strerror(errno));
+    char magic[4];
+    ::gzread(in,(void*)&magic,sizeof(char)*4);
+    if(magic[0]!='g' || magic[1]!='\1' || magic[2]!='d' || magic[3]!='X')
+	{
+	THROW("Not a gIndex");
+	}
 
+    ::gzread(in,(void*)&(this->short_read_max_size),sizeof(int32_t));
 
     uint8_t n_chrom;
     ::gzread(in,(void*)&n_chrom,sizeof(uint8_t)*1);
@@ -303,7 +348,9 @@ void GenomeIndex::writeIndex(const char* filename)
 	::gzread(in,(void*)&n_len_name,sizeof(size_t)*1);
 	chrom->name.resize(n_len_name,'\0');
 	::gzread(in,(void*)chrom->name.data(),sizeof(char)*n_len_name);
+	::gzread(in,(void*)&(chrom->heading_N),sizeof(int32_t));
 	::gzread(in,(void*)&(chrom->non_N),sizeof(int32_t));
+	::gzread(in,(void*)&(chrom->trailing_N),sizeof(int32_t));
 	}
 
     size_t n_gindex;
