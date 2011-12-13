@@ -50,7 +50,10 @@ class GenomeIndex
 	int32_t short_read_max_size;
 	auto_vector<Chromosome> chromosomes;
 	std::vector<Reference> gIndex;
-
+   private:
+	std::FILE* merge(std::FILE* io,std::vector<GenomeIndex::Reference>& gIndex);
+	uint32_t merge_sort_buff_size;
+	void print(std::ostream& out,const Reference& ref) const;
     };
 
 #endif /* GENOMEINDEX_H_ */
