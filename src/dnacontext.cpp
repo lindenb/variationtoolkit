@@ -25,7 +25,11 @@ using namespace std;
 class DNAContext
 	{
 	public:
-
+		struct GCPercent
+		    {
+		    double gc;
+		    double total;
+		    };
 		IndexedFasta* faidx;
 		Tokenizer tokenizer;
 		int32_t chromColumn;
@@ -56,6 +60,21 @@ class DNAContext
 		    cerr << endl;
 		    }
 
+		void fillGC(GCPercent* gc,const std::string* dna)
+		    {
+		    for(string::size_type i=0;i< dna->size();++i)
+			{
+			switch(toupper(dna->at(i)))
+			    {
+			    case 'G':
+			    case 'C':
+			    case 'W': gc->gc+=1.0; break;
+			    default:break;
+			    }
+			}
+		    gc->total+= dna->size();
+		    }
+
 		void run(std::istream& in)
 		    {
 		    string line;
@@ -69,7 +88,8 @@ class DNAContext
 				cout << line << tokenizer.delim
 					<< "LEFT(DNA)" << tokenizer.delim
 					<< "CONTEXT(DNA)" << tokenizer.delim
-					<< "RIGHT(DNA)"
+					<< "RIGHT(DNA)"<< tokenizer.delim
+					<< "%GC"
 					<< endl;
 				continue;
 				}
@@ -94,6 +114,9 @@ class DNAContext
 				continue;
 				}
 			pos-=1;//0 based
+			GCPercent gcPercent;
+			gcPercent.gc=0;
+			gcPercent.total=0;
 			cout << line << tokenizer.delim;
 			const char* chrom=tokens[chromColumn].c_str();
 			auto_ptr<string> dna=faidx->fetch(chrom,max(0,pos-extend),max(pos-1,0));
@@ -103,6 +126,7 @@ class DNAContext
 			    }
 			else
 			    {
+			    fillGC(&gcPercent,dna.get());
 			    cout << *(dna);
 			    }
 			cout << tokenizer.delim;
@@ -113,6 +137,7 @@ class DNAContext
 			    }
 			else
 			    {
+			    fillGC(&gcPercent,dna.get());
 			    cout << *(dna);
 			    }
 			cout << tokenizer.delim;
@@ -123,7 +148,17 @@ class DNAContext
 			    }
 			else
 			    {
+			    fillGC(&gcPercent,dna.get());
 			    cout << *(dna);
+			    }
+			cout << tokenizer.delim;
+			if(gcPercent.total<=0)
+			    {
+			    cout << ".";
+			    }
+			else
+			    {
+			    cout << (gcPercent.gc/gcPercent.total);
 			    }
 			cout << endl;
 			}
