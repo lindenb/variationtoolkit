@@ -245,7 +245,7 @@ std::auto_ptr<KnownGene> KnownGene::parse(std::string line)
      vector<string> exEnd;
      comma.split(tokens[8],exStart);
      comma.split(tokens[9],exEnd);
-     g->exons.reserve(countExons());
+     g->exons.reserve(exoncount);
      for(int32_t i=0;i< exoncount;++i)
 	 {
 	 Exon exon;
