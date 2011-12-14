@@ -25,6 +25,8 @@ void bam_init_header_hash(bam_header_t *header);
 class RedonStructVar:public AbstractApplication
     {
     public:
+
+
 	class BamFile;
 
 	struct Param
@@ -32,7 +34,7 @@ class RedonStructVar:public AbstractApplication
 	    RedonStructVar* owner;
 	    Exon* exon;
 	    BamFile* bamFile;
-	    int* coverage;
+	    vector<int>* coverage;
 	    };
 
 	struct GCPercent
@@ -40,6 +42,13 @@ class RedonStructVar:public AbstractApplication
 	    double gc;
 	    double total;
 	    };
+
+	struct Point
+	    {
+	    double gc;
+	    int32_t coverage;
+	    };
+
 
 	// callback for bam_fetch()
 	static int fetch_func(const bam1_t *b, void *data)
@@ -84,8 +93,14 @@ class RedonStructVar:public AbstractApplication
 			    case BAM_CMATCH:
 				{
 				char base=bam_nt16_rev_table[bam1_seqi(seq,read_seq_index)];
+				uint8_t qual=qualities[read_seq_index];
+
 				if(read_genomic_pos==pos)
 				    {
+				    if(param->owner->min_qual>=(double)qual)
+					{
+					param->coverage->at(pos-param->exon->start)++;
+					}
 				    //cerr << "[";
 				    }
 				cerr << base;
@@ -234,8 +249,8 @@ class RedonStructVar:public AbstractApplication
 	std::string genomePath;
 	auto_vector<BamFile> bamFiles;
 	std::auto_ptr<IndexedFasta> faidx;
-
-	RedonStructVar()
+	double min_qual;
+	RedonStructVar():min_qual(0.0)
 	    {
 	    }
 
@@ -264,14 +279,14 @@ class RedonStructVar:public AbstractApplication
 	void run(const KnownGene* gene)
 	    {
 	    if(gene->countExons()==0) return;
-
+	    vector<Point> points;
 	    Param param;
 	    param.owner=this;
 	    //loop over exons
 	    for(int32_t i=0;i< gene->countExons();++i)
 		{
 		param.exon=(Exon*)gene->exon(i);
-		param.coverage=new int[param.exon->end - param.exon->start ];
+		param.coverage=new vector<int>(param.exon->end - param.exon->start,0);
 
 		for(size_t b=0;b < bamFiles.size();++b)
 		    {
@@ -279,8 +294,9 @@ class RedonStructVar:public AbstractApplication
 		    param.bamFile=bf;
 		    bf->pileup(&param);
 		    }
-		delete [] param.coverage;
+		delete param.coverage;
 		}
+	    sort(points.begin(),points.end());
 	    }
 
 	void run(std::istream& in)
