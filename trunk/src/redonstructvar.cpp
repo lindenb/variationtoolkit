@@ -5,13 +5,23 @@
  *      Author: lindenb
  */
 #include <string>
+#include <cerrno>
+#include <cstring>
+#include <cstdlib>
 #include <memory>
-#include "sam.h"
+#include "bam.h"
+#include "throw.h"
 #include "auto_vector.h"
 #include "xfaidx.h"
 #include "knowngene.h"
+#include "application.h"
+using namespace std;
 
-class RedonStructVar
+extern "C" {
+void bam_init_header_hash(bam_header_t *header);
+}
+
+class RedonStructVar:public AbstractApplication
     {
     public:
 	// callback for bam_fetch()
@@ -47,7 +57,7 @@ class RedonStructVar
 	    {
 	    public:
 		std::string filename;
-		samfile_t *in;
+		bamFile in;
 		bam_header_t* header;
 		bam_index_t *idx;
 
@@ -58,7 +68,7 @@ class RedonStructVar
 
 		void close()
 		    {
-		    if(in!=NULL) ::bamclose(in);
+		    if(in!=NULL) ::bam_close(in);
 		    in=NULL;
 		    if(header!=NULL) ::bam_header_destroy(header);
 		    header=NULL;
@@ -74,14 +84,14 @@ class RedonStructVar
 		void open()
 		    {
 		    close();
-		    in=::samopen(filename.c_str(), "rb", 0);
+		    in=::bam_open(filename.c_str(), "rb");
 		    if(in==NULL)
 			{
 			THROW("Cannot open BAM file \"" << filename << "\". "<< strerror(errno));
 			}
 
 		    header= ::bam_header_read(in);
-		        if(header==NULL)
+		    if(header==NULL)
 		    	{
 		    	THROW("Cannot read header for "<< filename);
 		    	}
@@ -106,9 +116,9 @@ class RedonStructVar
 		    if(tid<0) THROW("Cannot find chromosome \""<< chrom << "\" in "<< filename);
 
 		    ::bam_plbuf_t *buf= ::bam_plbuf_init( scan_all_genome_func,param);
-		    ::bam_fetch(parameter.in->x.bam, idx, tid, position, position, buf, fetch_func);
+		    ::bam_fetch(in, idx, tid, param->exon->start, param->exon->end, buf, fetch_func);
 		    ::bam_plbuf_push(0, buf); // finalize pileup
-
+		    ::bam_plbuf_destroy(buf);
 		    }
 
 	    };
@@ -139,7 +149,7 @@ class RedonStructVar
 	GCPercent getGC(const Exon* exon)
 	    {
 	    GCPercent g;
-	    memset((void*)&gc,0,sizeof(GCPercent));
+	    std::memset((void*)&g,0,sizeof(GCPercent));
 	    std::auto_ptr<string> seq=faidx->fetch(exon->gene->chrom.c_str(),exon->start,exon->end);
 	    if(seq.get()!=0)
 		{
@@ -170,3 +180,9 @@ class RedonStructVar
 	    }
 
     };
+
+int main(int argc,char** argv)
+    {
+    RedonStructVar app;
+    return 0;
+    }

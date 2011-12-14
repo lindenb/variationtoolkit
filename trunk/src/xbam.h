@@ -8,6 +8,8 @@
 #ifndef XBAM_H
 #define XBAM_H
 #include <stdint.h>
+
+
 class BamFile
     {
 

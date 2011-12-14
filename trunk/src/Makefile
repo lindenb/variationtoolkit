@@ -78,11 +78,11 @@ $(BINDIR)/ranges: ranges.cpp tokenizer.h throw.h zstreambuf.h
 $(BINDIR)/manhattan: manhattan.cpp $(COLOR_O) application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/prediction: prediction.cpp knowngene.o xfaidx.o geneticcode.o application.o $(CHARSEQ)
-	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
+	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lbam -lz
 $(BINDIR)/backlocate: backlocate.cpp knowngene.o xfaidx.o geneticcode.o application.o $(CHARSEQ)
-	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lz -lbam
+	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lbam -lz
 $(BINDIR)/dnacontext: dnacontext.cpp xfaidx.o
-	$(CPP) -o $@ $< $(CFLAGS) xfaidx.o  -L $(SAMDIR) -lz -lbam
+	$(CPP) -o $@ $< $(CFLAGS) xfaidx.o  -L $(SAMDIR) -lbam -lz
 $(BINDIR)/vcftabix: vcftabix.cpp  xtabix.o 
 	$(CPP) -o $@ $< $(CFLAGS) xtabix.o  -L $(TABIXDIR)  `mysql_config --cflags  --libs` -lz -ltabix
 $(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
@@ -90,7 +90,7 @@ $(BINDIR)/vcfttview: vcfttview.cpp ttview.o xbam.o xfaidx.o
 		$(SAMDIR)/bam_color.o \
 		$(SAMDIR)/bam2bcf.o \
 		$(SAMDIR)/errmod.o \
-		-L $(SAMDIR) -L $(SAMDIR)/bcftools  -lz -lbam -lbcf
+		-L $(SAMDIR) -L $(SAMDIR)/bcftools -lbam -lbcf  -lz
 $(BINDIR)/mysqlucsc: mysqlucsc.cpp  bin.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz 
 $(BINDIR)/mysqlquery: mysqlquery.cpp  tokenizer.h throw.h zstreambuf.h
@@ -121,13 +121,15 @@ $(BINDIR)/vcfintersect : vcfintersect.cpp application.o segments.o netstreambuf.
 $(BINDIR)/igvcontrol: igv.cpp application.o xcurses.cpp 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz -lcurses	
 $(BINDIR)/shortreadsim: shortreadsim.cpp application.o  segments.o tarball.o
-	$(CPP) -o $@ $^ $(CFLAGS)  -L $(SAMDIR)  -lz -lbam
+	$(CPP) -o $@ $^ $(CFLAGS)  -L $(SAMDIR) -lbam -lz 
 $(BINDIR)/bedmerge: bedmerge.cpp application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz 
 $(BINDIR)/genomesim: genomesim.cpp application.o  segments.o tarball.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/loessapp:loessapp.cpp loess.o application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/redonstructvar: redonstructvar.cpp knowngene.o loess.o application.o 
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
