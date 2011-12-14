@@ -64,7 +64,19 @@ class LoessApp:public AbstractApplication
 	void dump()
 	    {
 	    if(records.empty()) return;
-	    std::sort(records.begin(),records.end(),_sorter);
+	    bool is_sorted=true;
+	    for(size_t i=1;i< records.size();++i)
+		{
+		if(records[i-1]->x > records[i]->x)
+		    {
+		    is_sorted=false;
+		    break;
+		    }
+		}
+	    if(!is_sorted)
+		{
+		std::sort(records.begin(),records.end(),_sorter);
+		}
 	    double* x=new double[records.size()];
 	    double* y=new double[records.size()];
 	    for(size_t i=0;i< records.size();++i)
