@@ -47,7 +47,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/igvcontrol \
 	$(BINDIR)/shortreadsim \
 	$(BINDIR)/bedmerge \
-	$(BINDIR)/genomesim 
+	$(BINDIR)/genomesim \
+	$(BINDIR)/loessapp
 
 
 all:$(TARGET_BINARIES)
@@ -125,6 +126,8 @@ $(BINDIR)/bedmerge: bedmerge.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz 
 $(BINDIR)/genomesim: genomesim.cpp application.o  segments.o tarball.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/loessapp:loessapp.cpp loess.o application.o 
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
@@ -185,6 +188,8 @@ stringsequence.o : stringsequence.cpp stringsequence.h
 xstdio.o: xstdio.cpp xstdio.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 xstdlib.o: xstdlib.cpp xstdlib.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+loess.o:loess.cpp loess.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
