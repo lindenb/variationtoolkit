@@ -17,7 +17,8 @@ typedef bool Rboolean;
 Loess::Loess():
 	smoother_span(2.0/3.0),
 	nsteps(3),
-	delta_speed(-1.0)
+	delta_speed(-1.0),
+	paranoid(true)
     {
     }
 
@@ -280,9 +281,17 @@ std::auto_ptr<std::vector<double> > Loess::lowess(
 	    )
     {
     if(n<1) THROW("n =" << n << "<1");
-    for(int32_t i=1;i< n;++i)
+    if(paranoid)
 	{
-	if(x[i-1]> x[i]) THROW("Data not sorted on x");
+	for(int32_t i=0;i< n;++i)
+	    {
+	    if(isnan(x[i])) THROW("NAN: x["<<i<<"]");
+	    if(isnan(y[i])) THROW("NAN: y["<<i<<"]");
+	    if(i>0)
+		{
+		if(x[i-1]> x[i]) THROW("Data not sorted on x");
+		}
+	    }
 	}
     double delta=this->delta_speed;
     if(delta<0.0)
@@ -296,12 +305,13 @@ std::auto_ptr<std::vector<double> > Loess::lowess(
     memset((void*)ys,0,sizeof(double)*n);
     memset((void*)res,0,sizeof(double)*n);
     clowess(x, y, n, this->smoother_span, this->nsteps, delta, ys, rw, res);
-    delete[] rw;
-    delete[] res;
+
 
     std::vector<double>* v=new std::vector<double>(n,0.0);
     std::copy(&ys[0],&ys[n],v->begin());
     delete[] ys;
+    delete[] rw;
+    delete[] res;
     return std::auto_ptr<std::vector<double> >(v);
     }
 
