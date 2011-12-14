@@ -128,7 +128,7 @@ $(BINDIR)/genomesim: genomesim.cpp application.o  segments.o tarball.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/loessapp:loessapp.cpp loess.o application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
-$(BINDIR)/redonstructvar: redonstructvar.cpp knowngene.o loess.o application.o 
+$(BINDIR)/redonstructvar: redonstructvar.cpp  xfaidx.o knowngene.o loess.o application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
 
 $(BINDIR)/embbedC:embbedC.c
@@ -247,4 +247,8 @@ clean:
 		pubmedxsl.cpp  taxonomyxsl.cpp selectset.output parsecolor.output
 
 clean-all:clean uninstall
+	
+
+test:$(BINDIR)/redonstructvar
+	$<  -f $(SAMDIR)/examples/ex1.fa -B $(SAMDIR)/examples/ex1.bam jeter.txt
 	
