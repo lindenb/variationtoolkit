@@ -1,5 +1,8 @@
 #include <sstream>
 #include "knowngene.h"
+#include "throw.h"
+#include "tokenizer.h"
+#include "numeric_cast.h"
 
 using namespace std;
 
@@ -188,15 +191,75 @@ int32_t KnownGene::getExonEnd(int32_t  idx) const
 
 std::auto_ptr<std::string>
 KnownGene::getExonNameFromGenomicIndex(int32_t genome) const
+	{
+	std::auto_ptr<std::string> p;
+	for(int i=0;i< countExons();++i)
 		{
-		std::auto_ptr<std::string> p;
-		for(int i=0;i< countExons();++i)
+		if(getExonStart(i)<=genome && genome< getExonEnd(i))
 			{
-			if(getExonStart(i)<=genome && genome< getExonEnd(i))
-				{
-				p.reset(new string(exon(i)->name()));
-				break;
-				}
+			p.reset(new string(exon(i)->name()));
+			break;
 			}
-		return p;
 		}
+	return p;
+	}
+
+
+std::auto_ptr<KnownGene> KnownGene::parse(std::string line)
+     {
+     vector<string> tokens;
+     Tokenizer tokenizer;
+
+     tokenizer.split(line,tokens);
+     if(tokens.size()<12)
+	 {
+	 THROW("Expected 12 columns in "<< line << " but got "<< tokens.size());
+	 }
+     KnownGene* g=new KnownGene;
+     g->name=tokens[0];
+     g->chrom=tokens[1];
+     g->strand=tokens[2].at(0);
+     if(!numeric_cast<int32_t>(tokens[3].c_str(),&(g->txStart)))
+	 {
+	 THROW("Bad txStart in "<< line);
+	 }
+     if(!numeric_cast<int32_t>(tokens[4].c_str(),&(g->txEnd)))
+	 {
+	 THROW("Bad txEnd in "<< line);
+	 }
+     if(!numeric_cast<int32_t>(tokens[5].c_str(),&(g->cdsStart)))
+		 {
+		 THROW("Bad cdsStart in "<< line);
+		 }
+     if(!numeric_cast<int32_t>(tokens[6].c_str(),&(g->cdsEnd)))
+	 {
+	 THROW("Bad cdsEnd in "<< line);
+	 }
+     int32_t exoncount;
+     if(!numeric_cast<int32_t>(tokens[7].c_str(),&(exoncount)))
+	 {
+	 THROW("Bad exoncount in "<< line);
+	 }
+     Tokenizer comma(',');
+     vector<string> exStart;
+     vector<string> exEnd;
+     comma.split(tokens[8],exStart);
+     comma.split(tokens[9],exEnd);
+     g->exons.reserve(countExons());
+     for(int32_t i=0;i< exoncount;++i)
+	 {
+	 Exon exon;
+	 exon.gene=g;
+	 exon.index=i;
+	 if(!numeric_cast<int32_t>(exStart[i].c_str(),&(exon.start)))
+	     {
+	     THROW("Bad exon.start in "<< line);
+	     }
+	 if(!numeric_cast<int32_t>(exEnd[i].c_str(),&(exon.end)))
+	     {
+	     THROW("Bad exon.end in "<< line);
+	     }
+	 g->exons.push_back(exon);
+	 }
+     return std::auto_ptr<KnownGene>(g);
+     }

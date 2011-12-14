@@ -66,5 +66,6 @@ class KnownGene
 		int32_t getExonStart(int32_t  idx) const;
 		int32_t getExonEnd(int32_t  idx) const;
 		std::auto_ptr<std::string> getExonNameFromGenomicIndex(int32_t genome) const;
+		static std::auto_ptr<KnownGene> parse(std::string line);
 	};
 #endif
