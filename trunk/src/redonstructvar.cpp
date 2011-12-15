@@ -479,13 +479,17 @@ class RedonStructVar:public AbstractApplication
 		<< "exon.name" << "\t"
 		<< "exon.start" << "\t"
 		<< "exon.end" << "\t"
-		<< "bam.file" << "\t"
-		<< "gc.percent" << "\t"
-		<< "exon.coverage" << "\t"
-		<< "coverage_all.mean" << "\t"
-		<< "loess(bam.coverage)"
-		<< endl
+		<< "gc.percent"
 		;
+	    for(size_t bamIdx=0;bamIdx< bamFiles.size();++bamIdx)
+	    	{
+		os << "\t"
+		 << "coverage(" << bamFiles.at(bamIdx)->filename << ")"
+		 << "\t"
+		 << "loess.coverage(" << bamFiles.at(bamIdx)->filename << ")"
+		 ;
+	    	}
+	   os << endl;
 
 	    for(set<string>::const_iterator r=chromosomes.begin(); r!=chromosomes.end();++r)
 		{
@@ -499,40 +503,51 @@ class RedonStructVar:public AbstractApplication
 		    KnownGene* gene=knownGenes.at(i);
 		    if((*r).compare(gene->chrom)!=0) continue;
 		    if(i>5) break;//TODO
-		    for(size_t bamIdx=0;bamIdx< bamFiles.size();++bamIdx)
+		    for(int32_t e=0;e < gene->countExons();++e)
 			{
-			param.bamFile=bamFiles.at(bamIdx);
-			for(int32_t e=0;e < gene->countExons();++e)
-			    {
-			    const Exon* exon= gene->exon(e);
-			    WHERE(gene->name<< " " << exon->name() << "/"<< gene->countExons());
-			    double gc_percent=0.0;
-			    if(!gcPercentAt(r->c_str(),exon->start,exon->end,&(gc_percent))) continue;
+			const Exon* exon= gene->exon(e);
+			param.start=exon->start;
+			param.end=exon->end;
 
+			WHERE(gene->name<< " " << exon->name() << "/"<< gene->countExons());
+			double gc_percent=0.0;
+			if(!gcPercentAt(r->c_str(),exon->start,exon->end,&(gc_percent))) continue;
+
+			 os << gene->chrom << "\t"
+			    << gene->name << "\t"
+			    << exon->name() << "\t"
+			    << exon->start << "\t"
+			    << exon->end << "\t"
+			    << gc_percent
+			    ;
+
+			for(size_t bamIdx=0;bamIdx< bamFiles.size();++bamIdx)
+			    {
+			    param.bamFile=bamFiles.at(bamIdx);
 			    param.coverage=0;
-			    param.start=exon->start;
-			    param.end=exon->end;
-			    if(!param.bamFile->pileup(&param)) continue;
+			    os << "\t";
+			    if(!param.bamFile->pileup(&param))
+				{
+				os << ".\t.";
+				continue;
+				}
 
 			    param.coverage/=(double)(exon->end-exon->start);
 
 			    vector<double>::iterator rgc=lower_bound(x.begin(),x.end(),gc_percent);
-			    if(rgc==x.end()) continue;
+			    if(rgc==x.end())
+				{
+				os << ".\t.";
+				continue;
+				}
 			    size_t coverage_index=std::distance(x.begin(),rgc);
 
-			    os << gene->chrom << "\t"
-				<< gene->name << "\t"
-				<< exon->name() << "\t"
-				<< exon->start << "\t"
-				<< exon->end << "\t"
-				<< param.bamFile->filename << "\t"
-				<< gc_percent << "\t"
-				<< param.coverage << "\t"
-				<< y[coverage_index] << "\t"
+
+			    os << param.coverage << "\t"
 				<< y_prime->at(coverage_index)
-				<< endl
 				;
 			    }
+			os << endl;
 			}
 		    }
 		}
