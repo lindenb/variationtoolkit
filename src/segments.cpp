@@ -130,6 +130,56 @@ std::ostream& operator << (std::ostream& out,const ChromStartEnd& cp)
     return out;
     }
 
+
+
+
+TidStartEnd::TidStartEnd(int32_t chrom,int32_t start,int32_t end):StartEnd(start,end),chrom(chrom)
+	{
+	}
+
+TidStartEnd::TidStartEnd(const TidStartEnd& cp):StartEnd(cp.start,cp.end),chrom(cp.chrom)
+	{
+	}
+TidStartEnd::~TidStartEnd()
+	{
+	}
+
+TidStartEnd& TidStartEnd::operator=(const TidStartEnd& cp)
+	{
+	if(this!=&cp)
+		{
+		chrom=cp.chrom;
+		start=cp.start;
+		end=cp.end;
+		}
+	return (*this);
+	}
+
+bool TidStartEnd::operator==(const TidStartEnd& cp)
+	{
+	return start==cp.start && cp.end==end && chrom==cp.chrom;
+	}
+
+bool TidStartEnd::operator<(const TidStartEnd& cp)
+	{
+	int i=chrom-cp.chrom;
+	if(i!=0) return i;
+	i= start-cp.start;
+	if(i!=0) return i;
+	return end-cp.end;
+	}
+
+
+std::ostream& operator << (std::ostream& out,const TidStartEnd& cp)
+    {
+    out << cp.chrom << ":" << cp.start << "-" << cp.end;
+    return out;
+    }
+
+
+
+
+
 ChromStrandStartEnd::ChromStrandStartEnd(const ChromStartEnd& seg,char strand):
 	ChromStartEnd(seg),
 	orient(strand)
