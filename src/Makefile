@@ -250,5 +250,6 @@ clean-all:clean uninstall
 	
 
 test:$(BINDIR)/redonstructvar
-	$<  -f $(SAMDIR)/examples/ex1.fa -B $(SAMDIR)/examples/ex1.bam jeter.txt
+	$<  -f /GENOTYPAGE/data/pubdb/ucsc/hg19/chromosomes/hg19.fa\
+	    -b jeter.bam.txt jeter.kg.txt
 	
