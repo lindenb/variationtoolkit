@@ -49,6 +49,21 @@ class ChromStartEnd:public StartEnd
 
 std::ostream& operator << (std::ostream& out,const ChromStartEnd& cp);
 
+class TidStartEnd:public StartEnd
+	{
+	public:
+		int32_t chrom;
+		TidStartEnd(int32_t tid,int32_t start,int32_t end);
+		TidStartEnd(const TidStartEnd& cp);
+		~TidStartEnd();
+		TidStartEnd& operator=(const TidStartEnd& cp);
+		bool operator==(const TidStartEnd& cp);
+		bool operator<(const TidStartEnd& cp);
+	};
+
+std::ostream& operator << (std::ostream& out,const TidStartEnd& cp);
+
+
 
 class ChromStrandStartEnd:public ChromStartEnd
 	{
