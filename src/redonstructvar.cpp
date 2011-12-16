@@ -489,7 +489,7 @@ class RedonStructVar:public AbstractApplication
 		 << "loess.coverage(" << bamFiles.at(bamIdx)->filename << ")"
 		 ;
 	    	}
-	   os << endl;
+	   os << "\tFLAG"<< endl;
 
 	    for(set<string>::const_iterator r=chromosomes.begin(); r!=chromosomes.end();++r)
 		{
@@ -502,7 +502,8 @@ class RedonStructVar:public AbstractApplication
 		    {
 		    KnownGene* gene=knownGenes.at(i);
 		    if((*r).compare(gene->chrom)!=0) continue;
-		    if(i>5) break;//TODO
+
+
 		    for(int32_t e=0;e < gene->countExons();++e)
 			{
 			const Exon* exon= gene->exon(e);
@@ -521,6 +522,8 @@ class RedonStructVar:public AbstractApplication
 			    << gc_percent
 			    ;
 
+			vector<double> all_loess_cov;
+			all_loess_cov.reserve(bamFiles.size());
 			for(size_t bamIdx=0;bamIdx< bamFiles.size();++bamIdx)
 			    {
 			    param.bamFile=bamFiles.at(bamIdx);
@@ -546,7 +549,30 @@ class RedonStructVar:public AbstractApplication
 			    os << param.coverage << "\t"
 				<< y_prime->at(coverage_index)
 				;
+
+			    all_loess_cov.push_back(y_prime->at(coverage_index));
 			    }
+			double total_cov=0.0;
+			for(size_t k=0;k< all_loess_cov.size();++k)
+			    {
+			    total_cov+=all_loess_cov.at(k);
+			    }
+			string flag(".");
+			if(!all_loess_cov.empty() && total_cov>0)
+			    {
+			    double mean_cov=total_cov/(double)all_loess_cov.size();
+
+			    for(size_t k=0;k< all_loess_cov.size();++k)
+				{
+				if(all_loess_cov.at(k)< mean_cov/10.0)
+				    {
+				    flag.assign("CNV");
+				    break;
+				    }
+				}
+			    }
+
+			os << "\t" << flag;
 			os << endl;
 			}
 		    }
