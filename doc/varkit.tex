@@ -1862,6 +1862,34 @@ $ tar tvf chrom.tar
 \end{verbatim}
 \end{quote}
 
+\subsection{bam2wig}
+Creates a WIG file for the coverage of a BAM file.
+\paragraph{Options:}
+\begin{itemize}
+\item-z (int) number of depth=0 accepted before starting a new WIG file
+\item-o (filename-out) save as... (default:stdout).
+\item-t print a ucsc custom track header.
+\end{itemize}
+
+
+\begin{quote}
+\begin{verbatim}
+$ bam2wig -t  file.bam
+
+track name="__TRACK_NAME__" description="__TRACK_DESC__" type="wiggle_0"
+fixedStep chrom=chrM start=23 step=1 span=1
+2
+2
+3
+4
+5
+6
+6
+4
+(...)
+\end{verbatim}
+\end{quote}
+
 \bibliographystyle{abbrv}
 \bibliography{varkit}
 
