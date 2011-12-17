@@ -49,7 +49,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/bedmerge \
 	$(BINDIR)/genomesim \
 	$(BINDIR)/loessapp \
-	$(BINDIR)/bam2wig
+	$(BINDIR)/bam2wig \
+	$(BINDIR)/ttmap
 
 
 all:$(TARGET_BINARIES)
@@ -133,6 +134,8 @@ $(BINDIR)/redonstructvar: redonstructvar.cpp  xfaidx.o knowngene.o loess.o appli
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/bam2wig: bam2wig.cpp application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
+$(BINDIR)/ttmap: ttmap.cpp application.o 
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
 
 
 

@@ -1890,6 +1890,42 @@ fixedStep chrom=chrM start=23 step=1 span=1
 \end{verbatim}
 \end{quote}
 
+\subsection{ttmap}
+prints an ASCII genomic map.
+\paragraph{Options:}
+\begin{itemize}
+\item-c (int) chrom column
+\item-s (int) start column
+\item-e (int) end column default: start column
+\item-o (int) strand column default (optional)
+\item-n (int) name column default (optional)
+\item-d (char) delimiter default:tab
+\item-C (int) fix the number of output columns.
+\end{itemize}
+
+
+\begin{quote}
+\begin{verbatim}
+$ curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt.gz" |\
+  gunzip -c |  grep chrM |\
+  ./ttmap -c 2 -s 4 -e 5 -o 3 -n 1 -C 50
+
+>chrM:236-15998
+<              .              .              .     uc004coq.3
+    >          .              .              .     uc004cor.1
+    >          .              .              .     uc004cos.3
+               . >            .              .     uc011mfh.1
+               .       >      .              .     uc004cou.3
+               .          >   .              .     uc011mfi.1
+               .              . >            .     uc004cov.3
+               .              .      >       .     uc004cow.1
+               .              .       >      .     uc004cox.3
+               .              .              .>    uc004coy.2
+
+\end{verbatim}
+\end{quote}
+
+
 \bibliographystyle{abbrv}
 \bibliography{varkit}
 
