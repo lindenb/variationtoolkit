@@ -231,7 +231,8 @@ xliftOver.o:xliftOver.cpp xliftOver.h
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
 
-
+$(BINDIR)/vcf2sqlite: vcf2sqlite.cpp xsqlite.cpp application.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz -lsqlite3
 
 
 parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o

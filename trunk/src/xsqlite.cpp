@@ -4,13 +4,109 @@
 #include "xsqlite.h"
 #include "throw.h"
 
-const int Connection::READ_ONLY= SQLITE_OPEN_READONLY;
-const int Connection::READ_WRITE= SQLITE_OPEN_READWRITE;
-const int Connection::CREATE= SQLITE_OPEN_CREATE;
+
+static std::string error_code(int err)
+    {
+    std::string msg;
+    switch(err)
+	{
+	case SQLITE_OK:return msg;break;
+	case SQLITE_ERROR: msg.append("SQLITE_ERROR");break;
+	case SQLITE_INTERNAL: msg.append("SQLITE_INTERNAL");break;
+	case SQLITE_PERM: msg.append("SQLITE_PERM");break;
+	case SQLITE_ABORT: msg.append("SQLITE_ABORT");break;
+	case SQLITE_BUSY: msg.append("SQLITE_BUSY");break;
+	case SQLITE_LOCKED: msg.append("SQLITE_LOCKED");break;
+	case SQLITE_NOMEM: msg.append("SQLITE_NOMEM");break;
+	case SQLITE_READONLY: msg.append("SQLITE_READONLY");break;
+	case SQLITE_INTERRUPT: msg.append("SQLITE_INTERRUPT");break;
+	case SQLITE_IOERR: msg.append("SQLITE_IOERR");break;
+	case SQLITE_CORRUPT: msg.append("SQLITE_CORRUPT");break;
+	case SQLITE_NOTFOUND: msg.append("SQLITE_NOTFOUND");break;
+	case SQLITE_FULL: msg.append("SQLITE_FULL");break;
+	case SQLITE_CANTOPEN: msg.append("SQLITE_CANTOPEN");break;
+	case SQLITE_PROTOCOL: msg.append("SQLITE_PROTOCOL");break;
+	case SQLITE_EMPTY: msg.append("SQLITE_EMPTY");break;
+	case SQLITE_SCHEMA: msg.append("SQLITE_SCHEMA");break;
+	case SQLITE_TOOBIG: msg.append("SQLITE_TOOBIG");break;
+	case SQLITE_CONSTRAINT: msg.append("SQLITE_CONSTRAINT");break;
+	case SQLITE_MISMATCH: msg.append("SQLITE_MISMATCH");break;
+	case SQLITE_MISUSE: msg.append("SQLITE_MISUSE");break;
+	case SQLITE_NOLFS: msg.append("SQLITE_NOLFS");break;
+	case SQLITE_AUTH: msg.append("SQLITE_AUTH");break;
+	case SQLITE_FORMAT: msg.append("SQLITE_FORMAT");break;
+	case SQLITE_RANGE: msg.append("SQLITE_RANGE");break;
+	case SQLITE_NOTADB: msg.append("SQLITE_NOTADB");break;
+	case SQLITE_ROW: msg.append("SQLITE_ROW");break;
+	case SQLITE_DONE: msg.append("SQLITE_DONE");break;
+	default: std::ostringstream os; os << "Unknown error: "<< err; msg.assign(os.str());break;
+	}
+    return msg;
+    }
+
+
+
+
+ConnectionFactory::ConnectionFactory():
+    allow_create(false),
+    read_only(true),
+    filename(NULL)
+    {
+
+    }
+ConnectionFactory::~ConnectionFactory()
+    {
+
+    }
+void ConnectionFactory::set_read_only(bool b)
+    {
+    read_only=b;
+    }
+void ConnectionFactory::set_allow_create(bool b)
+    {
+    allow_create=b;
+    }
+void ConnectionFactory::set_filename(const char* f)
+    {
+    filename.reset(0);
+    if(f!=0) filename.reset(new std::string(f));
+    }
+
+std::auto_ptr<Connection> ConnectionFactory::create()
+    {
+    std::auto_ptr<Connection> ret(NULL);
+    int flag=0;
+    if(read_only)
+	{
+	flag|=SQLITE_OPEN_READONLY;
+	}
+    else
+	{
+	flag|=SQLITE_OPEN_READWRITE;
+	}
+    //if(allow_create) flag|=SQLITE_OPEN_CREATE;
+    if(filename.get()==NULL) THROW("Filename hasn't been defined");
+    sqlite3* db=0;
+    int err= ::sqlite3_open_v2(
+	  filename->c_str(),   /* Database filename (UTF-8) */
+	  &db,         /* OUT: SQLite db handle */
+	  flag,              /* Flags */
+	  0       /* Name of VFS module to use */
+	);
+    if(err!=SQLITE_OK)
+	{
+	THROW("Cannot open db \""<< *(filename.get()) << "\":" << error_code(err));
+	}
+    ret.reset(new Connection((void*)db));
+    return ret;
+    }
+
+
 
 #define CAST_CON(p) ((sqlite3*)(p->_ptr))
 
-Connection::Connection():_ptr(0)
+
+Connection::Connection(void* p):_ptr(p)
     {
     }
 
@@ -19,36 +115,15 @@ Connection::~Connection()
     close();
     }
 
+
+
 int Connection::execute(const char* sql)
     {
     std::auto_ptr<Statement> stmt= prepare(sql);
-    if(stmt->step()!= SQLITE_DONE) return -1;
+    stmt->execute();
     return 0;
     }
 
-
-void Connection::open()
-    {
-    this->open("",READ_WRITE|CREATE);//tmp file
-    }
-
-void Connection::open(const char* filename)
-    {
-    this->open(filename,READ_ONLY);
-    }
-
-void Connection::open(const char* filename,int flags)
-    {
-    close();
-    sqlite3* db=0;
-    int ret= ::sqlite3_open_v2(
-	  filename,   /* Database filename (UTF-8) */
-	  &db,         /* OUT: SQLite db handle */
-	  flags,              /* Flags */
-	  0       /* Name of VFS module to use */
-	);
-    _ptr=db;
-    }
 
 void Connection::close()
     {
@@ -78,15 +153,21 @@ std::auto_ptr<Statement> Connection::prepare(const char* sql,std::size_t len)
        );
     if(ret!=SQLITE_OK)
 	{
-
+	std::string query(sql,len);
+	THROW("failure " << error_code(ret) << (pzTail!=NULL?pzTail:"(no)") << ":" << query);
 	}
     return std::auto_ptr<Statement>(new Statement(this,ppStmt));
     }
 
 
-
+int64_t Connection::last_insert_id()
+    {
+    return ::sqlite3_last_insert_rowid(CAST_CON(this));
+    }
 
 #define CAST_STMT(p) ((sqlite3_stmt*)(p->_ptr))
+
+const int Statement::DONE= SQLITE_DONE;
 
 Statement::Statement(Connection* owner,void* ptr):owner(owner),_ptr(ptr)
     {
@@ -109,9 +190,19 @@ void Statement::close()
 
 int Statement::step()
     {
-    return ::sqlite3_step( CAST_STMT(this));
+    int err= ::sqlite3_step( CAST_STMT(this));
+    switch(err)
+	{
+	case SQLITE_DONE: return Statement::DONE;
+	}
+    return err;
     }
 
+void Statement::execute()
+    {
+    int err;
+    if((err=step())!=Statement::DONE) THROW("ERROR after execute:"<< error_code(err));
+    }
 
 int Statement::column_count()
     {
@@ -154,7 +245,7 @@ int Statement::bind_string(int index1,const char* s,std::size_t len)
     if(p==0) THROW("Out of memory cannot alloc "<<len);
     std::memcpy(p,s,len*sizeof(char));
     p[len]=0;
-    int ret=::sqlite3_bind_text( CAST_STMT(this),index1,s, (int)len,std::free);
+    int ret=::sqlite3_bind_text( CAST_STMT(this),index1,p, (int)len,std::free);
     return ret;
     }
 

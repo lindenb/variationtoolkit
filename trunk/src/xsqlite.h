@@ -12,30 +12,40 @@
 #include <string>
 
 class Statement;
+class Connection;
+
+class ConnectionFactory
+    {
+    private:
+	bool allow_create;
+	bool read_only;
+	std::auto_ptr<std::string> filename;
+    public:
+	ConnectionFactory();
+	~ConnectionFactory();
+	void set_read_only(bool b);
+	void set_allow_create(bool b);
+	void set_filename(const char* filename);
+	std::auto_ptr<Connection> create();
+    };
+
 
 class Connection
     {
     private:
 	void* _ptr;
+	Connection(void* _ptr);
     public:
-	static const int READ_ONLY;
-	static const int READ_WRITE;
-	static const int CREATE;
-	Connection();
+
 	~Connection();
-	/** open tmp db */
-	void open();
-	/** open read-only */
-	void open(const char* filename);
-	/** open database */
-	void open(const char* filename,int flags);
 	/** close db */
 	void close();
 	/** execute */
 	int execute(const char* sql);
-
+	int64_t last_insert_id();
 	std::auto_ptr<Statement> prepare(const char* s);
 	std::auto_ptr<Statement> prepare(const char* s,std::size_t len);
+    friend class ConnectionFactory;
     };
 
 class Statement
@@ -45,9 +55,11 @@ class Statement
 	void*_ptr;
 	Statement(Connection* owner,void* ptr);
     public:
+	static const int DONE;
 	~Statement();
 	/** step */
 	int step();
+	void execute();
 	int reset();
 	void close();
 	int column_count();
