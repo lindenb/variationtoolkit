@@ -306,7 +306,14 @@ class VcfToSqlite:public AbstractApplication
 		    insert_vcfrow->bind_int(2,vcf_file_id);
 		    insert_vcfrow->bind_int(3,variation_id);
 		    insert_vcfrow->bind_string(4,tokens[5].c_str());
-		    insert_vcfrow->bind_string(5,tokens[6].c_str());
+		    if(tokens[6].compare(".")==0 || tokens[6].empty())
+			{
+			insert_vcfrow->bind_null(5);
+			}
+		    else
+			{
+			insert_vcfrow->bind_string(5,tokens[6].c_str());
+			}
 		    insert_vcfrow->execute();
 		    int64_t vcfrow_id= connection->last_insert_id();
 
