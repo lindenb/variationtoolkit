@@ -1,5 +1,6 @@
 #include <cstring>
 #include <cstdlib>
+#include <cstdio>
 #include <sqlite3.h>
 #include "xsqlite.h"
 #include "throw.h"
@@ -84,7 +85,18 @@ std::auto_ptr<Connection> ConnectionFactory::create()
 	{
 	flag|=SQLITE_OPEN_READWRITE;
 	}
-    //if(allow_create) flag|=SQLITE_OPEN_CREATE;
+    if(allow_create)
+	{
+	FILE* fin=fopen(filename->c_str(),"rb");
+	if(fin!=NULL)
+	    {
+	    fclose(fin);
+	    }
+	else
+	    {
+	    flag|=SQLITE_OPEN_CREATE;
+	    }
+	}
     if(filename.get()==NULL) THROW("Filename hasn't been defined");
     sqlite3* db=0;
     int err= ::sqlite3_open_v2(

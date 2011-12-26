@@ -261,4 +261,6 @@ clean-all:clean uninstall
 test:$(BINDIR)/redonstructvar
 	$<  -f /GENOTYPAGE/data/pubdb/ucsc/hg19/chromosomes/hg19.fa\
 	    -b jeter.bam.txt jeter.kg.txt
-	
+test2:../bin/vcf2sqlite
+	rm -f  ~/jeter.sqlite
+	head -n 50 ~/tmp/R/jeter2.vcf | ../bin/vcf2sqlite -f ~/jeter.sqlite 
