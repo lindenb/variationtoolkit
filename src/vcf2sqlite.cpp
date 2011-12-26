@@ -44,7 +44,7 @@ class VcfToSqlite:public AbstractApplication
 
 	void close()
 	    {
-
+	    this->connection->execute("COMMIT");
 	    }
 
 	void open()
@@ -162,6 +162,8 @@ class VcfToSqlite:public AbstractApplication
 	    insert_vcfcall = this->connection->prepare(
 	       "insert into VCFCALL(nIndex,vcfrow_id,sample_id,prop,value) values (?,?,?,?,?)"
 		);
+
+	    this->connection->execute("BEGIN");
 	    }
 
 
