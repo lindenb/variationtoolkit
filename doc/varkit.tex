@@ -1926,6 +1926,56 @@ $ curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt
 \end{quote}
 
 
+\subsection{vcf2sqlite}
+Inserts a VCF in a sqlite3 database.
+\paragraph{Options:}
+\begin{itemize}
+\item-f (file) sqlite database (REQUIRED).
+\end{itemize}
+\paragraph{Schema:}
+\begin{figure}
+\includegraphics[keepaspectratio=true,scale=0.7]{schema01.epsi}
+\caption{Sqlite schema}
+\end{figure}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ vcf2sqlite -f db.sqlite file.vcf
+$ sqlite3 -line db.sqlite  "select * from VCFCALL LIMIT 4"
+
+       id = 1
+   nIndex = 0
+vcfrow_id = 1
+sample_id = 1
+     prop = GT
+    value = 1/1
+
+       id = 2
+   nIndex = 1
+vcfrow_id = 1
+sample_id = 1
+     prop = PL
+    value = 46,6,0
+
+       id = 3
+   nIndex = 2
+vcfrow_id = 1
+sample_id = 1
+     prop = GQ
+    value = 10
+
+       id = 4
+   nIndex = 0
+vcfrow_id = 2
+sample_id = 1
+     prop = GT
+    value = 1/1
+
+\end{verbatim}
+\end{quote}
+
+
+
 \bibliographystyle{abbrv}
 \bibliography{varkit}
 

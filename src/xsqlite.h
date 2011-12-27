@@ -36,8 +36,10 @@ class Connection
 	void* _ptr;
 	Connection(void* _ptr);
     public:
-
 	~Connection();
+	void begin();
+	void commit();
+
 	/** close db */
 	void close();
 	/** execute */

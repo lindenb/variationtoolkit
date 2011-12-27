@@ -137,6 +137,15 @@ int Connection::execute(const char* sql)
     }
 
 
+void Connection::begin()
+    {
+    this->execute("BEGIN");
+    }
+void Connection::commit()
+    {
+    this->execute("COMMIT");
+    }
+
 void Connection::close()
     {
     if(_ptr!=0)

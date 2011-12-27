@@ -44,7 +44,7 @@ class VcfToSqlite:public AbstractApplication
 
 	void close()
 	    {
-	    this->connection->execute("COMMIT");
+	    this->connection->commit();
 	    }
 
 	void open()
@@ -109,12 +109,12 @@ class VcfToSqlite:public AbstractApplication
 		"REF VARCHAR(10) NOT NULL,"
 		"ALT VARCHAR(50) NOT NULL"
 	       ")");
-	    /*
+
 	    this->connection->execute(
 	       "create UNIQUE INDEX IF NOT EXISTS VAR1 ON "
 	       "VARIATION(CHROM,POS,REF,ALT)"
 		);
-	     */
+
 	    select_variation = this->connection->prepare(
 	       "select id from VARIATION where (CHROM=? AND POS=? AND REF=? AND ALT=?)"
 		);
@@ -143,8 +143,14 @@ class VcfToSqlite:public AbstractApplication
 		"nIndex INT NOT NULL DEFAULT -1,"
 		"vcfrow_id INT NOT NULL REFERENCES VCFROW(id) ON DELETE CASCADE,"
 		"prop VARCHAR(10) NOT NULL,"
-		"value VARCHAR(50)"
+		"value TEXT"
 	       ")");
+
+	    this->connection->execute(
+	       "create INDEX IF NOT EXISTS ROWINFOIDX1 ON "
+	       "VCFROWINFO(prop)"
+		);
+
 	    insert_vcfrowinfo = this->connection->prepare(
 	       "insert into VCFROWINFO(nIndex,vcfrow_id,prop,value) values (?,?,?,?)"
 		);
@@ -157,13 +163,20 @@ class VcfToSqlite:public AbstractApplication
 		"vcfrow_id INT NOT NULL REFERENCES VCFROW(id) ON DELETE CASCADE,"
 		"sample_id INT NOT NULL REFERENCES SAMPLE(id) ON DELETE CASCADE,"
 		"prop VARCHAR(10) NOT NULL,"
-		"value VARCHAR(30)"
+		"value TEXT"
 	       ")");
+
+
+	    this->connection->execute(
+	       "create INDEX IF NOT EXISTS VCFCALLIDX1 ON "
+	       "VCFCALL(prop)"
+		);
+
 	    insert_vcfcall = this->connection->prepare(
 	       "insert into VCFCALL(nIndex,vcfrow_id,sample_id,prop,value) values (?,?,?,?,?)"
 		);
 
-	    this->connection->execute("BEGIN");
+	    this->connection->begin();
 	    }
 
 
