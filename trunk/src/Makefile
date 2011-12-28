@@ -50,7 +50,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/genomesim \
 	$(BINDIR)/loessapp \
 	$(BINDIR)/bam2wig \
-	$(BINDIR)/ttmap
+	$(BINDIR)/ttmap \
+	$(BINDIR)/vcf2sqlite
 
 
 all:$(TARGET_BINARIES)
@@ -136,8 +137,8 @@ $(BINDIR)/bam2wig: bam2wig.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/ttmap: ttmap.cpp application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
-
-
+$(BINDIR)/vcf2sqlite: vcf2sqlite.cpp xsqlite.cpp application.o
+	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz $(SQLITE_CFLAGS) $(SQLITE_LIB) ; else $(CPP) -o $@ vcf2sqlite.cpp  -DNOSQLITE $(CFLAGS)  ; fi
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
@@ -231,8 +232,7 @@ xliftOver.o:xliftOver.cpp xliftOver.h
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
 
-$(BINDIR)/vcf2sqlite: vcf2sqlite.cpp xsqlite.cpp application.o
-	$(CPP) -o $@ $^ $(CFLAGS) -lz -lsqlite3
+
 
 
 parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o

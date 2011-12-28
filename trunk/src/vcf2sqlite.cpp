@@ -5,9 +5,13 @@
  *      Author: lindenb
  */
 #include <iostream>
+#include <cstdlib>
+
+#ifndef NOSQLITE
+
 #include <string>
 #include <vector>
-#include <cstdlib>
+
 #include <cstring>
 #include "xsqlite.h"
 #include "application.h"
@@ -464,3 +468,13 @@ int main(int argc,char** argv)
     VcfToSqlite app;
     return app.main(argc,argv);
     }
+
+#else
+
+int main(int argc,char** argv)
+    {
+    std::cerr << argv[0] << " was compiled without sqlite3 ( $SQLITE_LIB undefined) \n";
+    return EXIT_FAILURE;
+    }
+
+#endif

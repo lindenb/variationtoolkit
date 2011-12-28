@@ -35,6 +35,7 @@ but here, the bioinformaticians are the preliminary audience for this toolkit.
 \item[libxslt]: the C library for xslt \url{http://xmlsoft.org/XSLT/}.
 \item[libcurl]: the C library for downloading URLs.
 \item[jkentsrc]: (optional) Jim Kent's C library / Ucsc parsing bigbed, bigwig...
+\item[sqlite3]: (optional) SQL database engine.
 \end{description}
 \subsection{Building}
 Download the latest version of varking using \texttt{subversion}:
@@ -49,6 +50,21 @@ or update your current version by calling \texttt{"svn update"} in the  variatio
 \end{quote}
 
 Edit the file variationtoolkit/config.mk . You'll have to set the path to the sources of tabix (>=0.2.5), samtools (>=-0.1.18), etc..
+\paragraph{config.mk example:}
+\begin{quote}
+\begin{verbatim}
+##path to SAMTOOLS
+SAMDIR=${HOME}/samtools-0.1.18
+##path to TABIX
+TABIXDIR=/home/lindenb/tabix-0.2.5
+##optional path to UCSC kent's src
+KENTDIR=${HOME}/src/kent/kent
+##optional path to google leveldb
+LEVELDBDIR=${HOME}/tmp/leveldb-read-only
+SQLITE_LIB=-lsqlite3
+SQLITE_CFLAGS=
+\end{verbatim}
+\end{quote}
 
 then type:
 \begin{quote}
