@@ -143,6 +143,7 @@ int netstreambuf::underflow ( )
 	    {
 	    this->callback_was_called=false;
 	    ret2= ::curl_multi_perform(this->multi_handle,&( this->still_running));
+	    check_error(ret2);
 	    } while( this->still_running!=0 && this->callback_was_called==false);
 
 
@@ -162,20 +163,29 @@ size_t netstreambuf::write_callback(void *ptr, size_t size, size_t nmemb, void *
 /** called by the CURL  callback */
 size_t netstreambuf::call(void *ptr, size_t size, size_t nmemb)
     {
+    size_t remains=((size_t)egptr() - (size_t)gptr());
+    
+    	
     this->callback_was_called=true;
-    this->buffer_size = size*nmemb;
+    this->buffer_size = remains+size*nmemb;
 
     this->total_read+=this->buffer_size;
 
-    char *array=(char*)std::realloc(this->buffer,this->buffer_size);
-    if(array==NULL) THROW("out of memory");
+    char *array=(char*)std::malloc(this->buffer_size);
+    if(array==NULL) THROW("out of memory ("<< this->buffer_size << " bytes)");
+    if(remains>0)
+    	{
+    	std::memcpy((void*)&array[0],  gptr(), remains);
+    	}
+    std::memcpy((void*)&array[remains],ptr, (size*nmemb));
+    std::free(this->buffer);
     this->buffer=array;
-    std::memcpy((void*)this->buffer, ptr, this->buffer_size);
+
     setg(	(char*)this->buffer,
 	    (char*)&this->buffer[0],
 	    (char*)&this->buffer[this->buffer_size]
 	    );
-    return this->buffer_size;
+    return (size*nmemb);
     }
 
 std::size_t netstreambuf::gcount() const
@@ -215,9 +225,9 @@ int main(int argc,char** argv)
 	streamsize nRead;
 	    while((nRead=buf.read(t,BUFSIZ))!=0)
 	    {
-
+	cout.write(t,nRead);
 	    }
-	cout << "done " <<buf.gcount() << "\n";
+	//cout << "\ndone " <<buf.gcount() << "\n";
 	}
     return 0;
     }
