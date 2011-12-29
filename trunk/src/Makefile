@@ -51,7 +51,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/loessapp \
 	$(BINDIR)/bam2wig \
 	$(BINDIR)/ttmap \
-	$(BINDIR)/vcf2sqlite
+	$(BINDIR)/vcf2sqlite \
+	$(BINDIR)/fastatail
 
 
 all:$(TARGET_BINARIES)
@@ -139,6 +140,8 @@ $(BINDIR)/ttmap: ttmap.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/vcf2sqlite: vcf2sqlite.cpp xsqlite.cpp application.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz $(SQLITE_CFLAGS) $(SQLITE_LIB) ; else $(CPP) -o $@ vcf2sqlite.cpp  -DNOSQLITE $(CFLAGS)  ; fi
+$(BINDIR)/fastatail: fastatail.cpp abstractcharsequence.cpp
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
