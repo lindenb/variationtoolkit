@@ -1,7 +1,6 @@
 #include <cstring>
 #include <list>
 #include "zstreambuf.h"
-#include "tokenizer.h"
 #include "fastareader.h"
 #include "numeric_cast.h"
 
