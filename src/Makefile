@@ -141,7 +141,7 @@ $(BINDIR)/ttmap: ttmap.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/vcf2sqlite: vcf2sqlite.cpp xsqlite.cpp application.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz $(SQLITE_CFLAGS) $(SQLITE_LIB) ; else $(CPP) -o $@ vcf2sqlite.cpp  -DNOSQLITE $(CFLAGS)  ; fi
-$(BINDIR)/fastatail: fastatail.cpp abstractcharsequence.cpp
+$(BINDIR)/fastatail: fastatail.cpp abstractcharsequence.cpp fastareader.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/fasta2tsv: fasta2tsv.cpp
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
@@ -207,6 +207,8 @@ xstdio.o: xstdio.cpp xstdio.h
 xstdlib.o: xstdlib.cpp xstdlib.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 loess.o:loess.cpp loess.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
+fastareader.o:fastareader.cpp fastareader.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
