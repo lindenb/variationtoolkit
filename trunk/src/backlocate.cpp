@@ -31,18 +31,18 @@
 
 using namespace std;
 
-char complement(char c)
-		{
-		switch(c)
-			{
-			case 'A':case 'a': return 'T';
-			case 'T':case 't': return 'A';
-			case 'G':case 'g': return 'C';
-			case 'C':case 'c': return 'G';
-			case 'N':case 'n': return 'N';
-			default: THROW("bad base "<< c);
-			}
-		}
+static char complement(char c)
+    {
+    switch(c)
+	    {
+	    case 'A':case 'a': return 'T';
+	    case 'T':case 't': return 'A';
+	    case 'G':case 'g': return 'C';
+	    case 'C':case 'c': return 'G';
+	    case 'N':case 'n': return 'N';
+	    default: THROW("bad base "<< c);
+	    }
+    }
 
  class RNASequence:public AbstractCharSequence
 		{
