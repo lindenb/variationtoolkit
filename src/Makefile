@@ -53,7 +53,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/ttmap \
 	$(BINDIR)/vcf2sqlite \
 	$(BINDIR)/fastatail \
-	$(BINDIR)/fasta2tsv
+	$(BINDIR)/fasta2tsv \
+	$(BINDIR)/vcf2xml \
 
 
 all:$(TARGET_BINARIES)
@@ -145,6 +146,8 @@ $(BINDIR)/fastatail: fastatail.cpp abstractcharsequence.cpp fastareader.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/fasta2tsv: fasta2tsv.cpp
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/vcf2xml: vcf2xml.cpp application.o
+	$(CPP) -o $@ $^ $(CFLAGS) `xml2-config --cflags --libs` -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
