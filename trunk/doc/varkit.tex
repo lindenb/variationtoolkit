@@ -1990,7 +1990,64 @@ sample_id = 1
 \end{verbatim}
 \end{quote}
 
+\subsection{vcf2xml}
+Transforms a VCF to xml.
 
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ vcf2xml input.vcf | xmllint --format -
+
+<?xml version="1.0" encoding="UTF-8"?>
+<vcf>
+  <head>
+    <meta key="fileformat">VCFv4.1</meta>
+    <meta key="samtoolsVersion">0.1.17 (r973:277)</meta>
+    <infos>
+      <info>
+        <id>DP</id>
+        <number>1</number>
+        <type>Integer</type>
+        <description>Raw read depth</description>
+      </info>
+      <info>
+        <id>DP4</id>
+        <number>4</number>
+        <type>Integer</type>
+        <description># high-quality ref-forward bases</description>
+      </info>
+      <info>
+        <id>MQ</id>
+(...)
+      </calls>
+    </variation>
+    <variation>
+      <chrom>chr1</chrom>
+      <pos>112697</pos>
+      <ref>T</ref>
+      <alt>G</alt>
+      <qual>10.4</qual>
+      <infos>
+        <info key="DP">1</info>
+        <info key="AF1">1</info>
+        <info key="AC1">2</info>
+        <info key="DP4">0,0,0,1</info>
+        <info key="MQ">60</info>
+        <info key="FQ">-30</info>
+      </infos>
+      <calls>
+        <call sample="input.bam">
+          <prop key="GT">1/1</prop>
+          <prop key="PL">40,3,0</prop>
+          <prop key="GQ">5</prop>
+        </call>
+      </calls>
+    </variation>
+  </body>
+</vcf>
+
+\end{verbatim}
+\end{quote}
 
 \bibliographystyle{abbrv}
 \bibliography{varkit}
