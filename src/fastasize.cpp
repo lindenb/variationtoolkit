@@ -17,8 +17,9 @@ class FastaSize
 		int32_t* max_size;
 		FastaReader fastareader;
 		bool print_size;
+		bool inverse;
 	public:
-		FastaSize():min_size(0),max_size(0),print_size(false)
+		FastaSize():min_size(0),max_size(0),print_size(false),inverse(false)
 			{
 			}
 		
@@ -36,6 +37,7 @@ class FastaSize
 			out << "  -m <min-size>  default: none\n";
 			out << "  -M <max-size>  default: none\n";
 			out << "  -p append sequence size to FASTA header.\n";
+			out << "  -v inverse.\n";
 			out << "Other options:\n";
 			out << "  --reserve <buffer-size> . Reserve size for the fasta buffer (optional)\n";
 			out << endl;
@@ -47,8 +49,17 @@ class FastaSize
 			    {
 			    auto_ptr<FastaSequence> seq=fastareader.next(in);
 			    if(seq.get()==0) break;
-			    if(min_size!=NULL && seq->size()< (*min_size)) continue;
-			    if(max_size!=NULL && seq->size()> (*max_size)) continue;
+			    bool accept=true;
+
+			    if(min_size!=NULL && seq->size()< (*min_size))
+				{
+				accept=false;
+				}
+			    if(max_size!=NULL && seq->size()> (*max_size))
+				{
+				accept=false;
+				}
+			    if(accept==inverse) continue;
 			    cout << ">" << seq->name();
 			    if(print_size) cout << "|length="<< seq->size();
 			    for(int32_t i=0;i< seq->size();++i)
@@ -75,6 +86,10 @@ class FastaSize
 			    else if(strcmp(argv[optind],"-p")==0)
 				{
 				this->print_size=true;
+				}
+			    else if(strcmp(argv[optind],"-v")==0)
+				{
+				this->inverse=true;
 				}
 			    else if(strcmp(argv[optind],"--reserve")==0 && optind+1<argc)
 				{
