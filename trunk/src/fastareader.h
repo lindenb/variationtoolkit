@@ -15,7 +15,7 @@ class FastaSequence:public AbstractCharSequence
 		std::string _seq;
 		FastaSequence();
 	public:
-		
+		static const int32_t DEFAULT_LINE_LENGTH;
 		FastaSequence(const FastaSequence& cp);
 		virtual ~ FastaSequence();
 		virtual char at(int32_t index) const;

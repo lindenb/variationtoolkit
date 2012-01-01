@@ -142,9 +142,11 @@ $(BINDIR)/ttmap: ttmap.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/vcf2sqlite: vcf2sqlite.cpp xsqlite.cpp application.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz $(SQLITE_CFLAGS) $(SQLITE_LIB) ; else $(CPP) -o $@ vcf2sqlite.cpp  -DNOSQLITE $(CFLAGS)  ; fi
-$(BINDIR)/fastatail: fastatail.cpp abstractcharsequence.cpp fastareader.o
+$(BINDIR)/fastatail: fastatail.cpp abstractcharsequence.o fastareader.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/fasta2tsv: fasta2tsv.cpp
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/fastasize: fastasize.cpp abstractcharsequence.o fastareader.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/vcf2xml: vcf2xml.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) `xml2-config --cflags --libs` -lz

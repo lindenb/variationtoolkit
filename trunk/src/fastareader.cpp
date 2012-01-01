@@ -6,6 +6,8 @@
 
 using namespace std;
 
+const int32_t FastaSequence::DEFAULT_LINE_LENGTH=60;
+
 FastaSequence::FastaSequence() {}
 FastaSequence::FastaSequence(const FastaSequence& cp):_name(cp._name),_seq(cp._seq)
 			{
@@ -50,7 +52,7 @@ void FastaSequence::printFasta(std::ostream& out,int32_t lineLength) const
 	}
 void FastaSequence::printFasta(std::ostream& out)
 	{
-	printFasta(out,60);
+	printFasta(out,DEFAULT_LINE_LENGTH);
 	}
 
 
