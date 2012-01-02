@@ -9,7 +9,7 @@ CHARSEQ=abstractcharsequence.o \
 	mutatedsequence.o \
 	proteincharsequence.o \
 	stringsequence.o
-
+PARSESEG=segparser.tab.o lex.segparser.o segments.o
 
 
 TARGET_BINARIES=$(BINDIR)/scanvcf \
@@ -233,7 +233,8 @@ loess.o:loess.cpp loess.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 fastareader.o:fastareader.cpp fastareader.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
-	
+cgi.o:cgi.cpp cgi.h
+	$(CPP) -c -o $@ $< $(CFLAGS)
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
@@ -263,7 +264,12 @@ xliftOver.o:xliftOver.cpp xliftOver.h
 #not in production
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
-
+$(BINDIR)/ngsproject:ngsproject.cpp cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
+	$(CPP) -o $@ $^ $(CFLAGS)  `xml2-config --cflags --libs` `xslt-config --cflags --libs` \
+		$(SAMDIR)/bam_color.o \
+		$(SAMDIR)/bam2bcf.o \
+		$(SAMDIR)/errmod.o \
+		 -L $(SAMDIR) -L $(SAMDIR)/bcftools -lbam -lbcf  -lz
 
 
 
@@ -293,6 +299,4 @@ clean-all:clean uninstall
 test:$(BINDIR)/redonstructvar
 	$<  -f /GENOTYPAGE/data/pubdb/ucsc/hg19/chromosomes/hg19.fa\
 	    -b jeter.bam.txt jeter.kg.txt
-test2:../bin/vcf2sqlite
-	rm -f  ~/jeter.sqlite
-	head -n 1000 ~/tmp/R/jeter2.vcf | ../bin/vcf2sqlite -f ~/jeter.sqlite 
+test2:$(BINDIR)/ngsproject
