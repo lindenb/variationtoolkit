@@ -186,7 +186,10 @@ genexsl.o:gene.xsl $(BINDIR)/embbedC
 taxonomyxsl.o:taxonomy.xsl $(BINDIR)/embbedC
 	$(BINDIR)/embbedC taxonomyxsl < $< > taxonomyxsl.cpp
 	$(CPP) -c -o $@ taxonomyxsl.cpp $(CFLAGS) 
-
+ngsproject2htmlxsl.o:ngsproject2html.xsl $(BINDIR)/embbedC
+	$(BINDIR)/embbedC ngsproject2html < $< > ngsproject2htmlxsl.cpp
+	$(CPP) -c -o $@ ngsproject2htmlxsl.cpp $(CFLAGS) 
+	
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 knowngene.o: knowngene.cpp knowngene.h
@@ -264,7 +267,7 @@ xliftOver.o:xliftOver.cpp xliftOver.h
 #not in production
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
-$(BINDIR)/ngsproject:ngsproject.cpp cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
+$(BINDIR)/ngsproject:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
 	$(CPP) -o $@ $^ $(CFLAGS)  `xml2-config --cflags --libs` `xslt-config --cflags --libs` \
 		$(SAMDIR)/bam_color.o \
 		$(SAMDIR)/bam2bcf.o \
