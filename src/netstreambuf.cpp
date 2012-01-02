@@ -3,6 +3,7 @@
 #include <curl/curl.h>
 #include "netstreambuf.h"
 #include "throw.h"
+#include "where.h"
 
 using namespace std;
 #define NETSIZE BUFSIZ
@@ -18,7 +19,7 @@ static void check_error(CURLcode code)
 
 static void check_error(CURLMcode code)
     {
-    if(code==CURLM_OK) return;
+    if(code==CURLM_OK || code==CURLM_CALL_MULTI_PERFORM) return;
     THROW(::curl_multi_strerror(code));
     }
 
@@ -110,6 +111,7 @@ void netstreambuf::open(const char* url)
 	this->curl_handle
 	);
     check_error(ret2);
+
     }
 
 void netstreambuf::close()
@@ -128,6 +130,16 @@ void netstreambuf::close()
 	    }
     if(curl_handle!=NULL)
 	    {
+
+	    long http_code = 0;
+	    CURLcode res = ::curl_easy_getinfo(CAST_CURL(curl_handle), CURLINFO_RESPONSE_CODE,&http_code);
+	    if(CURLE_OK == res)
+		{
+		if(http_code!=200)
+		    {
+		    THROW("Failure HTTP CODE="<< http_code);
+		    }
+		}
 	    :: curl_easy_cleanup(CAST_CURL(curl_handle));
 	    curl_handle=NULL;
 	    }
@@ -136,6 +148,7 @@ void netstreambuf::close()
 
 int netstreambuf::underflow ( )
     {
+
     CURLMcode ret2;
     if(curl_handle==NULL) return EOF;
     this->buffer_size=0;
