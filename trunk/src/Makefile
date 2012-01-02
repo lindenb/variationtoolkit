@@ -55,7 +55,12 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/fastatail \
 	$(BINDIR)/fasta2tsv \
 	$(BINDIR)/vcf2xml \
-
+	$(BINDIR)/fastaslice \
+	$(BINDIR)/fastasortuniq \
+	$(BINDIR)/fastatac \
+	$(BINDIR)/fastarevcomp \
+	$(BINDIR)/ncbielink \
+	$(BINDIR)/ncbicited 
 
 all:$(TARGET_BINARIES)
 
@@ -150,6 +155,19 @@ $(BINDIR)/fastasize: fastasize.cpp abstractcharsequence.o fastareader.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/vcf2xml: vcf2xml.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) `xml2-config --cflags --libs` -lz
+$(BINDIR)/fastaslice: fastaslice.cpp abstractcharsequence.o fastareader.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/fastasortuniq: fastasortuniq.cpp abstractcharsequence.o fastareader.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/fastatac: fastatac.cpp abstractcharsequence.o fastareader.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/fastarevcomp: fastarevcomp.cpp abstractcharsequence.o fastareader.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/ncbielink: ncbielink.cpp netstreambuf.o application.o
+	$(CPP) -o $@ $^ $(CFLAGS)  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
+$(BINDIR)/ncbicited: ncbicited.cpp netstreambuf.o application.o
+	$(CPP) -o $@ $^ $(CFLAGS)  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
+	
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
@@ -215,6 +233,7 @@ loess.o:loess.cpp loess.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 fastareader.o:fastareader.cpp fastareader.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
+	
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
