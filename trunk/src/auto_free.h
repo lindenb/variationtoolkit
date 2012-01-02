@@ -21,6 +21,10 @@ class auto_free
 	     {
 	     if(_ptr!=0 && _fun!=0) _fun((void*)_ptr);
 	     }
+	 bool nil() const
+	     {
+	     return _ptr==0;
+	     }
 	 void reset()
 	     {
 	     if(_ptr!=0 && _fun!=0) _fun((void*)_ptr);

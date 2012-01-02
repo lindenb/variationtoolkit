@@ -24,7 +24,8 @@ using namespace std;
 
 
 extern std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s);
-
+#define FOR_EACH_BEGIN(root,var) for (xmlNode* var = (root==0?0:root->children); var!=0; var = var->next) { if (var->type != XML_ELEMENT_NODE) continue;
+#define FOR_EACH_END }
 
 /** reference genome indexed with faidx */
 class Reference
@@ -32,6 +33,7 @@ class Reference
     public:
 	std::string id;
 	std::string path;
+	IndexedFasta* faidx;
     };
 
 
@@ -49,6 +51,8 @@ class Project
     {
     public:
 	std::string id;
+	std::string name;
+	std::string description;
 	Reference* reference;
 	std::vector<IndexedBam*> bams;
     };
@@ -184,11 +188,16 @@ class NGSProject
 
 	void show_bam()
 	    {
-	    Project project;
+	    auto_ptr<Project> project(0);
 	    const char* positions=cgi.getParameter("q");
 	    if(positions==0)
 		{
 		quit(0,SC_BAD_REQUEST,"query missing");
+		}
+	    const char* project_id=cgi.getParameter("project.id");
+	    if(project_id==0)
+		{
+		quit(0,SC_BAD_REQUEST,"project.id missing");
 		}
 
 	    std::auto_ptr<std::vector<ChromStartEnd> > segments;
@@ -200,8 +209,108 @@ class NGSProject
 		{
 		quit(0,SC_BAD_REQUEST,err.what());
 		}
-	    auto_ptr<IndexedFasta> genome_faidx;
+
+
+	    auto_ptr<Reference> reference(0);
 	    auto_free<xmlDoc> doc(load_project_file(),(auto_free<xmlDoc>::fun)xmlFreeDoc);
+
+	    //loop over each project
+	    FOR_EACH_BEGIN(::xmlDocGetRootElement(doc.get()),proj)
+		if(strcmp((const char*)proj->name,"project")!=0) continue;
+		auto_free<xmlChar> curr_id(::xmlGetProp(proj,BAD_CAST "id"),(auto_free<xmlChar>::fun)::xmlFree);
+		if(curr_id.nil()) continue;
+		if(::strcmp((const char*)curr_id.get(),project_id)==0)
+		    {
+		    project.reset(new Project);
+		    project->id.assign(project_id);
+		    FOR_EACH_BEGIN(proj,C1)
+			if(strcmp((const char*)C1->name,"name")==0)
+			    {
+			    auto_free<xmlChar> xs(::xmlNodeGetContent(C1),(auto_free<xmlChar>::fun)::xmlFree);
+			    if(!xs.nil()) project->name.assign((const char*)xs.get());
+			    }
+			else if(strcmp((const char*)C1->name,"description")==0)
+			    {
+			    auto_free<xmlChar> xs(::xmlNodeGetContent(C1),(auto_free<xmlChar>::fun)::xmlFree);
+			    if(!xs.nil()) project->description.assign((const char*)xs.get());
+			    }
+			else if(strcmp((const char*)C1->name,"bam")==0)
+			    {
+			    auto_free<xmlChar> bam_ref(::xmlGetProp(proj,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
+			    if(!bam_ref.nil())
+				{
+				IndexedBam* bam=new IndexedBam;
+				bam->id.assign((const char*)bam_ref.get());
+				project->bams.push_back(bam);
+				}
+			    }
+			else if(strcmp((const char*)C1->name,"reference")==0)
+			    {
+			    auto_free<xmlChar> ref_ref(::xmlGetProp(proj,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
+			    if(!ref_ref.nil())
+				{
+				reference.reset(new Reference);
+				reference->id.assign((const char*)ref_ref.get());
+				}
+			    }
+		    FOR_EACH_END
+		    break;
+		    }
+	    FOR_EACH_END
+
+	    if(project.get())
+		{
+		quit(0,SC_BAD_REQUEST,"Unknown project");
+		}
+
+	    //search for the BAM
+	    FOR_EACH_BEGIN(::xmlDocGetRootElement(doc.get()),sam)
+	    	if(strcmp((const char*)sam->name,"bam")!=0) continue;
+		auto_free<xmlChar> curr_id(::xmlGetProp(sam,BAD_CAST "id"),(auto_free<xmlChar>::fun)::xmlFree);
+	    	if(curr_id.nil()) continue;
+	    	for(size_t i=0;i< project->bams.size();++i)
+	    	    {
+	    	    IndexedBam* newsam=project->bams[i];
+	    	    if(newsam->id.compare((const char*)curr_id.get())!=0) continue;
+		    FOR_EACH_BEGIN(sam,C1)
+	    		if(strcmp((const char*)C1->name,"sample")==0)
+			    {
+			    auto_free<xmlChar> xs(xmlNodeGetContent(C1),(auto_free<xmlChar>::fun)::xmlFree);
+			    if(!xs.nil()) newsam->sample.assign((const char*)xs.get());
+			    }
+	    		else if(strcmp((const char*)C1->name,"path")==0)
+			    {
+			    auto_free<xmlChar> xs(xmlNodeGetContent(C1),(auto_free<xmlChar>::fun)::xmlFree);
+			    if(!xs.nil()) newsam->path.assign((const char*)xs.get());
+			    }
+		    FOR_EACH_END
+	    	    }
+	    FOR_EACH_END
+
+	    //search for the reference
+	    FOR_EACH_BEGIN(::xmlDocGetRootElement(doc.get()),ref)
+	    	if(strcmp((const char*)ref->name,"reference")!=0) continue;
+		auto_free<xmlChar> curr_id(::xmlGetProp(ref,BAD_CAST "id"),(auto_free<xmlChar>::fun)::xmlFree);
+	    	if(curr_id.nil()) continue;
+	    	if(reference.get()!=0 && reference->id.compare((const char*)curr_id.get())==0)
+	    	    {
+	    	    FOR_EACH_BEGIN(ref,C1)
+			if(strcmp((const char*)C1->name,"path")==0)
+			    {
+			    auto_free<xmlChar> xs(::xmlNodeGetContent(C1),(auto_free<xmlChar>::fun)::xmlFree);
+			    if(!xs.nil()) reference->path.assign((const char*)xs.get());
+			    }
+		    FOR_EACH_END
+	    	    }
+	    FOR_EACH_END
+
+	    if(reference.get()==0)
+		{
+		quit(0,0,"Cannot find reference");
+		}
+
+	    reference->faidx=new IndexedFasta(reference->path.c_str());
+
 	    header();
 	    cout << "<div>";
 	    for(vector<ChromStartEnd>::iterator r=segments->begin();r!=segments->end();++r)
@@ -209,7 +318,7 @@ class NGSProject
 		cout << "<div>";
 		cout << "<h3>" << (*r).chrom<<":"<< (*r).start << "</h3>";
 
-		for(size_t i=0;i< project.bams.size();++i)
+		for(size_t i=0;i< project->bams.size();++i)
 		    {
 		    cout << "<h4>" <<  ""<< "</h4>";
 		    cout << "<pre>";
@@ -217,8 +326,8 @@ class NGSProject
 		    ttview.print(cout,
 			    r->chrom.c_str(),
 			    r->start-1,
-			    project.bams[i]->bam,
-			    genome_faidx.get()
+			    project->bams[i]->bam,
+			    reference->faidx
 			    );
 		    cout << "</pre>";
 		    }
@@ -226,25 +335,33 @@ class NGSProject
 		}
 	    cout << "</div>";
 	    footer();
+
 	    }
 
 	int main(int argc,char** argv)
 	    {
-	    if(!cgi.parse() || !cgi.contains("action") || cgi.contains("action","projects.list"))
+	    try
 		{
-		print_main();
+		if(!cgi.parse() || !cgi.contains("action") || cgi.contains("action","projects.list"))
+		    {
+		    print_main();
+		    }
+		else if(cgi.contains("action","project.show"))
+		    {
+		    print_project();
+		    }
+		else if(cgi.contains("action","bam.show"))
+		    {
+		    show_bam();
+		    }
+		else
+		    {
+		    print_main();
+		    }
 		}
-	    else if(cgi.contains("action","project.show"))
+	    catch(exception& err)
 		{
-		print_project();
-		}
-	    else if(cgi.contains("action","bam.show"))
-		{
-		show_bam();
-		}
-	    else
-		{
-		print_main();
+		quit(0,0,err.what());
 		}
 	    return EXIT_SUCCESS;
 	    }
