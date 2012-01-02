@@ -113,6 +113,16 @@ set<string> VCFReader::Row::formats() const
     return fmt;
     }
 
+std::set<std::string> VCFReader::Row::info_keys() const
+    {
+    set<string> s;
+    for(map<string,string>::const_iterator r=info.begin();r!=info.end();++r)
+   	{
+   	s.insert(r->first);
+   	}
+    return s;
+    }
+
 /*************************************************************************/
 /*************************************************************************/
 /*************************************************************************/

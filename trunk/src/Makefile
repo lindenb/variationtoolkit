@@ -268,7 +268,7 @@ xliftOver.o:xliftOver.cpp xliftOver.h
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
 $(BINDIR)/ngsproject:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
-	$(CPP) -o $@ $^ $(CFLAGS)  `xml2-config --cflags --libs` `xslt-config --cflags --libs` \
+	$(CPP) -g -o $@ $^ -DSTANDALONE_VERSION $(CFLAGS)  `xml2-config --cflags --libs` `xslt-config --cflags --libs` \
 		$(SAMDIR)/bam_color.o \
 		$(SAMDIR)/bam2bcf.o \
 		$(SAMDIR)/errmod.o \
