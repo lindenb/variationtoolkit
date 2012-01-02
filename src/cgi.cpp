@@ -6,6 +6,7 @@
  */
 #include <sstream>
 #include "cgi.h"
+#include "where.h"
 
 using namespace std;
 
@@ -150,7 +151,7 @@ bool CGI::parseQueryString(std::istream& in,int maxCharRead)
 			{
 			if(!key.empty())
 				{
-				parameters.push_back(new Param(key,value));
+			   	putParameter(key.c_str(),value.c_str());
 				}
 			in_key=true;
 			key.clear();
@@ -192,7 +193,7 @@ bool CGI::parseQueryString(std::istream& in,int maxCharRead)
 		}
 	if(!key.empty())
 		{
-		parameters.push_back(new Param(key,value));
+		putParameter(key.c_str(),value.c_str());
 		}
 	return true;
 	}
@@ -215,10 +216,10 @@ CGI::CGI()
 
 CGI::~CGI()
 	{
-	std::vector<Param*>::iterator r=parameters.begin();
+	std::multimap<string,Param*>::iterator r=parameters.begin();
 	while(r!=parameters.end())
 		{
-		delete (*r);
+		delete (*r).second;
 		++r;
 		}
 	}
@@ -251,59 +252,51 @@ bool CGI::parse()
 
 bool CGI::contains(std::string key) const
 	{
-	std::vector<Param*>::const_iterator r=parameters.begin();
-	while(r!=parameters.end())
-		{
-		if(key.compare((*r)->name())==0)
-			{
-			return true;
-			}
-		++r;
-		}
-	return false;
+	return parameters.find(key)!=parameters.end();
 	}
 
 
 bool CGI::contains(std::string key,std::string value) const
     {
-    std::vector<Param*>::const_iterator r=parameters.begin();
-    while(r!=parameters.end())
-    		{
-    		if(key.compare((*r)->name())==0 && value.compare((*r)->value())==0)
-    			{
-    			return true;
-    			}
-    		++r;
-    		}
+    std::pair<
+	std::multimap<string,Param*>::const_iterator,
+	std::multimap<string,Param*>::const_iterator
+	>p=parameters.equal_range(key);
+    std::multimap<string,Param*>::const_iterator r=p.first;
+    while(r!=p.second)
+	{
+	if(value.compare(r->second->value())==0)
+		{
+		return true;
+		}
+	++r;
+	}
+
     return false;
     }
 
 
 const char* CGI::getParameter(std::string key) const
 	{
-	std::vector<Param*>::const_iterator r=parameters.begin();
-	while(r!=parameters.end())
-		{
-		if(key.compare((*r)->name())==0)
-			{
-			return (*r)->value();
-			}
-		++r;
-		}
-	return NULL;
+	std::pair<
+	    std::multimap<string,Param*>::const_iterator,
+	    std::multimap<string,Param*>::const_iterator
+	    > p=parameters.equal_range(key);
+	if(p.first==p.second) return 0;
+	return p.first->second->value();
 	}
 
 std::set<std::string> CGI::getParameters(std::string key) const
 	{
 	std::set<std::string> vals;
-	std::vector<Param*>::const_iterator r=parameters.begin();
-	while(r!=parameters.end())
+	std::pair<
+		    std::multimap<string,Param*>::const_iterator,
+		    std::multimap<string,Param*>::const_iterator
+		    > p=parameters.equal_range(key);
+	while(p.first!=p.second)
 		{
-		if(key.compare((*r)->name())==0)
-			{
-			vals.insert(std::string( (*r)->value() ));
-			}
-		++r;
+		vals.insert(std::string(p.first->second->value() ));
+		++p.first;
 		}
 	return vals;
 	}
@@ -312,10 +305,10 @@ std::set<std::string> CGI::getParameters(std::string key) const
 std::set<std::string> CGI::getParameterNames() const
 	{
 	std::set<std::string> keys;
-	std::vector<Param*>::const_iterator r=parameters.begin();
+	std::multimap<string,Param*>::const_iterator r=parameters.begin();
 	while(r!=parameters.end())
 		{
-		keys.insert(std::string((*r)->name()));
+		keys.insert((*r).first);
 		++r;
 		}
 	return keys;
@@ -343,12 +336,12 @@ std::ostream& CGI::dump(std::ostream& out)
 	_var(out,"SERVER_NAME");
 	_var(out,"SERVER_PORT");
 
-	std::vector<Param*>::iterator r=parameters.begin();
+	std::multimap<string,Param*>::const_iterator r=parameters.begin();
 	while(r!=parameters.end())
 		{
-		out	<< (*r)->name()
+		out	<< r->first
 			<< " : "
-			<< (*r)->value()
+			<< r->second->value()
 			<< std::endl;
 		++r;
 		}
@@ -359,4 +352,30 @@ const char* CGI::last_error() const
     {
     if(_last_error.get()==0) return 0;
     return _last_error->c_str();
+    }
+
+
+void CGI::putParameter(const char* key,const char* value)
+    {
+    parameters.insert(make_pair<string,Param*>(key,new Param(key,value)));
+    }
+void CGI::setParameter(const char* k,const char* v)
+    {
+    removeParameter(k);
+    putParameter(k,v);
+    }
+
+void CGI::removeParameter(const char* key)
+    {
+    std::pair<
+	std::multimap<string,Param*>::iterator,
+	std::multimap<string,Param*>::iterator
+	> p=parameters.equal_range(key);
+    std::multimap<string,Param*>::iterator r=p.first;
+    while(r!=p.second)
+	{
+	delete (*r).second;
+	++r;
+	}
+    parameters.erase(p.first,p.second);
     }

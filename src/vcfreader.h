@@ -94,6 +94,7 @@ class VCFReader
 		std::vector<Call> calls;
 		std::size_t nLine;
 		std::set<std::string> formats() const;
+		std::set<std::string> info_keys() const;
 
 	    };
 	VCFReader(std::istream& in);

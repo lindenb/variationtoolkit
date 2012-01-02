@@ -21,7 +21,7 @@
 #include "ttview.h"
 #include "auto_vector.h"
 #include "xmlescape.h"
-
+#include "where.h"
 using namespace std;
 
 
@@ -53,6 +53,19 @@ class Project
 		std::string sample;
 		std::string path;
 		BamFile* bam;
+		IndexedBam():bam(0)
+		    {
+
+		    }
+		~IndexedBam()
+		    {
+		    if(bam!=0) delete bam;
+		    }
+		void open()
+		    {
+		    WHERE("");
+		    if(bam==0) bam=new BamFile(path.c_str());
+		    }
 	    };
 
 
@@ -74,6 +87,10 @@ class Project
 
 class NGSProject
     {
+    private:
+#ifdef STANDALONE_VERSION
+	std::string xml_path;
+#endif
     public:
 	CGI cgi;
 	streambuf* stdbuf;;
@@ -113,7 +130,12 @@ class NGSProject
 
 	xmlDocPtr load_project_file()
 	    {
-	    char* project_xml=getenv("NGS_PROJECT_PATH");
+#ifdef STANDALONE_VERSION
+	const char* project_xml=xml_path.c_str();
+#else
+	char* project_xml=getenv("NGS_PROJECT_PATH");
+#endif
+
 	    if(project_xml==NULL)
 		{
 		quit(0,0,"Cannot get $NGS_PROJECT_PATH.");
@@ -134,34 +156,31 @@ class NGSProject
 		)
 	    {
 	    auto_ptr<string> result_as_string(0);
-	    auto_free<xmlDoc> doc(load_project_file(),(auto_free<xmlDoc>::fun)xmlFreeDoc);
-	    auto_free<xmlDoc> xsl(xmlParseMemory(xslt_string,xslt_len),(auto_free<xmlDoc>::fun)xmlFreeDoc);
-	    if(xsl.get())
+	    xmlDocPtr doc=load_project_file();
+	    xmlDocPtr xsl=::xmlParseMemory(xslt_string,xslt_len);
+	    if(xsl==0)
 		{
 		quit(0,SC_INTERNAL_SERVER_ERROR,"XML Error in XSLT file.");
-		 return result_as_string;
 		}
-	    auto_free<xsltStylesheet> stylesheet(xsltParseStylesheetDoc(xsl.get()),(auto_free<xsltStylesheet>::fun)xsltFreeStylesheet);
-	    if(stylesheet.get()==0)
+
+	    xsltStylesheetPtr stylesheet=::xsltParseStylesheetDoc(xsl);
+	    if(stylesheet==0)
 		{
 		quit(0,SC_INTERNAL_SERVER_ERROR,"XSL Error in XML/XSLT file.");
-		 return result_as_string;
 		}
 
-	    auto_free<xmlDoc> res(::xsltApplyStylesheet(stylesheet.get(), doc.get(), params),(auto_free<xmlDoc>::fun)::xmlFreeDoc);
-	    if(res.get()==0)
+	    xmlDocPtr res=::xsltApplyStylesheet(stylesheet, doc, params);
+	    if(res==0)
 		{
 		quit(0,SC_INTERNAL_SERVER_ERROR,"Cannot transform XML 2 HTML.");
-		return result_as_string;
 		}
-
 	    xmlChar* doc_txt_ptr=NULL;
 	    int doc_txt_length;
 	    if(::xsltSaveResultToString(
 		    &doc_txt_ptr,
 		    &doc_txt_length,
-		    res.get(),
-		    stylesheet.get()
+		    res,
+		    stylesheet
 		    )!=0)
 		    {
 		    quit(0,SC_INTERNAL_SERVER_ERROR,"Cannot save to string.");
@@ -170,6 +189,11 @@ class NGSProject
 	    result_as_string.reset(new string((const char*)doc_txt_ptr,doc_txt_length));
 	    ::xmlFree(doc_txt_ptr);
 
+
+	    ::xmlFreeDoc(res);
+	    ::xsltFreeStylesheet(stylesheet);
+	    //::xmlFreeDoc(xsl); //NON "the doc is automatically freed when the stylesheet is closed."
+	    ::xmlFreeDoc(doc);
 	    return result_as_string;
 	    }
 
@@ -181,13 +205,28 @@ class NGSProject
 	    extern unsigned long ngsproject2html_length;
 	    auto_ptr<string> html=apply_stylesheet(ngsproject2html,ngsproject2html_length,params);
 	    if(html.get()==0) quit(0,0,"Error");
+	    cout << *html;
 	    }
 
 	void print_project()
 	    {
-	    const char ** params={NULL};
-	    auto_ptr<string> html=apply_stylesheet("",1,params);
+	    WHERE("");
+	    if(!cgi.contains("project.id"))
+		{
+		quit(0,0,"Error in POST parameters");
+		}
+	    const char *params[3]={"projectid",NULL,NULL};
+	    std::string param;
+	    param.append("\"");
+	    param.append(cgi.getParameter("project.id"));
+	    param.append("\"");
+	    params[1]=param.c_str();
+	    extern char* ngsproject2html;
+	    extern unsigned long ngsproject2html_length;
+
+	    auto_ptr<string> html=apply_stylesheet(ngsproject2html,ngsproject2html_length,params);
 	    if(html.get()==0) quit(0,0,"Error");
+
 	    }
 
 	void show_bam()
@@ -199,11 +238,12 @@ class NGSProject
 		quit(0,SC_BAD_REQUEST,"query missing");
 		}
 	    const char* project_id=cgi.getParameter("project.id");
+
 	    if(project_id==0)
 		{
 		quit(0,SC_BAD_REQUEST,"project.id missing");
 		}
-
+	    WHERE(project_id);
 	    std::auto_ptr<std::vector<ChromStartEnd> > segments;
 	    try
 		{
@@ -221,10 +261,12 @@ class NGSProject
 	    //loop over each project
 	    FOR_EACH_BEGIN(::xmlDocGetRootElement(doc.get()),proj)
 		if(strcmp((const char*)proj->name,"project")!=0) continue;
+		WHERE("");
 		auto_free<xmlChar> curr_id(::xmlGetProp(proj,BAD_CAST "id"),(auto_free<xmlChar>::fun)::xmlFree);
 		if(curr_id.nil()) continue;
 		if(::strcmp((const char*)curr_id.get(),project_id)==0)
 		    {
+		    WHERE("");
 		    project.reset(new Project);
 		    project->id.assign(project_id);
 		    FOR_EACH_BEGIN(proj,C1)
@@ -240,21 +282,31 @@ class NGSProject
 			    }
 			else if(strcmp((const char*)C1->name,"bam")==0)
 			    {
-			    auto_free<xmlChar> bam_ref(::xmlGetProp(proj,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
+			    auto_free<xmlChar> bam_ref(::xmlGetProp(C1,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
 			    if(!bam_ref.nil())
 				{
 				Project::IndexedBam* bam=new Project::IndexedBam;
 				bam->id.assign((const char*)bam_ref.get());
 				project->bams.push_back(bam);
 				}
+			    else
+				{
+				WHERE("missing bam ref");
+				}
 			    }
 			else if(strcmp((const char*)C1->name,"reference")==0)
 			    {
-			    auto_free<xmlChar> ref_ref(::xmlGetProp(proj,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
+			    WHERE("x");
+			    auto_free<xmlChar> ref_ref(::xmlGetProp(C1,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
 			    if(!ref_ref.nil())
 				{
+				WHERE("found ref");
 				project->reference.reset(new Project::Reference);
 				project->reference->id.assign((const char*)ref_ref.get());
+				}
+			    else
+				{
+				WHERE("no @ref in reference");
 				}
 			    }
 		    FOR_EACH_END
@@ -262,11 +314,15 @@ class NGSProject
 		    }
 	    FOR_EACH_END
 
-	    if(project.get())
+	    if(project.get()==0)
 		{
 		quit(0,SC_BAD_REQUEST,"Unknown project");
 		}
-
+	    if(project->bams.empty())
+		{
+		WHERE("");
+		quit(0,0,"EMpty project");
+		}
 	    //search for the BAM
 	    FOR_EACH_BEGIN(::xmlDocGetRootElement(doc.get()),sam)
 	    	if(strcmp((const char*)sam->name,"bam")!=0) continue;
@@ -276,7 +332,8 @@ class NGSProject
 	    	    {
 	    	    Project::IndexedBam* newsam=project->bams[i];
 	    	    if(newsam->id.compare((const char*)curr_id.get())!=0) continue;
-		    FOR_EACH_BEGIN(sam,C1)
+		    WHERE("");
+	    	    FOR_EACH_BEGIN(sam,C1)
 	    		if(strcmp((const char*)C1->name,"sample")==0)
 			    {
 			    auto_free<xmlChar> xs(xmlNodeGetContent(C1),(auto_free<xmlChar>::fun)::xmlFree);
@@ -291,13 +348,23 @@ class NGSProject
 	    	    }
 	    FOR_EACH_END
 
+
+	    if(project->reference.get()==0)
+		{
+		WHERE("");
+		quit(0,0,"Cannot find reference");
+		}
+
 	    //search for the reference
 	    FOR_EACH_BEGIN(::xmlDocGetRootElement(doc.get()),ref)
 	    	if(strcmp((const char*)ref->name,"reference")!=0) continue;
+		WHERE("");
 		auto_free<xmlChar> curr_id(::xmlGetProp(ref,BAD_CAST "id"),(auto_free<xmlChar>::fun)::xmlFree);
 	    	if(curr_id.nil()) continue;
+	    	WHERE("");
 	    	if(project->reference.get()!=0 && project->reference->id.compare((const char*)curr_id.get())==0)
 	    	    {
+	    	    WHERE("");
 	    	    FOR_EACH_BEGIN(ref,C1)
 			if(strcmp((const char*)C1->name,"path")==0)
 			    {
@@ -308,10 +375,7 @@ class NGSProject
 	    	    }
 	    FOR_EACH_END
 
-	    if(project->reference.get()==0)
-		{
-		quit(0,0,"Cannot find reference");
-		}
+
 
 	    project->reference->faidx=new IndexedFasta(project->reference->path.c_str());
 
@@ -327,6 +391,7 @@ class NGSProject
 		for(size_t i=0;i< project->bams.size();++i)
 		    {
 		    Project::IndexedBam* bam=project->bams[i];
+		    bam->open();
 		    cout << "<h4>" << xmlEscape(bam->sample) << ":" << xmlEscape(bam->id) << "</h4>";
 		    cout << "<pre>";
 		    TTView ttview;
@@ -342,23 +407,94 @@ class NGSProject
 		}
 	    cout << "</div>";
 	    footer();
-
 	    }
 
+
+#ifdef STANDALONE_VERSION
+	void usage(std::ostream& out,int argc,char** argv)
+	    {
+	    out << argv[0] << " Pierre Lindenbaum PHD. 2012.\n";
+	    out << "Options:\n";
+	    out << "  -D <key> <value> . Add CGI parameter.\n";
+	    out << "  -f <xml> path to project file.\n";
+	    out << endl;
+	    }
+#endif
 	int main(int argc,char** argv)
 	    {
+#ifdef STANDALONE_VERSION
+
+	    int optind=1;
+
+	    while(optind < argc)
+		{
+		if(std::strcmp(argv[optind],"-h")==0)
+		    {
+		    this->usage(cerr,argc,argv);
+		    return (EXIT_FAILURE);
+		    }
+		else if(std::strcmp(argv[optind],"-D")==0 && optind+2<argc)
+		    {
+		    WHERE(argv[optind+1]<<"="<< argv[optind+2]);
+		    cgi.setParameter(argv[optind+1],argv[optind+2]);
+		    optind+=2;
+		    }
+		else if(std::strcmp(argv[optind],"-f")==0 && optind+1<argc)
+		    {
+		    xml_path.assign(argv[++optind]);
+		    }
+		else if(argv[optind][0]=='-')
+		    {
+		    cerr << "unknown option '"<< argv[optind]<<"'\n";
+		    this->usage(cerr,argc,argv);
+		    return (EXIT_FAILURE);
+		    }
+		else
+		    {
+		    break;
+		    }
+		++optind;
+		}
+
+
+	if(xml_path.empty())
+	    {
+	    cerr << "xml path undefined.\n";
+	    return EXIT_FAILURE;
+	    }
+	if(argc!=optind)
+	    {
+	    cerr << "Illegal number of arguments.\n";
+	    return EXIT_FAILURE;
+	    }
+	cgi.dump(cerr);
+#endif
+
 	    try
 		{
-		if(!cgi.parse() || !cgi.contains("action") || cgi.contains("action","projects.list"))
+		if(
+#ifndef STANDALONE_VERSION
+		   !cgi.parse() ||
+#endif
+		   !cgi.contains("action") ||
+		   cgi.contains("action","projects.list"))
 		    {
 		    print_main();
 		    }
-		else if(cgi.contains("action","project.show"))
+		else if(
+			cgi.contains("action","project.show") &&
+			cgi.contains("project.id")
+
+			)
 		    {
 		    print_project();
 		    }
-		else if(cgi.contains("action","bam.show"))
+		else if(cgi.contains("action","bam.show") &&
+			cgi.contains("project.id") &&
+			cgi.contains("q")
+			)
 		    {
+		    WHERE("");
 		    show_bam();
 		    }
 		else

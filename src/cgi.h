@@ -115,7 +115,7 @@ class CGI
 		std::size_t max_input_size() const;
 	private:
 		std::auto_ptr<std::string> _last_error;
-		std::vector<Param*> parameters;
+		std::multimap<std::string,Param*> parameters;
 		bool parseGET();
 		bool parsePOST();
 		bool parseQueryString(std::istream& in,int maxCharRead);
@@ -132,6 +132,9 @@ class CGI
 		std::set<std::string> getParameters(std::string key) const;
 		std::set<std::string> getParameterNames() const;
 		const char* last_error() const;
+		void putParameter(const char* k,const char* v);
+		void setParameter(const char* k,const char* v);
+		void removeParameter(const char* k);
 	private:
 		 void _var(std::ostream& out,const char* s);
 	public:

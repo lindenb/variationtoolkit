@@ -19,7 +19,11 @@ class auto_free
 	     }
 	 ~auto_free()
 	     {
-	     if(_ptr!=0 && _fun!=0) _fun((void*)_ptr);
+	     if(_ptr!=0 && _fun!=0)
+		 {
+		 _fun((void*)_ptr);
+		 }
+	     _ptr=0;
 	     }
 	 bool nil() const
 	     {
