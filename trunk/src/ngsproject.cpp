@@ -19,6 +19,8 @@
 #include "auto_free.h"
 #include "segments.h"
 #include "ttview.h"
+#include "auto_vector.h"
+#include "xmlescape.h"
 
 using namespace std;
 
@@ -27,48 +29,48 @@ extern std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s);
 #define FOR_EACH_BEGIN(root,var) for (xmlNode* var = (root==0?0:root->children); var!=0; var = var->next) { if (var->type != XML_ELEMENT_NODE) continue;
 #define FOR_EACH_END }
 
-/** reference genome indexed with faidx */
-class Reference
-    {
-    public:
-	std::string id;
-	std::string path;
-	IndexedFasta* faidx;
-    };
 
-
-/** Indexed BAM file */
-class IndexedBam
-    {
-    public:
-	std::string id;
-	std::string sample;
-	std::string path;
-	BamFile* bam;
-    };
 /** content of a project */
 class Project
     {
     public:
+
+	/** reference genome indexed with faidx */
+	class Reference
+	    {
+	    public:
+		std::string id;
+		std::string path;
+		IndexedFasta* faidx;
+	    };
+
+
+	/** Indexed BAM file */
+	class IndexedBam
+	    {
+	    public:
+		std::string id;
+		std::string sample;
+		std::string path;
+		BamFile* bam;
+	    };
+
+
 	std::string id;
 	std::string name;
 	std::string description;
-	Reference* reference;
-	std::vector<IndexedBam*> bams;
-    };
+	auto_ptr<Reference> reference;
+	auto_vector<IndexedBam> bams;
 
-/** content of a project */
-class ProjectList
-    {
-    public:
-	ProjectList()
-	    {
-	    }
-	~ProjectList()
+	Project()
 	    {
 
 	    }
+
+
     };
+
+
 
 class NGSProject
     {
@@ -175,7 +177,9 @@ class NGSProject
 	void print_main()
 	    {
 	    const char ** params={NULL};
-	    auto_ptr<string> html=apply_stylesheet("",1,params);
+	    extern char* ngsproject2html;
+	    extern unsigned long ngsproject2html_length;
+	    auto_ptr<string> html=apply_stylesheet(ngsproject2html,ngsproject2html_length,params);
 	    if(html.get()==0) quit(0,0,"Error");
 	    }
 
@@ -211,7 +215,7 @@ class NGSProject
 		}
 
 
-	    auto_ptr<Reference> reference(0);
+
 	    auto_free<xmlDoc> doc(load_project_file(),(auto_free<xmlDoc>::fun)xmlFreeDoc);
 
 	    //loop over each project
@@ -239,7 +243,7 @@ class NGSProject
 			    auto_free<xmlChar> bam_ref(::xmlGetProp(proj,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
 			    if(!bam_ref.nil())
 				{
-				IndexedBam* bam=new IndexedBam;
+				Project::IndexedBam* bam=new Project::IndexedBam;
 				bam->id.assign((const char*)bam_ref.get());
 				project->bams.push_back(bam);
 				}
@@ -249,8 +253,8 @@ class NGSProject
 			    auto_free<xmlChar> ref_ref(::xmlGetProp(proj,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
 			    if(!ref_ref.nil())
 				{
-				reference.reset(new Reference);
-				reference->id.assign((const char*)ref_ref.get());
+				project->reference.reset(new Project::Reference);
+				project->reference->id.assign((const char*)ref_ref.get());
 				}
 			    }
 		    FOR_EACH_END
@@ -270,7 +274,7 @@ class NGSProject
 	    	if(curr_id.nil()) continue;
 	    	for(size_t i=0;i< project->bams.size();++i)
 	    	    {
-	    	    IndexedBam* newsam=project->bams[i];
+	    	    Project::IndexedBam* newsam=project->bams[i];
 	    	    if(newsam->id.compare((const char*)curr_id.get())!=0) continue;
 		    FOR_EACH_BEGIN(sam,C1)
 	    		if(strcmp((const char*)C1->name,"sample")==0)
@@ -292,42 +296,45 @@ class NGSProject
 	    	if(strcmp((const char*)ref->name,"reference")!=0) continue;
 		auto_free<xmlChar> curr_id(::xmlGetProp(ref,BAD_CAST "id"),(auto_free<xmlChar>::fun)::xmlFree);
 	    	if(curr_id.nil()) continue;
-	    	if(reference.get()!=0 && reference->id.compare((const char*)curr_id.get())==0)
+	    	if(project->reference.get()!=0 && project->reference->id.compare((const char*)curr_id.get())==0)
 	    	    {
 	    	    FOR_EACH_BEGIN(ref,C1)
 			if(strcmp((const char*)C1->name,"path")==0)
 			    {
 			    auto_free<xmlChar> xs(::xmlNodeGetContent(C1),(auto_free<xmlChar>::fun)::xmlFree);
-			    if(!xs.nil()) reference->path.assign((const char*)xs.get());
+			    if(!xs.nil()) project->reference->path.assign((const char*)xs.get());
 			    }
 		    FOR_EACH_END
 	    	    }
 	    FOR_EACH_END
 
-	    if(reference.get()==0)
+	    if(project->reference.get()==0)
 		{
 		quit(0,0,"Cannot find reference");
 		}
 
-	    reference->faidx=new IndexedFasta(reference->path.c_str());
+	    project->reference->faidx=new IndexedFasta(project->reference->path.c_str());
 
 	    header();
 	    cout << "<div>";
+	    cout << "<h2>" << xmlEscape(project->name) << "</h2>";
+	    cout << "<p>" << xmlEscape(project->description) << "</p>";
 	    for(vector<ChromStartEnd>::iterator r=segments->begin();r!=segments->end();++r)
 		{
 		cout << "<div>";
-		cout << "<h3>" << (*r).chrom<<":"<< (*r).start << "</h3>";
+		cout << "<h3>" << xmlEscape((*r).chrom)<<":"<< (*r).start << "</h3>";
 
 		for(size_t i=0;i< project->bams.size();++i)
 		    {
-		    cout << "<h4>" <<  ""<< "</h4>";
+		    Project::IndexedBam* bam=project->bams[i];
+		    cout << "<h4>" << xmlEscape(bam->sample) << ":" << xmlEscape(bam->id) << "</h4>";
 		    cout << "<pre>";
 		    TTView ttview;
 		    ttview.print(cout,
 			    r->chrom.c_str(),
 			    r->start-1,
-			    project->bams[i]->bam,
-			    reference->faidx
+			    bam->bam,
+			    project->reference->faidx
 			    );
 		    cout << "</pre>";
 		    }
