@@ -140,7 +140,7 @@ class ProteinToGenome:public MysqlApplication
 	    		      << tokenizer.delim << gene->name
 	    		      << tokenizer.delim << gene->chrom
 	    		      << tokenizer.delim << gene->strand
-	    		      << tokenizer.delim << "Exon "<< (gene->isForward()?r->chrom+1:(gene->countExons()-1)-r->chrom)
+	    		      << tokenizer.delim << "Exon "<< (gene->isForward()?r->chrom+1:(gene->countExons()-r->chrom))
 	    		      << tokenizer.delim << r->start
 	    		      << tokenizer.delim << r->end
 	    		      << endl;
