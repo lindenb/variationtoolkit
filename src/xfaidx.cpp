@@ -4,6 +4,10 @@
  *  Created on: Oct 10, 2011
  *      Author: lindenb
  */
+#include <cstdio>
+#include <cstring>
+#include <cstdio>
+#include <cerrno>
 #include "faidx.h"
 #include "xfaidx.h"
 #include "throw.h"
@@ -14,7 +18,7 @@ using namespace std;
 IndexedFasta::IndexedFasta(const char* fasta)
     {
     faidx_t *idx=fai_load(fasta);
-    if(idx==NULL) THROW("Cannot load indexed fasta "<< fasta);
+    if(idx==NULL) THROW("Cannot load indexed fasta "<< fasta << "(" << strerror(errno) << ")");
     ptr=idx;
     }
 

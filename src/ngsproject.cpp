@@ -63,8 +63,11 @@ class Project
 		    }
 		void open()
 		    {
-		    WHERE("");
-		    if(bam==0) bam=new BamFile(path.c_str());
+		    if(bam==0)
+			{
+			WHERE("open " << path);
+			bam=new BamFile(path.c_str());						
+			}
 		    }
 	    };
 
@@ -95,7 +98,8 @@ class NGSProject
 	CGI cgi;
 	streambuf* stdbuf;;
 	cgistreambuf* cgibuff;
-	NGSProject():stdbuf(cout.rdbuf()),cgibuff(0)
+	std::string title;
+	NGSProject():stdbuf(cout.rdbuf()),cgibuff(0),title("NGS Project")
 	    {
 	    cgibuff=new cgistreambuf(stdbuf);
 	    cout.rdbuf(cgibuff);
@@ -110,13 +114,22 @@ class NGSProject
 
 	void header()
 	    {
-	    cgibuff->setContentType("text/html");
-	    cout << "<html><body>";
+	    cgibuff->setContentType("application/xhtml+xml");
+	    cout << "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
+	    cout << "<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en'><head>"
+		<< "<title>" << xmlEscape(title) << "</title>"
+		<< "<style type='text/css'>"
+		<< "</style>"
+		<< "</head><body>";
 	    }
 
 	void footer()
 	    {
-	    cout << "</body></html>";
+	    cout << "<hr/><div style='font-size:50%;'>";
+	    cout << "<a href='http://plindenbaum.blogspot.com'>Pierre Lindenbaum PhD</a><br/>";
+	    cout << "Last compilation " << __DATE__ << " at " << __TIME__ << ".<br/>";
+	    //cout << "<pre>"; cgi.dump(cout); cout << "</pre>";
+	    cout << "</div></body></html>";
 	    }
 
 	void quit(const char* mime,int status,const char* message)
@@ -200,37 +213,66 @@ class NGSProject
 
 	void print_main()
 	    {
-	    const char ** params={NULL};
+	    const char * params[3]={"scriptname",NULL,NULL};
 	    extern char* ngsproject2html;
 	    extern unsigned long ngsproject2html_length;
+
+	    std::string param2;
+	    param2.append("\"");
+#ifdef STANDALONE_VERSION
+ 	    param2.append("SCRIPT_NAME");
+#else
+	    param2.append(getenv("SCRIPT_NAME"));
+#endif
+	    param2.append("\"");
+	    params[1]=param2.c_str();
+
 	    auto_ptr<string> html=apply_stylesheet(ngsproject2html,ngsproject2html_length,params);
 	    if(html.get()==0) quit(0,0,"Error");
+	    header();
 	    cout << *html;
+            footer();
 	    }
 
 	void print_project()
 	    {
-	    WHERE("");
+	    title.assign("Project ID.");
 	    if(!cgi.contains("project.id"))
 		{
 		quit(0,0,"Error in POST parameters");
 		}
-	    const char *params[3]={"projectid",NULL,NULL};
+            //title.append(cgi.getParameter("project.id"));
+	    const char *params[5]={"projectid",NULL,"scriptname",NULL,NULL};
 	    std::string param;
 	    param.append("\"");
 	    param.append(cgi.getParameter("project.id"));
 	    param.append("\"");
 	    params[1]=param.c_str();
+
+	    std::string param2;
+	    param2.append("\"");
+#ifdef STANDALONE_VERSION
+ 	    param2.append("SCRIPT_NAME");
+#else
+	    param2.append(getenv("SCRIPT_NAME"));
+#endif
+	    param2.append("\"");
+	    params[3]=param2.c_str();
+
 	    extern char* ngsproject2html;
 	    extern unsigned long ngsproject2html_length;
 
 	    auto_ptr<string> html=apply_stylesheet(ngsproject2html,ngsproject2html_length,params);
+	   
 	    if(html.get()==0) quit(0,0,"Error");
-
+	    header();
+            cout << *html;
+            footer();
 	    }
 
 	void show_bam()
 	    {
+	    title.assign("Project ID.");
 	    auto_ptr<Project> project(0);
 	    const char* positions=cgi.getParameter("q");
 	    if(positions==0)
@@ -243,17 +285,23 @@ class NGSProject
 		{
 		quit(0,SC_BAD_REQUEST,"project.id missing");
 		}
-	    WHERE(project_id);
+	    title.append(project_id);
 	    std::auto_ptr<std::vector<ChromStartEnd> > segments;
 	    try
 		{
 		segments=::parseSegments(positions);
+		if(!segments->empty())
+			{
+			ostringstream os;
+			os << segments->front();
+			title.append(" Region:").append(os.str());
+			}
 		}
 	    catch(exception& err)
 		{
 		quit(0,SC_BAD_REQUEST,err.what());
 		}
-
+	    
 
 
 	    auto_free<xmlDoc> doc(load_project_file(),(auto_free<xmlDoc>::fun)xmlFreeDoc);
@@ -266,7 +314,6 @@ class NGSProject
 		if(curr_id.nil()) continue;
 		if(::strcmp((const char*)curr_id.get(),project_id)==0)
 		    {
-		    WHERE("");
 		    project.reset(new Project);
 		    project->id.assign(project_id);
 		    FOR_EACH_BEGIN(proj,C1)
@@ -296,11 +343,9 @@ class NGSProject
 			    }
 			else if(strcmp((const char*)C1->name,"reference")==0)
 			    {
-			    WHERE("x");
 			    auto_free<xmlChar> ref_ref(::xmlGetProp(C1,BAD_CAST "ref"),(auto_free<xmlChar>::fun)::xmlFree);
 			    if(!ref_ref.nil())
 				{
-				WHERE("found ref");
 				project->reference.reset(new Project::Reference);
 				project->reference->id.assign((const char*)ref_ref.get());
 				}
@@ -320,7 +365,6 @@ class NGSProject
 		}
 	    if(project->bams.empty())
 		{
-		WHERE("");
 		quit(0,0,"EMpty project");
 		}
 	    //search for the BAM
@@ -332,7 +376,6 @@ class NGSProject
 	    	    {
 	    	    Project::IndexedBam* newsam=project->bams[i];
 	    	    if(newsam->id.compare((const char*)curr_id.get())!=0) continue;
-		    WHERE("");
 	    	    FOR_EACH_BEGIN(sam,C1)
 	    		if(strcmp((const char*)C1->name,"sample")==0)
 			    {
@@ -392,12 +435,13 @@ class NGSProject
 		    {
 		    Project::IndexedBam* bam=project->bams[i];
 		    bam->open();
-		    cout << "<h4>" << xmlEscape(bam->sample) << ":" << xmlEscape(bam->id) << "</h4>";
+		    cout << "<h4>" << xmlEscape(bam->sample) << " ID. " << xmlEscape(bam->id) << "</h4>";
+		    cout << "<h5>" << xmlEscape(r->chrom) << ":" << r->start << "</h5>";
 		    cout << "<pre>";
 		    TTView ttview;
 		    ttview.print(cout,
 			    r->chrom.c_str(),
-			    r->start-1,
+			    max(0,r->start-1),
 			    bam->bam,
 			    project->reference->faidx
 			    );
@@ -479,6 +523,7 @@ class NGSProject
 		   !cgi.contains("action") ||
 		   cgi.contains("action","projects.list"))
 		    {
+WHERE("");
 		    print_main();
 		    }
 		else if(
@@ -487,6 +532,7 @@ class NGSProject
 
 			)
 		    {
+			WHERE("");
 		    print_project();
 		    }
 		else if(cgi.contains("action","bam.show") &&
@@ -499,6 +545,7 @@ class NGSProject
 		    }
 		else
 		    {
+			WHERE("");
 		    print_main();
 		    }
 		}
