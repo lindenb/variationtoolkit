@@ -2049,6 +2049,29 @@ $ vcf2xml input.vcf | xmllint --format -
 \end{verbatim}
 \end{quote}
 
+
+sudo mkdir -p /var/www/cgi-bin
+sudo chmod 755 /var/www/cgi-bin
+sudo nano /etc/apache2/apache2.conf
+
+<VirtualHost *:80>
+ServerName localhost
+DocumentRoot /var/www/
+AddHandler cgi-script .cgi .pl 
+    
+<Directory /cgi-bin/>
+        AllowOverride None
+        Options ExecCGI -MultiViews +SymLinksIfOwnerMatch
+        Order allow,deny
+        Allow from all    
+</Directory>
+
+</VirtualHost>
+
+sudo /etc/init.d/apache2 restart
+
+
+
 \bibliographystyle{abbrv}
 \bibliography{varkit}
 

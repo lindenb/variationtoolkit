@@ -6,6 +6,7 @@
  */
 #include <sstream>
 #include "cgi.h"
+#include "xmlescape.h"
 #include "where.h"
 
 using namespace std;
@@ -317,7 +318,16 @@ std::set<std::string> CGI::getParameterNames() const
  void CGI::_var(std::ostream& out,const char* s)
 	{
 	char* p=::getenv(s);
-	out << s << ":" << (p==NULL?"null":p) << "\n";
+	out << s << ":";
+	if(p==0)
+		{
+		out << "null";
+		}
+	else
+		{
+		out << xmlEscape(p);
+		}
+        out << "\n";
 	}
 
 

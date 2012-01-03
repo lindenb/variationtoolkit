@@ -267,13 +267,16 @@ xliftOver.o:xliftOver.cpp xliftOver.h
 #not in production
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
-$(BINDIR)/ngsproject:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
-	$(CPP) -g -o $@ $^ -DSTANDALONE_VERSION $(CFLAGS)  `xml2-config --cflags --libs` `xslt-config --cflags --libs` \
+ngs_project:$(CGI_BIN_DIR)/ngsproject.cgi
+$(CGI_BIN_DIR)/ngsproject.cgi:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
+	if [ -z "${CGI_BIN_DIR}" ] ; then echo -e "#\n#\n# CGI_BIN_DIR undefined\n#\n#" ; else \
+	$(CPP) -o $@ $^ -DSTANDALONE_VERSION $(CFLAGS) \
 		$(SAMDIR)/bam_color.o \
 		$(SAMDIR)/bam2bcf.o \
 		$(SAMDIR)/errmod.o \
-		 -L $(SAMDIR) -L $(SAMDIR)/bcftools -lbam -lbcf  -lz
-
+		-L $(SAMDIR) -L $(SAMDIR)/bcftools \
+		`xml2-config --cflags --libs` `xslt-config --cflags --libs` \
+		-lbam -lbcf  -lz ; fi
 
 
 parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o
