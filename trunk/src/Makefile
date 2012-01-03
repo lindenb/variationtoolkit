@@ -60,7 +60,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/fastatac \
 	$(BINDIR)/fastarevcomp \
 	$(BINDIR)/ncbielink \
-	$(BINDIR)/ncbicited 
+	$(BINDIR)/ncbicited \
+	$(BINDIR)/protein2genome
 
 all:$(TARGET_BINARIES)
 
@@ -167,6 +168,9 @@ $(BINDIR)/ncbielink: ncbielink.cpp netstreambuf.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS)  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
 $(BINDIR)/ncbicited: ncbicited.cpp netstreambuf.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS)  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
+$(BINDIR)/protein2genome: protein2genome.cpp knowngene.o application.o segments.o
+	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lbam -lz
+	
 	
 
 $(BINDIR)/embbedC:embbedC.c
