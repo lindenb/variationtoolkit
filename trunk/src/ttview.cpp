@@ -26,6 +26,8 @@
 #include "faidx.h"
 #include "bam2bcf.h"
 #include "ttview.h"
+
+
 extern "C" {
 char bam_aux_getCEi(bam1_t *b, int i);
 char bam_aux_getCSi(bam1_t *b, int i);
@@ -49,6 +51,7 @@ char bam_aux_getCQi(bam1_t *b, int i);
 
 TTView::TTView():nLines(0),screen(NULL),lplbuf(NULL),bca(NULL),no_skip(0),show_name(0)
     {
+    this->row_shift=0;
     this->is_dot = 1;
     this->lplbuf = ::bam_lplbuf_init((bam_pileup_f)TTView::ttv_pl_func, this);
     this->bca = ::bcf_call_init(0.83, 13);
@@ -149,7 +152,10 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 	const bam_pileup1_t *pl=(const bam_pileup1_t *)bampileup;
 	int i, j, c, rb, max_ins = 0;
 	uint32_t call = 0;
-	if((int)pos < this->left_pos || this->ccol > this->mcol) return 0; // out of screen
+	if((int)pos < this->left_pos || this->ccol > this->mcol)
+	   {
+	   return 0; // out of screen
+	   }
 	// print reference
 	rb = (this->ref.get()!=NULL && pos - this->left_pos < this->ref->size())? this->ref->at(pos - this->left_pos) : 'N';
 	for(i = this->last_pos + 1; i < (int)pos; ++i)
@@ -161,6 +167,7 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 		c = this->ref.get()!=NULL ? this->ref->at(i - this->left_pos) : 'N';
 		putchxy(1, this->ccol++, c);
 		}
+	
 	if (pos%10 == 0 && this->mcol - this->ccol >= 10) printfyx(0, this->ccol, "%-d", pos+1);
 	{ // call consensus
 		bcf_callret1_t bcr;
@@ -197,6 +204,7 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 		for (i = 0; i < n; ++i) {
 			const bam_pileup1_t *p = pl + i;
 			int row = TV_MIN_ALNROW + p->level - this->row_shift;
+			
 			if (j == 0) {
 				if (!p->is_del) {
 					if (this->base_for == TV_BASE_COLOR_SPACE &&
@@ -231,6 +239,7 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 					}
 				}
 			}
+			
 			if (row > TV_MIN_ALNROW
 				/* && row < this->mrow */
 				)
@@ -293,6 +302,7 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 int TTView::ttv_pl_func(uint32_t tid, uint32_t pos, int n, const void *pl, void *data)
 	{
 	TTView *tv = (TTView*)data;
+	
 	return tv->callback(tid,pos,n,pl);
 	}
 

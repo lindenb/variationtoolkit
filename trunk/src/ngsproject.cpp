@@ -437,7 +437,7 @@ class NGSProject
 		    bam->open();
 		    cout << "<h4>" << xmlEscape(bam->sample) << " ID. " << xmlEscape(bam->id) << "</h4>";
 		    cout << "<h5>" << xmlEscape(r->chrom) << ":" << r->start << "</h5>";
-		    cout << "<pre>";
+		    cout << "<pre style=\"font-size:14pt;color:white;background-color:black;max-width:100%;max-height:400px;overflow:auto;padding:20px;\">";
 		    TTView ttview;
 		    ttview.print(cout,
 			    r->chrom.c_str(),
