@@ -21,6 +21,8 @@
 #include "ttview.h"
 #include "auto_vector.h"
 #include "xmlescape.h"
+#include "numeric_cast.h"
+#define NOWHERE
 #include "where.h"
 using namespace std;
 
@@ -34,7 +36,7 @@ extern std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s);
 class Project
     {
     public:
-
+	
 	/** reference genome indexed with faidx */
 	class Reference
 	    {
@@ -65,9 +67,13 @@ class Project
 		    {
 		    if(bam==0)
 			{
-			WHERE("open " << path);
 			bam=new BamFile(path.c_str());						
 			}
+		    }
+		void close()
+		    {
+		    if(bam!=0) delete bam;
+		    bam=0;
 		    }
 	    };
 
@@ -94,6 +100,7 @@ class NGSProject
 #ifdef STANDALONE_VERSION
 	std::string xml_path;
 #endif
+	static const int DEFAULT_NUM_COLUMNS=100;
     public:
 	CGI cgi;
 	streambuf* stdbuf;;
@@ -119,6 +126,12 @@ class NGSProject
 	    cout << "<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en'><head>"
 		<< "<title>" << xmlEscape(title) << "</title>"
 		<< "<style type='text/css'>"
+		<< "label { text-align:right; margin:5px;}\n"
+			"button {font-size:200%;min-width:100px;border: 1px solid; background-image:-moz-linear-gradient( top, gray, lightgray );margin:5px;}\n"
+			"button:hover {background-image:-moz-linear-gradient( top, lightgray, gray );}\n"
+			"pre.code {font-size:14pt;color:white;background-color:black;max-width:100%;max-height:400px;overflow:auto;padding:20px;}\n"
+			"p.desc { border-style:solid; border-width:1px; border-radius: 5px; background-color:lightgray;padding:20px;margin:20px;color:black;}\n"
+			".bigtitle {text-align:center;padding:10px;text-shadow: 3px 3px 4px gray; font-size:200%;}\n"
 		<< "</style>"
 		<< "</head><body>";
 	    }
@@ -161,6 +174,13 @@ class NGSProject
 	    return doc;
 	    }
 
+	std::string script_name()
+		{
+		string name;
+		char* s=getenv("SCRIPT_NAME");
+		if(s!=0) name.assign(s);
+		return name;
+		}
 
 	auto_ptr<string> apply_stylesheet(
 		char* xslt_string,
@@ -219,11 +239,7 @@ class NGSProject
 
 	    std::string param2;
 	    param2.append("\"");
-#ifdef STANDALONE_VERSION
- 	    param2.append("SCRIPT_NAME");
-#else
-	    param2.append(getenv("SCRIPT_NAME"));
-#endif
+ 	    param2.append(script_name());
 	    param2.append("\"");
 	    params[1]=param2.c_str();
 
@@ -251,11 +267,7 @@ class NGSProject
 
 	    std::string param2;
 	    param2.append("\"");
-#ifdef STANDALONE_VERSION
- 	    param2.append("SCRIPT_NAME");
-#else
-	    param2.append(getenv("SCRIPT_NAME"));
-#endif
+ 	    param2.append(script_name());
 	    param2.append("\"");
 	    params[3]=param2.c_str();
 
@@ -280,7 +292,18 @@ class NGSProject
 		quit(0,SC_BAD_REQUEST,"query missing");
 		}
 	    const char* project_id=cgi.getParameter("project.id");
-
+		
+            const char* shift_str=cgi.getParameter("shift");
+	    int32_t shift_value=0;
+	    if(shift_str!=0)
+	    	{
+	    	if(!numeric_cast<int32_t>(shift_str,&shift_value))
+	    		{
+	    		shift_value=0;
+	    		}
+	    	}
+	    
+		
 	    if(project_id==0)
 		{
 		quit(0,SC_BAD_REQUEST,"project.id missing");
@@ -290,6 +313,10 @@ class NGSProject
 	    try
 		{
 		segments=::parseSegments(positions);
+		for(vector<ChromStartEnd>::iterator r=segments->begin();r!=segments->end();++r)
+			{
+			(*r).start+=shift_value;
+			}
 		if(!segments->empty())
 			{
 			ostringstream os;
@@ -424,32 +451,54 @@ class NGSProject
 
 	    header();
 	    cout << "<div>";
-	    cout << "<h2>" << xmlEscape(project->name) << "</h2>";
-	    cout << "<p>" << xmlEscape(project->description) << "</p>";
+	    cout << "<h2 class=\"bigtitle\">"
+	         << xmlEscape(project->name)
+	         << "</h2>";
+	    cout << "<p class='desc'>" << xmlEscape(project->description) << "</p>";
+	    int segment_index=0;
 	    for(vector<ChromStartEnd>::iterator r=segments->begin();r!=segments->end();++r)
 		{
-		cout << "<div>";
+		segment_index++;
+		cout << "<div><form method='POST' action='"<< script_name() << "'>";
+		cout << "<input type='hidden' name='shift' value='0' id='shift"<< segment_index << "'/>";
+		cout << "<input type='hidden' name='action' value='bam.show'/>";
+		cout << "<input type='hidden' name='project.id' value='" << xmlEscape(project->id) << "'/>";
+		cout << "<input type='hidden' name='q' value='" <<  xmlEscape((*r).chrom)<<":"<< (*r).start  << "'/>";
 		cout << "<h3>" << xmlEscape((*r).chrom)<<":"<< (*r).start << "</h3>";
-
+#define SHIFT(N) "onclick=\"document.getElementById('shift" << segment_index << "').value="<< (int)((N)*DEFAULT_NUM_COLUMNS) << ";this.parentNode.parentNode.submit();\""
+			
+		cout << "<div style='text-align:center;font-size:120%;'>"
+			"<button " SHIFT(-0.95) " title=\"move 95% left\">&#x21DA;</button>"
+			"<button " SHIFT(-0.47) " title=\"move 47% left\">&#x21D0;</button>"
+			"<button " SHIFT(-0.10) " title=\"move 10% left\">&#x2190;</button>"
+			"<button " SHIFT( 0.10) " title=\"move 10% right\">&#x2192;</button>"
+			"<button " SHIFT( 0.47) " title=\"move 47% right\">&#x21D2;</button>"
+			"<button " SHIFT( 0.95) " title=\"move 95% right\">&#x21DB;</button>"
+			"</div>"
+			;
+#undef SHIFT
+			 
 		for(size_t i=0;i< project->bams.size();++i)
 		    {
 		    Project::IndexedBam* bam=project->bams[i];
 		    bam->open();
 		    cout << "<h4>" << xmlEscape(bam->sample) << " ID. " << xmlEscape(bam->id) << "</h4>";
 		    cout << "<h5>" << xmlEscape(r->chrom) << ":" << r->start << "</h5>";
-		    cout << "<pre style=\"font-size:14pt;color:white;background-color:black;max-width:100%;max-height:400px;overflow:auto;padding:20px;\">";
+		    cout << "<pre class=\"code\">";
 		    TTView ttview;
+		    ttview.mcol=DEFAULT_NUM_COLUMNS;
 		    ttview.print(cout,
 			    r->chrom.c_str(),
 			    max(0,r->start-1),
 			    bam->bam,
 			    project->reference->faidx
 			    );
+	   	    bam->close();
 		    cout << "</pre>";
 		    }
 		cout << "</div>";
 		}
-	    cout << "</div>";
+	    cout << "</form></div>";
 	    footer();
 	    }
 
