@@ -455,10 +455,10 @@ class NGSProject
 
 	    header();
 	    cout << "<div>";
-	    cout << "<h2 class=\"bigtitle\">"
+	    cout << "<h1 class=\"bigtitle\">"
 	         << xmlEscape(project->name)
-	         << "</h2>";
-	    cout << "<p class='desc'>" << xmlEscape(project->description) << "</p>";
+	         << "</h1>";
+	    //cout << "<p class='desc'>" << xmlEscape(project->description) << "</p>";
 	    int segment_index=0;
 	    for(vector<ChromStartEnd>::iterator r=segments->begin();r!=segments->end();++r)
 		{
