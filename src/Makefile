@@ -61,7 +61,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/fastarevcomp \
 	$(BINDIR)/ncbielink \
 	$(BINDIR)/ncbicited \
-	$(BINDIR)/protein2genome
+	$(BINDIR)/protein2genome \
+	$(CGI_BIN_DIR)/ngsproject.cgi
 
 all:$(TARGET_BINARIES)
 
@@ -170,7 +171,15 @@ $(BINDIR)/ncbicited: ncbicited.cpp netstreambuf.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS)  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
 $(BINDIR)/protein2genome: protein2genome.cpp knowngene.o application.o segments.o
 	$(CPP) -o $@ $^ $(CFLAGS) -L $(SAMDIR)  `mysql_config --cflags  --libs` -lbam -lz
-	
+$(CGI_BIN_DIR)/ngsproject.cgi:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
+	if [ -z "${CGI_BIN_DIR}" ] ; then echo -e "#\n#\n# CGI_BIN_DIR undefined\n#\n#" ; else \
+	$(CPP) -o $@ $^  $(CFLAGS) \
+		$(SAMDIR)/bam_color.o \
+		$(SAMDIR)/bam2bcf.o \
+		$(SAMDIR)/errmod.o \
+		-L $(SAMDIR) -L $(SAMDIR)/bcftools \
+		`xml2-config --cflags --libs` `xslt-config --cflags --libs` \
+		-lbam -lbcf  -lz ; fi
 	
 
 $(BINDIR)/embbedC:embbedC.c
@@ -271,16 +280,7 @@ xliftOver.o:xliftOver.cpp xliftOver.h
 #not in production
 $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 	$(CPP) -o $@ $< application.o $(CFLAGS) -lz -lsqlite3
-ngs_project:$(CGI_BIN_DIR)/ngsproject.cgi
-$(CGI_BIN_DIR)/ngsproject.cgi:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
-	if [ -z "${CGI_BIN_DIR}" ] ; then echo -e "#\n#\n# CGI_BIN_DIR undefined\n#\n#" ; else \
-	$(CPP) -o $@ $^  $(CFLAGS) \
-		$(SAMDIR)/bam_color.o \
-		$(SAMDIR)/bam2bcf.o \
-		$(SAMDIR)/errmod.o \
-		-L $(SAMDIR) -L $(SAMDIR)/bcftools \
-		`xml2-config --cflags --libs` `xslt-config --cflags --libs` \
-		-lbam -lbcf  -lz ; fi
+
 
 
 parsecolor.tab.o lex.parsecolor.o: parsecolor.l parsecolor.y color.o
