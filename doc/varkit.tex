@@ -2049,16 +2049,84 @@ $ vcf2xml input.vcf | xmllint --format -
 \end{verbatim}
 \end{quote}
 
+\subsection{ngsproject}
+A Web-Application (CGI) displaying a BAM alignment using the Samtools API.
 
+\paragraph{Install on apache 2:}
+add the path to th cgi directory in the file variationtoolkit/config.mk
+
+\begin{quote}
+\begin{verbatim}
+CGI_BIN_DIR=/var/www/cgi-bin
+\end{verbatim}
+\end{quote}
+Create the cgi-bin folder is needed
+\begin{quote}
+\begin{verbatim}
 sudo mkdir -p /var/www/cgi-bin
 sudo chmod 755 /var/www/cgi-bin
-sudo nano /etc/apache2/apache2.conf
+\end{verbatim}
+\end{quote}
+Create a XML file describing your project
+\begin{quote}
+\begin{verbatim}
+cat /var/www/cgi-bin/ngsproject.xml  
 
+
+<?xml version="1.0"?>
+<!DOCTYPE projects [
+<!ENTITY samdir "/tmp">
+]>
+<projects>
+  <reference id="ref1">
+    <name>Samtools1</name>
+    <description>Samtools example 1</description>
+    <path>&samdir;/examples/ex1.fa</path>
+  </reference>
+  <bam id="b1">
+    <sample>Huey</sample>
+    <path>&samdir;/examples/ex1.bam</path>
+  </bam>
+  <bam id="b2">
+    <sample>Dewey</sample>
+    <path>&samdir;/examples/ex1.bam</path>
+  </bam>
+  <bam id="b3">
+    <sample>Louie</sample>
+    <path>&samdir;/examples/ex1.bam</path>
+  </bam>
+  <project id="p1">
+    <name>Project P1</name>
+    <description>This is my 1st project</description>
+    <bam ref="b1"/>
+    <bam ref="b2"/>
+    <bam ref="b3"/>
+    <reference ref="ref1"/>
+  </project>
+  <project id="p2">
+    <name>Project P2</name>
+    <description>This is my 2nd project</description>
+    <bam ref="b1"/>
+    <bam ref="b3"/>
+    <reference ref="ref1"/>
+  </project>
+</projects>
+\end{verbatim}
+\end{quote}
+Edit the apache2 config /etc/apache2/apache2.conf
+\begin{quote}
+\begin{verbatim}
+sudo nano /etc/apache2/apache2.conf
+\end{verbatim}
+\end{quote}
+and add the following lines, specify NGS\_PROJECT\_PATH, the path to the XML file
+\begin{quote}
+\begin{verbatim}
 <VirtualHost *:80>
 ServerName localhost
 DocumentRoot /var/www/
 AddHandler cgi-script .cgi .pl 
-    
+SetEnv NGS_PROJECT_PATH /var/www/cgi-bin/ngsproject.xml    
 <Directory /cgi-bin/>
         AllowOverride None
         Options ExecCGI -MultiViews +SymLinksIfOwnerMatch
@@ -2068,9 +2136,200 @@ AddHandler cgi-script .cgi .pl
 
 </VirtualHost>
 
+\end{verbatim}
+\end{quote}
+and restart apache:
+\begin{quote}
+\begin{verbatim}
 sudo /etc/init.d/apache2 restart
+\end{verbatim}
+\end{quote}
+\paragraph{Example:}
+\begin{figure}
+\includegraphics[keepaspectratio=true,scale=0.8]{ngsproject.epsi}
+\caption{Screenshot of ngsproject}
+\end{figure}
 
 
+\subsection{fastaslice}
+Slice some FASTA sequences.
+\paragraph{Options:}
+\begin{itemize}
+\item-e (every)  default:0
+\item-L (fragment size)  default: (same as -e)
+\end{itemize}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ ../bin/fastaslice -e 10 -L 20 < nsp3.fasta | head
+
+>gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:0-20
+MLKMESTQQMASSIINTSFE
+>gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:10-30
+ASSIINTSFEAAVVAATSTL
+>gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:20-40
+AAVVAATSTLELMGIQYDYN
+>gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:30-50
+ELMGIQYDYNEIYTRVKSKF
+>gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:40-60
+EIYTRVKSKFDYVMDDSGVK
+\end{verbatim}
+\end{quote}
+
+
+\subsection{fastasortuniq}
+sort/uniq on FASTA sequences.
+\paragraph{Options:}
+\begin{itemize}
+\item-u uniq
+\item-i ignore case
+\end{itemize}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ fastaslice -e 1 -L 3 < nsp3.fasta |\
+  fastasortuniq -i -u | head
+
+>gi|77020788|gb|ABA60396.1| non-structural protein NSP3 [Human rotavirus B219]|slice:47-50
+AAF
+>gi|288187218|gb|ADC42131.1| translation enhancer NSP3 [Bovine rotavirus A]|slice:80-83
+AAK
+>gi|110558644|gb|ABG75781.1| NSP3 [Rotavirus A]|slice:20-23
+AAL
+>gi|284517165|gb|ADB92082.1| NSP3 [Human rotavirus A]|slice:48-51
+AAR
+>gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:24-27
+AAT
+
+\end{verbatim}
+\end{quote}
+
+
+\subsection{fastasortuniq}
+reverse complement FASTA sequences.
+\paragraph{Options:}
+\begin{itemize}
+\item-p print original sequence.
+\item-c DISABLE complement.
+\item-r DISABLE reverse.
+\end{itemize}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ fastaslice -e 1 -L 20 < rotavirus.fasta  | fastarevcomp  -p | head
+>gi|27592135|slice:0-20
+GGAAGGGCTGCCCCACCATT
+>gi|27592135|slice:0-20|reverse-complement
+AATGGTGGGGCAGCCCTTCC
+>gi|27592135|slice:1-21
+GAAGGGCTGCCCCACCATTC
+>gi|27592135|slice:1-21|reverse-complement
+GAATGGTGGGGCAGCCCTTC
+>gi|27592135|slice:2-22
+AAGGGCTGCCCCACCATTCA
+\end{verbatim}
+\end{quote}
+
+\subsection{fastatail}
+prints the last sequences of a list of FASTA sequences.
+\paragraph{Options:}
+\begin{itemize}
+\item-n number of sequences
+\end{itemize}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ fastaslice -e 50 -L 50 < rotavirus.fasta  |fastatail -n 2
+
+>gi|14662886|slice:200-250
+CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
+>gi|14662886|slice:250-275
+TTTGTAACCGGCCCCCCTTAAAACT
+\end{verbatim}
+\end{quote}
+
+\subsection{fasta2tsv}
+prints Fasta Sequences as Tab delimited values.
+\paragraph{Options:}
+\begin{itemize}
+\item-d <char> delimiter. default: tab
+\item-u convert sequence to upper case
+\end{itemize}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ fastaslice -e 50 -L 50 < rotavirus.fasta  | fastatail -n 5 | fasta2tsv 
+
+gi|14662886|slice:50-100	CACTCCTTTCACAAATCCCGAATTCTCTATCTAACTAACATTTGGCATAT
+gi|14662886|slice:100-150	CAGGTTGCCCTTCTCTCAGCGCCAGTTACAGGCCCATTTCCCAGTCAAGT
+gi|14662886|slice:150-200	CCTATTCCGCGCTCAGGTATATCTTTTCAACCCATCAATATTGCAGCCTT
+gi|14662886|slice:200-250	CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
+gi|14662886|slice:250-275	TTTGTAACCGGCCCCCCTTAAAACT
+\end{verbatim}
+\end{quote}
+
+
+\subsection{fastatac}
+Reverse the order of some fasta sequences.
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ fastaslice -e 50 -L 50 < rotavirus.fasta  | fastatac  | head
+
+>gi|14662886|slice:250-275
+TTTGTAACCGGCCCCCCTTAAAACT
+>gi|14662886|slice:200-250
+CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
+>gi|14662886|slice:150-200
+CCTATTCCGCGCTCAGGTATATCTTTTCAACCCATCAATATTGCAGCCTT
+>gi|14662886|slice:100-150
+CAGGTTGCCCTTCTCTCAGCGCCAGTTACAGGCCCATTTCCCAGTCAAGT
+>gi|14662886|slice:50-100
+CACTCCTTTCACAAATCCCGAATTCTCTATCTAACTAACATTTGGCATAT
+\end{verbatim}
+\end{quote}
+
+\subsection{ncbielink}
+Retrieves related NCBI records using NCBI-ELink
+\paragraph{Options:}
+\begin{itemize}
+\item-f (ncbi-database-from) REQUIRED.
+\item-t (ncbi-database-to) REQUIRED.
+\item-d (delimiter) (default:tab)
+\item-c (column) index of column containing gi identifier for database-from.
+\end{itemize}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#Genbank_GI\n256041817" | ncbielink  -c 1 -f protein -t nucleotide
+
+#Genbank_GI	protein:nucleotide.linkName	protein:nucleotide.id
+256041817	protein_nuccore	256041816
+256041817	protein_nuccore_mrna	256041816
+\end{verbatim}
+\end{quote}
+
+\subsection{ncbicited}
+Retrieves  NCBI/Pubmed records citing a pmid using NCBI-ELink.
+\paragraph{Options:}
+\begin{itemize}
+\item-p show pmids.
+\item-c (column) index of column containing gi identifier for database-from.
+\end{itemize}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#query\nNOTCH2"  |\
+  ncbiesearch  -q 'Caignec $1' | \
+  ncbicited -p -c 2
+
+#query	pubmed.id	count.citing	citing.pmid
+NOTCH2	21793104	.	.
+NOTCH2	21718643	.	.
+NOTCH2	21378989	2	21984761
+NOTCH2	21378989	2	22046109
+\end{verbatim}
+\end{quote}
 
 \bibliographystyle{abbrv}
 \bibliography{varkit}

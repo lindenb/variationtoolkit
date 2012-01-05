@@ -12,7 +12,8 @@ varkit.pdf:varkit.dvi
 	dvipdf $<
 varkit.dvi:varkit.tex varkit.bib manhattan.eps ucscgenes.eps \
 		igvcontrol.epsi \
-		schema01.epsi
+		schema01.epsi \
+		ngsproject.epsi
 	latex  $<
 	latex  $<
 	bibtex varkit
