@@ -274,7 +274,7 @@ $(BINDIR)/sqlitequery: sqlitequery.cpp application.o
 ngs_project:$(CGI_BIN_DIR)/ngsproject.cgi
 $(CGI_BIN_DIR)/ngsproject.cgi:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSESEG) ttview.o  xbam.o xfaidx.o
 	if [ -z "${CGI_BIN_DIR}" ] ; then echo -e "#\n#\n# CGI_BIN_DIR undefined\n#\n#" ; else \
-	$(CPP) -o $@ $^ -DSTANDALONE_VERSION $(CFLAGS) \
+	$(CPP) -o $@ $^  $(CFLAGS) \
 		$(SAMDIR)/bam_color.o \
 		$(SAMDIR)/bam2bcf.o \
 		$(SAMDIR)/errmod.o \

@@ -127,6 +127,10 @@ class NGSProject
 		<< "<title>" << xmlEscape(title) << "</title>"
 		<< "<style type='text/css'>"
 		<< "label { text-align:right; margin:5px;}\n"
+			"dl {padding: 0.5em;}\n"
+			"dt {float: left; clear: left; width: 190px; text-align: right; font-weight: bold; color:darkgray;}\n"
+			"dt:after { content: \":\"; }\n"
+			"dd { margin: 0 0 0 200px; padding: 0 0 0.5em 0; }\n"
 			"button {font-size:200%;min-width:100px;border: 1px solid; background-image:-moz-linear-gradient( top, gray, lightgray );margin:5px;}\n"
 			"button:hover {background-image:-moz-linear-gradient( top, lightgray, gray );}\n"
 			"pre.code {font-size:14pt;color:white;background-color:black;max-width:100%;max-height:400px;overflow:auto;padding:20px;}\n"
@@ -464,7 +468,7 @@ class NGSProject
 		cout << "<input type='hidden' name='action' value='bam.show'/>";
 		cout << "<input type='hidden' name='project.id' value='" << xmlEscape(project->id) << "'/>";
 		cout << "<input type='hidden' name='q' value='" <<  xmlEscape((*r).chrom)<<":"<< (*r).start  << "'/>";
-		cout << "<h3>" << xmlEscape((*r).chrom)<<":"<< (*r).start << "</h3>";
+		cout << "<div class='bigtitle'>" << xmlEscape((*r).chrom)<<":"<< (*r).start << "</div>";
 #define SHIFT(N) "onclick=\"document.getElementById('shift" << segment_index << "').value="<< (int)((N)*DEFAULT_NUM_COLUMNS) << ";this.parentNode.parentNode.submit();\""
 			
 		cout << "<div style='text-align:center;font-size:120%;'>"
@@ -482,8 +486,7 @@ class NGSProject
 		    {
 		    Project::IndexedBam* bam=project->bams[i];
 		    bam->open();
-		    cout << "<h4>" << xmlEscape(bam->sample) << " ID. " << xmlEscape(bam->id) << "</h4>";
-		    cout << "<h5>" << xmlEscape(r->chrom) << ":" << r->start << "</h5>";
+		    cout << "<h3 style='font-size:150%;text-align:center;'>&quot;" << xmlEscape(bam->sample) << "&quot; <a href='#'>file://" << xmlEscape(bam->path) << "</a></h3>";
 		    cout << "<pre class=\"code\">";
 		    TTView ttview;
 		    ttview.mcol=DEFAULT_NUM_COLUMNS;
@@ -496,9 +499,9 @@ class NGSProject
 	   	    bam->close();
 		    cout << "</pre>";
 		    }
-		cout << "</div>";
+		cout << "</form></div>";
 		}
-	    cout << "</form></div>";
+	    cout << "</div>";
 	    footer();
 	    }
 

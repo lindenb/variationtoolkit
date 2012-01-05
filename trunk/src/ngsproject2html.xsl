@@ -26,7 +26,7 @@
 </xsl:template>
 
 <xsl:template match="projects" mode="list">
-<h1 style="text-align:center;">NGS Projects</h1>
+<h1 class="bigtitle">NGS Projects</h1>
 <div>
 <xsl:for-each select="project">
 <div>
@@ -38,11 +38,11 @@
 </input>
 <div>
 <a href="#" title="go to this project" style="font-size:200%;" onclick="javascript:this.parentNode.parentNode.submit();"><xsl:value-of select="name"/></a><br/>
-<p><xsl:value-of select="description"/></p>
+<p class="desc"><xsl:value-of select="description"/></p>
 <dl>
 <dt>Reference</dt>
 <dd><xsl:value-of select="key('refindex',reference/@ref)/name"/>: <xsl:value-of select="key('refindex',reference/@ref)/description"/></dd>
-<dt>Number of BAMs:</dt>
+<dt>Number of BAMs</dt>
 <dd><xsl:value-of select="count(bam)"/> BAM(s)</dd>
 </dl>
 </div>
@@ -66,19 +66,18 @@
 <input type="hidden" name="project.id">
 <xsl:attribute name="value"><xsl:value-of select="@id"/></xsl:attribute>
 </input>
-<div style="text-align:center;font-size:200%;">
-<xsl:value-of select="name"/>
-<br/>
+<div class="bigtitle"><xsl:value-of select="name"/></div>
+<div style="text-align:center;font-size:200%; margin:50px;">
 <label for="query">Position: </label>
-<input type="text" name="q" value="" id="query"/>
+<input type="text" name="q" value="" id="query" style="padding:10px;font-size:100%;" title="position" placeholder='chrom:position' required='true'/>
 </div>
-<p><xsl:value-of select="description"/></p>
+<p class="desc"><xsl:value-of select="description"/></p>
 <dl>
 <dt>Reference</dt>
-<dd><xsl:value-of select="key('refindex',reference/@ref)/name"/>: <xsl:value-of select="key('refindex',reference/@ref)/description"/></dd>
-<dt>BAMs:</dt>
+<dd><xsl:value-of select="key('refindex',reference/@ref)/name"/> : &quot;<xsl:value-of select="key('refindex',reference/@ref)/description"/>&quot;</dd>
+<dt>BAMs</dt>
 <xsl:for-each select="bam">
-<dd>&quot;<xsl:value-of select="key('bamindex',@ref)/sample"/>&quot; <span><xsl:value-of select="key('bamindex',@ref)/path"/></span></dd>
+<dd>&quot;<xsl:value-of select="key('bamindex',@ref)/sample"/>&quot; <i>( <a href="#"><xsl:value-of select="concat('file://',key('bamindex',@ref)/path)"/>)</a></i></dd>
 </xsl:for-each>
 </dl>
 
