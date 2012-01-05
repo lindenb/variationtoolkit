@@ -3,10 +3,18 @@ Author:
 	Pierre Lindenbaum PhD
 	plindenbaum@yahoo.fr
 Motivation:
-	tool handling VCF files.
+	tool handling VCF, FASTA, bio* files.
 WWW:
 	http://code.google.com/p/variationtoolkit/
+Documentation:
+	The documentation is available as a TeX file in doc/varkit.tex
 
 Compilation:
 	before compiling, edit the file config.mk and
 	change the path to samtools, tabix, etc...
+	edit the file config.mk as described in the documentation
+	
+	Type:
+		make clean
+		make all doc
+		make install
