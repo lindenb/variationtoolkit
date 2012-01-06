@@ -28,6 +28,7 @@
 #include "bam2bcf.h"
 #include "ttview.h"
 
+//#define OUCH(c) if(!isprint(c)) fprintf(stderr,"[%d]OUCH! (%d)\n",__LINE__,c)
 
 extern "C" {
 char bam_aux_getCEi(bam1_t *b, int i);
@@ -140,7 +141,7 @@ void TTView::dump(std::ostream& out)
 			{
 			char c=this->screen[y][x].c;
 			if(!isprint(c)) c='?'; 
-			out << this->screen[y][x].c;
+			out << c;
 			}
 		out << std::endl;
 		}
@@ -194,6 +195,7 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 	i = (call&0xffff)/10+1;
 	if (i > 4) i = 4;
 	if (c == toupper(rb)) c = '.';
+
 	putchxy(2, this->ccol, c);
 	if(this->ins) {
 		// calculate maximum insert
@@ -214,18 +216,29 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 							(c = bam_aux_getCSi(p->b, p->qpos))) {
 						c = bam_aux_getCSi(p->b, p->qpos);
 						// assume that if we found one color, we will be able to get the color error
-						if (this->is_dot && '-' == bam_aux_getCEi(p->b, p->qpos)) c = bam1_strand(p->b)? ',' : '.';
+						if (this->is_dot && '-' == bam_aux_getCEi(p->b, p->qpos))
+						    {
+						    c = bam1_strand(p->b)? ',' : '.';
+						    }
+
 					} else {
 						if (this->show_name) {
 							char *name = bam1_qname(p->b);
 							c = (p->qpos + 1 >= (int32_t)p->b->core.l_qname)? ' ' : name[p->qpos];
+
 						} else {
 							c = bam_nt16_rev_table[bam1_seqi(bam1_seq(p->b), p->qpos)];
 							if (this->is_dot && toupper(c) == toupper(rb)) c = bam1_strand(p->b)? ',' : '.';
+
 						}
 					}
-				} else c = p->is_refskip? (bam1_strand(p->b)? '<' : '>') : '*';
+				} else
+				    {
+				    c = p->is_refskip? (bam1_strand(p->b)? '<' : '>') : '*';
+
+				    }
 			} else { // padding
+
 				if (j > p->indel) c = '*';
 				else { // insertion
 					if (this->base_for ==  TV_BASE_NUCL) {
@@ -238,11 +251,18 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 						}
 					} else {
 						c = bam_aux_getCSi(p->b, p->qpos + j);
-						if (this->is_dot && '-' == bam_aux_getCEi(p->b, p->qpos + j)) c = bam1_strand(p->b)? ',' : '.';
+						if(c==0) c='.';//ADDED ???? is it a bug ???
+						if (this->is_dot && '-' == bam_aux_getCEi(p->b, p->qpos + j))
+						    {
+						    c = bam1_strand(p->b)? ',' : '.';
+
+						    }
 					}
+
 				}
+
 			}
-			
+
 			if (row > TV_MIN_ALNROW
 				/* && row < this->mrow */
 				)
@@ -285,7 +305,7 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 					x = x/10 + 1;
 					if (x > 4) x = 4;
 					}
-				
+
 				putchxy(row, this->ccol, bam1_strand(p->b)? tolower(c) : toupper(c));
 				
 			}
@@ -293,10 +313,14 @@ int TTView::callback(uint32_t tid, uint32_t pos, int n, const void *bampileup)
 		c = j? '*' : rb;
 		if (c == '*') {
 			
-			
+
 			putchxy(1, this->ccol++, c);
 			
-		} else putchxy(1, this->ccol++, c);
+		} else
+		    {
+
+		    putchxy(1, this->ccol++, c);
+		    }
 	}
 	this->last_pos = pos;
 	return 0;
