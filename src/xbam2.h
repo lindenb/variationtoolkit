@@ -9,6 +9,7 @@
 #define XBAM2_H
 #include <string>
 #include <vector>
+#include <memory>
 #include <stdint.h>
 #include "bam.h"
 
