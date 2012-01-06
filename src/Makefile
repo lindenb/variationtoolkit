@@ -180,7 +180,8 @@ $(CGI_BIN_DIR)/ngsproject.cgi:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSES
 		-L $(SAMDIR) -L $(SAMDIR)/bcftools \
 		`xml2-config --cflags --libs` `xslt-config --cflags --libs` \
 		-lbam -lbcf  -lz ; fi
-	
+$(BINDIR)/cmpdepth: cmpdepth.cpp xbam2.o
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
@@ -216,6 +217,8 @@ xtabix.o: xtabix.cpp xtabix.h
 ttview.o: ttview.cpp ttview.h xbam.h xfaidx.h
 	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR)
 xbam.o: xbam.cpp xbam.h
+	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR) 
+xbam2.o: xbam2.cpp xbam2.h
 	$(CPP) -c -o $@ $< $(CFLAGS) -I $(SAMDIR) 
 geneticcode.o: geneticcode.cpp geneticcode.h
 	$(CPP) -c -o $@ $< $(CFLAGS)

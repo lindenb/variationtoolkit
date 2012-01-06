@@ -51,6 +51,9 @@ BamFile::~BamFile()
     if(this->header!=NULL) bam_header_destroy(CASTHEAD(header));
     if(this->fp!=NULL) bam_close(CASTBAM(fp));
     }
+
+
+
 const char* BamFile::findNameByTid(int32_t tid)
     {
     assert(header!=NULL);
