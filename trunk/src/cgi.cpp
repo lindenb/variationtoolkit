@@ -14,13 +14,14 @@ using namespace std;
 
 cgistreambuf::cgistreambuf(std::streambuf* delegate):printed(false),delegate(delegate)
 	{
-	setbuf(buffer,BUFSIZ);
+	setp(buffer,&buffer[BUFSIZ-1]);//save one char for the next overflow
 	header.insert(make_pair<string,string>("Content-Type","text-plain"));
 	header.insert(make_pair<string,string>("Status","200 OK"));
 	}
 
 cgistreambuf::~cgistreambuf()
 	{
+	sync();
 	}
 
 void cgistreambuf::setStatus(int status)
@@ -36,8 +37,31 @@ void cgistreambuf::setContentType(const char* mime)
 int cgistreambuf::overflow(int c)
 	{
 	flushHeaders();
-	return delegate->sputc(c);
+	char* end=pptr();
+	if(c!=EOF)
+		{
+		//one character has been saved in setp. see constructor
+		*end=c;
+		end++;
+		}
+	else
+		{
+		c=0;
+		}
+	delegate->sputn( pbase(), end - pbase()  );
+	setp(buffer,&buffer[BUFSIZ-1]);//save one char for the next overflow
+	return c;
 	}
+int cgistreambuf::sync()
+	{
+	flushHeaders();
+        delegate->sputn( pbase(), pptr() - pbase()  );	
+	delegate->pubsync();
+	setp(buffer,&buffer[BUFSIZ-1]);//save one char for the next overflow
+	return 0;	
+	}
+
+
 
 void cgistreambuf::flushHeaders()
 	{
@@ -389,3 +413,20 @@ void CGI::removeParameter(const char* key)
 	}
     parameters.erase(p.first,p.second);
     }
+
+#ifdef TEST_THIS_CODE
+
+int main(int argc,char** argv)
+	{
+	int c;
+	cgistreambuf b1(cout.rdbuf());
+	ostream out(&b1);
+	while((c=cin.get())!=-1)
+		{
+		out << (char)c;
+		}
+	//out.flush();
+	return 0;
+	}
+
+#endif

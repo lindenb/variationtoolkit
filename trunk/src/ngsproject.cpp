@@ -75,6 +75,7 @@ class Project
 		    if(bam!=0) delete bam;
 		    bam=0;
 		    }
+		
 	    };
 
 
@@ -89,7 +90,7 @@ class Project
 
 	    }
 
-
+	
     };
 
 
@@ -133,7 +134,7 @@ class NGSProject
 			"dd { margin: 0 0 0 200px; padding: 0 0 0.5em 0; }\n"
 			"button {font-size:200%;min-width:100px;border: 1px solid; background-image:-moz-linear-gradient( top, gray, lightgray );margin:5px;}\n"
 			"button:hover {background-image:-moz-linear-gradient( top, lightgray, gray );}\n"
-			"pre.code {font-size:14pt;color:white;background-color:black;max-width:100%;max-height:400px;overflow:auto;padding:20px;}\n"
+			".code {font-family:monospace;font-size:14pt;color:white;background-color:black;max-width:100%;max-height:400px;overflow:auto;padding:20px;}\n"
 			"p.desc { border-style:solid; border-width:1px; border-radius: 5px; background-color:lightgray;padding:20px;margin:20px;color:black;}\n"
 			".bigtitle {text-align:center;padding:10px;text-shadow: 3px 3px 4px gray; font-size:200%;}\n"
 		<< "</style>"
@@ -147,6 +148,7 @@ class NGSProject
 	    cout << "Last compilation " << __DATE__ << " at " << __TIME__ << ".<br/>";
 	    //cout << "<pre>"; cgi.dump(cout); cout << "</pre>";
 	    cout << "</div></body></html>";
+	    cout.flush();
 	    }
 
 	void quit(const char* mime,int status,const char* message)
@@ -482,12 +484,26 @@ class NGSProject
 			;
 #undef SHIFT
 			 
+
+		
+
 		for(size_t i=0;i< project->bams.size();++i)
 		    {
+
+		    cout << "<div style='text-align:center;font-size:9pt;'>";
+		    for(size_t k=0;k< project->bams.size();++k)
+				{
+				cout	<< " [<a href=\"#s"<< segment_index << "b" << xmlEscape(project->bams[k]->id) << "\">"
+					<< xmlEscape(project->bams[k]->sample)
+					<< "</a>] "; 
+				}
+		    cout << "</div>\n";
+
 		    Project::IndexedBam* bam=project->bams[i];
 		    bam->open();
+		   cout << "<a name=\"s" <<  segment_index << "b" << xmlEscape(bam->id) << "\"/>";
 		    cout << "<h3 style='font-size:150%;text-align:center;'>&quot;" << xmlEscape(bam->sample) << "&quot; <a href='#'>file://" << xmlEscape(bam->path) << "</a></h3>";
-		    cout << "<pre class=\"code\">";
+		    cout << "<pre class=\"code\">";//<![CDATA[";
 		    TTView ttview;
 		    ttview.mcol=DEFAULT_NUM_COLUMNS;
 		    ttview.print(cout,
@@ -497,6 +513,7 @@ class NGSProject
 			    project->reference->faidx
 			    );
 	   	    bam->close();
+		    //cout << "]]>";
 		    cout << "</pre>";
 		    }
 		cout << "</form></div>";

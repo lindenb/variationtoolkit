@@ -21,7 +21,7 @@ digits {digit}+
 [mM][bB]	return SIZE_MP;
 [gG][bB]	return SIZE_GP;
 
-[a-zA-Z_][a-zA-Z_0-9]+ {yylval.s=new string(yytext,yyleng);return TEXT;}
+[a-zA-Z_][a-zA-Z_0-9]* {yylval.s=new string(yytext,yyleng);return TEXT;}
 
 {digits}(,{digits})* {
 	char* p2;
