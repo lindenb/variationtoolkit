@@ -321,7 +321,7 @@ class NGSProject
 		segments=::parseSegments(positions);
 		for(vector<ChromStartEnd>::iterator r=segments->begin();r!=segments->end();++r)
 			{
-			(*r).start+=shift_value;
+			(*r).start=max(1,(*r).start+shift_value);
 			}
 		if(!segments->empty())
 			{
