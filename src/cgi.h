@@ -92,6 +92,8 @@ class cgistreambuf:public std::streambuf
 		virtual int overflow(int c=EOF);
 		virtual void flushHeaders();
 		virtual bool headersFlushed();
+	protected:
+		int sync();
 	};
 
 

@@ -20,6 +20,7 @@
 #include <cmath>
 #include <cstdarg>
 #include <cerrno>
+#include <cctype>
 #include <limits>
 #include "throw.h"
 #include "bam.h"
@@ -137,6 +138,8 @@ void TTView::dump(std::ostream& out)
 		{
 		for(x=0;x< this->mcol;++x)
 			{
+			char c=this->screen[y][x].c;
+			if(!isprint(c)) c='?'; 
 			out << this->screen[y][x].c;
 			}
 		out << std::endl;
