@@ -63,6 +63,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/ncbicited \
 	$(BINDIR)/protein2genome \
 	$(BINDIR)/cmpdepth \
+	$(BINDIR)/fasta2term \
 	$(CGI_BIN_DIR)/ngsproject.cgi
 
 all:$(TARGET_BINARIES)
@@ -182,7 +183,10 @@ $(CGI_BIN_DIR)/ngsproject.cgi:ngsproject.cpp ngsproject2htmlxsl.o cgi.o $(PARSES
 		`xml2-config --cflags --libs` `xslt-config --cflags --libs` \
 		-lbam -lbcf  -lz ; fi
 $(BINDIR)/cmpdepth: cmpdepth.cpp xbam2.o $(PARSESEG)
-	$(CPP) -o $@ $^ -g $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
+$(BINDIR)/fasta2term: fasta2term.cpp
+	$(CPP) -o $@ $^  $(CFLAGS) 
+
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
