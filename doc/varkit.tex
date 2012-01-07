@@ -2248,6 +2248,14 @@ TTTGTAACCGGCCCCCCTTAAAACT
 \end{verbatim}
 \end{quote}
 
+\subsection{fasta2term}
+colorizes some fasta sequences when printing to stdout.
+\begin{quote}
+\begin{verbatim}
+$ cat input.fa | fasta2term
+\end{verbatim}
+\end{quote}
+
 \subsection{fasta2tsv}
 prints Fasta Sequences as Tab delimited values.
 \paragraph{Options:}
@@ -2328,6 +2336,83 @@ NOTCH2	21793104	.	.
 NOTCH2	21718643	.	.
 NOTCH2	21378989	2	21984761
 NOTCH2	21378989	2	22046109
+\end{verbatim}
+\end{quote}
+
+
+
+\subsection{protein2genome}
+Maps a protein start/end back to the genome.
+\paragraph{Options:}
+\begin{itemize}
+\item-p (column) protein name column default:1
+\item-s (column) protein start column (1-based) default:2
+\item-e (column) protein end column (1-based)  default:3
+\item-d (delimiter). Default:tab
+\item--host (mysql host) default:genome-mysql.cse.ucsc.edu
+\item--user (mysql user) default:genome
+\item--password (mysql password) default:
+\item--database (mysql database) default:hg19
+\item--port (mysql password) default:0
+\end{itemize}
+\paragraph{Example:}
+\begin{quote}
+\begin{verbatim}
+$ echo -e "#Pep\tpepStart\tpepEnd\tDomain\nZC3H7B\t82\t115\tTPR\nNOTC2_HUMAN\t26\t63\tEGF_DOMAIN" |\
+  protein2genome | verticalize 
+  
+  
+>>>	2
+$1	#Pep            	ZC3H7B
+$2	pepStart        	82
+$3	pepEnd          	115
+$4	Domain          	TPR
+$5	knownGene.name  	uc003azw.2
+$6	knownGene.chrom 	chr22
+$7	knownGene.strand	+
+$8	knownGene.exon  	Exon 4
+$9	domain.start    	41721879
+$10	domain.end      	41721922
+<<<	2
+
+>>>	3
+$1	#Pep            	ZC3H7B
+$2	pepStart        	82
+$3	pepEnd          	115
+$4	Domain          	TPR
+$5	knownGene.name  	uc003azw.2
+$6	knownGene.chrom 	chr22
+$7	knownGene.strand	+
+$8	knownGene.exon  	Exon 5
+$9	domain.start    	41723209
+$10	domain.end      	41723268
+<<<	3
+
+>>>	4
+$1	#Pep            	NOTC2_HUMAN
+$2	pepStart        	26
+$3	pepEnd          	63
+$4	Domain          	EGF_DOMAIN
+$5	knownGene.name  	uc001eik.2
+$6	knownGene.chrom 	chr1
+$7	knownGene.strand	-
+$8	knownGene.exon  	Exon 2
+$9	domain.start    	120572528
+$10	domain.end      	120572609
+<<<	4
+
+>>>	5
+$1	#Pep            	NOTC2_HUMAN
+$2	pepStart        	26
+$3	pepEnd          	63
+$4	Domain          	EGF_DOMAIN
+$5	knownGene.name  	uc001eik.2
+$6	knownGene.chrom 	chr1
+$7	knownGene.strand	-
+$8	knownGene.exon  	Exon 3
+$9	domain.start    	120548178
+$10	domain.end      	120548211
+<<<	5
 \end{verbatim}
 \end{quote}
 
