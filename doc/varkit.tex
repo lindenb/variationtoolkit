@@ -637,14 +637,17 @@ $ gunzip -c data.vcf.gz |\
 \end{quote}
 
 \subsection{dnacontext}
-Prints the DNA context of a variation using a genome indexed with samtools.
+Prints the DNA context of a variation using a genome indexed with samtools faidx and its GC percent.
 \paragraph{Options:}
 \begin{itemize}
 \item-c (chrom Column) (1)
-\item-p (pos Column) (2)
+\item-p|-s (pos or start Column) (2)
 \item-d (column-delimiter) (default:tab)
 \item-x (segment-size) (default:10)
-\item-f (genome file indexed with tabix.
+\item-e (end-column) . exclusive of -x . Assumes BED data (first base=0)
+\item-f (genome file indexed with tabix
+\item--no-gc don't print gc percent
+\item--no-seq don't print DNA sequence
 \end{itemize}
 \paragraph{Example:}
 
