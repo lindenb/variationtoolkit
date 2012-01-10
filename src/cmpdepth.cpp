@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <memory>
+#include <cmath>
 #include "xbam2.h"
 #include "segments.h"
 #include "auto_vector.h"
@@ -38,7 +39,7 @@ class CompareDepth
 	auto_vector<BamFile2> bamFiles;
 	int32_t window_size;
 	int32_t window_shift;
-	int32_t minimum_mean_depth;
+	int32_t minimum_max_depth;
 	double ratio;
 
 	CompareDepth():depths_array(0),
@@ -47,7 +48,7 @@ class CompareDepth
 		buffer_start(-1),
 		window_size(50),
 		window_shift(25),
-		minimum_mean_depth(0),
+		minimum_max_depth(0),
 		ratio(2)
 	    {
 	    }
@@ -120,8 +121,9 @@ class CompareDepth
 		    refill_buffer(tid,n);
 		    }
 
-
+		double biggest_shift=0.0;
 		double total_depth=0.0;
+		double max_depth=0.0;
 		fill(depths.begin(),depths.end(),0.0);
 		for(size_t i=0;i < bamFiles.size();++i)
 		    {
@@ -132,14 +134,15 @@ class CompareDepth
 			}
 		    depths[i]=bam_depth;
 		    depths[i]/=this->window_size;
+		    max_depth=std::max(max_depth,depths[i]);
 		    total_depth+=depths[i];
 		    }
 
 
-		double mean=total_depth/bamFiles.size();
-		if(mean< minimum_mean_depth)
+
+		if(max_depth< minimum_max_depth)
 		    {
-		    WHERE(mean<< "<"<<minimum_mean_depth );
+		    WHERE(max_depth<< "<"<<minimum_max_depth );
 		    continue;
 		    }
 
@@ -149,6 +152,7 @@ class CompareDepth
 			cout << "\t" <<  (int32_t)(depths[i]);
 			}
 
+		double mean=total_depth/bamFiles.size();
 		cout << "\t"<< (int32_t)mean << "\t";
 		bool found=false;
 		for(size_t i=0;
@@ -167,6 +171,11 @@ class CompareDepth
 			d2+= depths[j];
 			}
 		    d2/=(double)(depths.size()-1);
+
+
+		  biggest_shift=std::max(biggest_shift,abs(d2-d1));
+
+
 		    if(d1< d2/ratio ||d1>d2*ratio)
 			{
 			if(found) cout << ";";
@@ -174,10 +183,13 @@ class CompareDepth
 			found=true;
 			}
 		    }
+
 		if(!found)
 		    {
 		    cout << ".";
 		    }
+		cout << "\t" ;
+		cout << (int)biggest_shift ;
 		cout << endl;
 
 		}
@@ -281,7 +293,7 @@ class CompareDepth
 	    out << " -w (every-bases) window-size default:"<< window_size << "\n";
 	    out << " -s (shift-bases) window-shift default:"<< window_shift << "\n";
 	    out << " -b (size) buffer-size for each BAM default:"<< buffer_size << "\n";
-	    out << " -m (size) min depth default:"<< minimum_mean_depth << "\n";
+	    out << " -m (size) minimal maximum depth between samples default:"<< minimum_max_depth << "\n";
 	    out << " -r (value) depth treshold default:"<< ratio << "\n";
 	    out << " -p (chrom:start-end) limit to that position (optional)\n";
 	    out << " -B (file) limit to that bed file (optional)\n";
@@ -323,7 +335,7 @@ class CompareDepth
 		    }
 		else if(strcmp(argv[optind],"-m")==0 && optind+1<argc)
 		    {
-		    if(!numeric_cast<int32_t>(argv[++optind],&minimum_mean_depth) || minimum_mean_depth<0)
+		    if(!numeric_cast<int32_t>(argv[++optind],&minimum_max_depth) || minimum_max_depth<0)
 			{
 			cerr << "Bad option -m "<< argv[optind]<<endl;
 			this->usage(cerr,argc,argv);
@@ -398,12 +410,12 @@ class CompareDepth
 		{
 		cout << "\t" << bamFiles[i]->path();
 		}
-	    cout << "\tmean.depth\tflag" << endl;
+	    cout << "\tmean.depth\tflag\tlargest.diff" << endl;
 	    if(befFile!=0)
 		{
 		runBed(befFile);
 		}
-	    if(positionStr!=0)
+	    else if(positionStr!=0)
 		{
 		std::auto_ptr<std::vector<ChromStartEnd> > segs= parseSegments(positionStr);
 		if(segs.get()==0)

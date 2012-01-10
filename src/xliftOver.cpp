@@ -71,6 +71,7 @@ std::auto_ptr<ChromStrandStartEnd> LiftOver::convert(
     char retStrand;
     auto_ptr<ChromStrandStartEnd> ret;
     last_error.reset();
+
     char *error = ::liftOverRemapRange(
 	    CAST_HASH(chainHash),
 	    minBlocks(),
@@ -109,7 +110,7 @@ std::auto_ptr<ChromStartEnd> LiftOver::convert(
 	)
     {
     auto_ptr<ChromStartEnd> ret;
-    ChromStrandStartEnd seg(*src,true);
+    ChromStrandStartEnd seg(*src,'+');
     auto_ptr<ChromStrandStartEnd> p=convert(&seg);
     if(p.get()==NULL)
 	{
