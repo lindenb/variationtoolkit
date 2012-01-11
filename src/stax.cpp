@@ -387,10 +387,13 @@ bool StreamXmlReader::_fill()
    	{
 	WHERE("");
    	int ret = ::xmlTextReaderRead(CAST_READER(this));
-   	WHERE(ret);
+
    	if(ret==-1 || ret==0) return false;
-   	 switch(xmlTextReaderNodeType(CAST_READER(this)))
+   	int nodeType=xmlTextReaderNodeType(CAST_READER(this));
+   	WHERE(nodeType);
+   	switch(nodeType)
    	     {
+
    	     case XML_READER_TYPE_ELEMENT:
    		 {
    		 StartElement* e=new StartElement;
@@ -438,12 +441,12 @@ bool StreamXmlReader::_fill()
    		 }
    	     case XML_READER_TYPE_COMMENT:
    		 {
-   		WHERE("");
+   		WHERE(nodeType);
    		 break;
    		 }
    	     default:
    		 {
-   		WHERE("");
+   		WHERE(nodeType);
    		 break;
    		 }
    	     }

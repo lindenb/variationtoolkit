@@ -6,6 +6,7 @@
  */
 #include <cerrno>
 #include <cassert>
+#define NOWHERE
 #include "where.h"
 
 #include "throw.h"
@@ -20,6 +21,146 @@ using namespace std;
 extern "C" {
 void bam_init_header_hash(bam_header_t *header);
 }
+
+/***************************************************************************************/
+/***************************************************************************************/
+
+const CigarOp CigarOp::MATCH('M');
+const CigarOp CigarOp::INSERT('I');
+
+const CigarOp* CigarOp::find(char c)
+    {
+    switch(c)
+	{
+	case 'M': return &MATCH;
+	case 'I': return &INSERT;
+	}
+    return 0;
+    }
+
+CigarOp::CigarOp(char c)
+    {
+
+    }
+
+
+/***************************************************************************************/
+/***************************************************************************************/
+
+SAMRecord::SAMRecord()
+    {
+    }
+
+SAMRecord::~SAMRecord()
+    {
+    }
+
+bool SAMRecord::isReverseStrand() const
+    {
+    return !isForwardStrand();
+    }
+
+#define BAM_GETTER(fun,opcode) bool SAMRecord::fun() const \
+    {\
+    return (this->flag() & opcode)!=0;\
+    }
+BAM_GETTER(isRead1,BAM_FREAD1)
+BAM_GETTER(isRead2,BAM_FREAD2)
+BAM_GETTER(isProperPair,BAM_FPROPER_PAIR)
+BAM_GETTER(isUnmapped,BAM_FUNMAP)
+BAM_GETTER(isQCFail,BAM_FQCFAIL)
+BAM_GETTER(isPaired,BAM_FPAIRED)
+BAM_GETTER(isDuplicate,BAM_FDUP)
+#undef BAM_GETTER
+
+char SAMRecord::at(int32_t idx) const
+    {
+    return bam_nt16_rev_table[bam1_seqi(_seq(),idx)];
+    }
+
+
+/***************************************************************************************/
+/***************************************************************************************/
+
+
+class DelegateSAMRecord:public SAMRecord
+    {
+
+    public:
+	DelegateSAMRecord(bam1_t* ptr);
+	virtual ~DelegateSAMRecord();
+	virtual const char* readName() const;
+	virtual bool isForwardStrand() const;
+	virtual int32_t flag() const;
+	virtual int32_t size() const;
+	virtual int32_t tid() const;
+	virtual int32_t pos() const;
+    protected:
+	virtual const bam1_t* ptr() const;
+	virtual const uint8_t* _seq() const;
+	const bam1_core_t* core() const;
+    private:
+	bam1_t* _ptr;
+    };
+
+DelegateSAMRecord::DelegateSAMRecord(bam1_t* ptr):_ptr(ptr)
+    {
+    }
+
+DelegateSAMRecord::~DelegateSAMRecord()
+    {
+    }
+
+const bam1_t* DelegateSAMRecord::ptr() const
+    {
+    return _ptr;
+    }
+
+const bam1_core_t* DelegateSAMRecord::core() const
+    {
+    return &(ptr()->core);
+    }
+
+const uint8_t* DelegateSAMRecord::_seq() const
+    {
+    return bam1_seq(ptr());
+    }
+
+const char* DelegateSAMRecord::readName() const
+    {
+    return bam1_qname(ptr());
+    }
+
+bool DelegateSAMRecord::isForwardStrand() const
+    {
+    return (bam1_strand(ptr())==0);//equal
+    }
+
+
+int32_t DelegateSAMRecord::flag() const
+    {
+    return core()->flag;
+    }
+
+
+int32_t DelegateSAMRecord::size() const
+    {
+    return core()->l_qseq;
+    }
+
+int32_t DelegateSAMRecord::tid() const
+    {
+    return core()->tid;
+    }
+
+int32_t DelegateSAMRecord::pos() const
+    {
+    return core()->pos;
+    }
+
+/***************************************************************************************/
+/***************************************************************************************/
+
 
 BamFile2::BamFile2(const char* file) :fp(NULL),header(NULL),index(NULL),filename(file)
     {
@@ -170,3 +311,118 @@ uint32_t BamFile2::Target::length() const
     {
     return _length;
     }
+
+
+std::auto_ptr<BamFile2::Iterator>
+BamFile2::query(int tid, int beg0, int end0)
+    {
+    return std::auto_ptr<BamFile2::Iterator>(new  BamFile2::Iterator(
+	 ::bam_iter_query(CASTIDX(index), tid, beg0,end0),
+	  this
+	));
+    }
+
+
+std::auto_ptr<BamFile2::Iterator>
+BamFile2::query(int tid)
+    {
+    if(tid<0 || tid>=count_targets()) THROW("BOUM");
+    return query(tid,0,target_length(tid));
+    }
+
+std::auto_ptr<BamFile2::Iterator>
+BamFile2::query()
+    {
+    return std::auto_ptr<BamFile2::Iterator>(new  BamFile2::Iterator(
+   	 0,
+   	  this
+   	));
+    }
+
+
+/*****************************************************************************/
+BamFile2::Iterator::Iterator(bam_iter_t iter,BamFile2* owner):
+	_iter(iter),_owner(owner),_rec(0),_sam(0)
+    {
+    _rec=bam_init1();
+    if(_rec==0) THROW("bam_init1 failed");
+    }
+
+void BamFile2::Iterator::close()
+    {
+    WHERE("");
+    if(_iter!=0) ::bam_iter_destroy(_iter);
+    _iter=0;
+    if(_rec!=0) bam_destroy1(_rec);
+    _rec=0;
+    if(_sam!=0) delete _sam;
+    _sam=0;
+    }
+
+const SAMRecord*  BamFile2::Iterator::next()
+    {
+    if(_rec==0) return false;
+    bool ok=false;
+    if (_iter!=0)
+	{
+	WHERE("_iter!=0");
+	ok= bam_iter_read(
+	    CASTBAM(_owner->fp),
+	    _iter,
+	    _rec)>=0;
+	}
+    else
+	{
+	WHERE("_iter==0");
+	ok= bam_read1(CASTBAM(_owner->fp),_rec)>=0;
+	}
+
+    if(!ok)
+	{
+	close();
+	return 0;
+	}
+    if(_sam!=0) delete _sam;
+    _sam=new DelegateSAMRecord(_rec);
+    return _sam;
+    }
+
+BamFile2::Iterator::~Iterator()
+    {
+    this->close();
+    }
+
+#ifdef TEST_THIS_CODE
+int main(int argc,char** argv)
+    {
+    for(int i=1;i< argc;++i)
+	{
+	BamFile2 f(argv[i]);
+	f.open();
+	for(int j=0;j< f.count_targets();++j)
+	    {
+	    if(j==0) continue;
+	    int n=0;
+	    auto_ptr<BamFile2::Iterator> iter=f.query(j,0,99999999);
+	    const SAMRecord* rec;
+	    while(++n<10 && (rec=iter->next())!=0)
+		{
+		cout << argv[i] << " "<< n << " " << rec->tid() << ":"<< rec->pos() << " " << rec->readName() << endl;
+		}
+
+	    n=0;
+	    iter->close();
+	    iter=f.query(23);
+
+	    while(++n<10 && (rec=iter->next())!=0)
+		{
+		cout << "#2" << argv[i] << " "<< n << " " << rec->tid() << ":"<< rec->pos() << " " << rec->readName() << endl;
+		}
+	    break;
+	    }
+	f.close();
+	}
+    return 0;
+    }
+
+#endif

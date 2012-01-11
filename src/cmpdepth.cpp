@@ -169,11 +169,12 @@ class CompareDepth
 			{
 			if(i==j) continue;
 			d2+= depths[j];
+			biggest_shift=std::max(biggest_shift,abs(depths[j]-d1));
 			}
 		    d2/=(double)(depths.size()-1);
 
 
-		  biggest_shift=std::max(biggest_shift,abs(d2-d1));
+
 
 
 		    if(d1< d2/ratio ||d1>d2*ratio)

@@ -13,6 +13,64 @@
 #include <stdint.h>
 #include "bam.h"
 
+class CigarOp
+    {
+    public:
+	static const CigarOp MATCH;
+	static const CigarOp INSERT;
+	static const CigarOp* find(char c);
+    private:
+	CigarOp(char symbol);
+    };
+
+struct CigarOperation
+    {
+    char op;
+    uint32_t count;
+    };
+
+class Cigar
+    {
+    public:
+	Cigar() {}
+	~Cigar() {}
+    private:
+
+    };
+
+
+class SAMRecord
+    {
+    protected:
+	SAMRecord();
+	virtual const uint8_t * _seq() const=0;
+    public:
+	virtual ~SAMRecord();
+	virtual int32_t flag() const=0;
+	virtual const char* readName() const=0;
+	/* the read is paired in sequencing, no matter whether it is mapped in a pair. */
+	virtual bool isForwardStrand() const=0;
+#define BAM_GETTER(fun) virtual bool fun() const
+
+	BAM_GETTER(isReverseStrand);
+	BAM_GETTER(isPaired);
+	BAM_GETTER(isRead1);
+	BAM_GETTER(isRead2);
+	BAM_GETTER(isProperPair);
+	BAM_GETTER(isUnmapped);
+	BAM_GETTER(isQCFail);
+	BAM_GETTER(isDuplicate);
+
+#undef BAM_GETTER
+	virtual int32_t size() const=0;
+	virtual char at(int32_t idx) const;
+	virtual int32_t tid() const=0;
+	virtual int32_t pos() const=0;
+    };
+
+
+
+
 class BamFile2
     {
   private:
@@ -21,6 +79,21 @@ class BamFile2
 	bam_index_t* index;
 	std::string filename;
     public:
+	class Iterator
+	    {
+	    public:
+		~Iterator();
+		const SAMRecord* next();
+		void close();
+	    private:
+		Iterator(bam_iter_t iter,BamFile2* owner);
+		bam_iter_t _iter;
+		BamFile2* _owner;
+		bam1_t *_rec;
+		SAMRecord* _sam;
+	    friend class BamFile2;
+	    };
+
 	class Target
 	    {
             private:
@@ -53,6 +126,10 @@ class BamFile2
 	int32_t target_length(int32_t n) const;
 	//
 	static int fetch_func(const bam1_t *b, void *data);
+	//iterators
+	std::auto_ptr<Iterator> query(int tid, int beg, int end);
+	std::auto_ptr<Iterator> query(int tid);
+	std::auto_ptr<Iterator> query();
     };
 
 
