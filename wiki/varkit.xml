@@ -293,5 +293,35 @@ Y 21154529 . G A 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample20
 </pre>
 </page>
 
+<page title="ExtractInfo" desc="Extract a field from the INFO column of a VCF file" labels="ngs,vcf">
+
+<h2>Options:</h2>
+<ul>
+<li><b>-c</b> (info-column-infex) (7)</li>
+<li><b>--delim</b> (column-delimiter) (default:tab)</li>
+<li><b>-t</b> (tag) (required)</li>
+<li><b>-N</b> (string) symbol for NOT-FOUND. default:N/A</li>
+<li><b>-i</b> ignore line if tag was not found</li>
+</ul>
+
+<h2>Example:</h2>
+The following script extract the <b>GN</b>(gene name) field from the column <b>INFO</b>. We keep the lines for the gene NOTCH2 and we display the associated SNP.
+<pre><![CDATA[
+$ gunzip -c data.vcf.gz |\
+  extractinfo -t GN -i | \
+  awk -F '       ' '($11 =="NOTCH2")' |\
+  cut -d ' ' -f 3 | grep rs
+
+rs6685892
+rs2493392
+rs2493420
+rs7534585
+rs7534586
+rs2493409
+rs2453040
+rs2124109
+]]></pre>
+</page>
+
 
 </documentation>
