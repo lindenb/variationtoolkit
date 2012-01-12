@@ -135,7 +135,7 @@ Inserts a VCF in a sqlite3 database.
 <li>-f (file) sqlite database (<b>REQUIRED</b>).</li>
 </ul>
 <h2>Schema</h2>
-A schema is available as SVG in http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg
+A schema is available as SVG in <url>http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg</url>
 <h2>Example:</h2>
 <pre><![CDATA[$ vcf2sqlite -f db.sqlite file.vcf
 $ sqlite3 -line db.sqlite  "select * from VCFCALL LIMIT 4"
