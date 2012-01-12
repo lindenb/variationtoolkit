@@ -47,6 +47,10 @@
 <xsl:value-of select="concat('[',.,' ',.,']')"/>
 </xsl:template>
 
+<xsl:template match="img">
+<xsl:value-of select="concat('[',@src,']')"/>
+</xsl:template>
+
 <xsl:template match="pre">
 <xsl:text>
 {{{
