@@ -323,5 +323,29 @@ rs2124109
 ]]></pre>
 </page>
 
+<page title="Bam2wig" desc="Creates a WIG file for the coverage of a BAM file" labels="wig,wiggle,bam,ngs,samtools,sam">
+
+<h2>Options:</h2>
+<ul>
+<li><b>-z</b> (int) number of depth=0 accepted before starting a new WIG file</li>
+<li><b>-o</b> (filename-out) save as... (default:stdout).</li>
+<li><b>-t</b> print a ucsc custom track header.</li>
+</ul>
+
+<pre>$ bam2wig -t  file.bam
+
+track name="__TRACK_NAME__" description="__TRACK_DESC__" type="wiggle_0"
+fixedStep chrom=chrM start=23 step=1 span=1
+2
+2
+3
+4
+5
+6
+6
+4
+(...)</pre>
+
+</page>
 
 </documentation>
