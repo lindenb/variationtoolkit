@@ -228,5 +228,29 @@ sample_id = 1
 </vcf>]]></pre>
 </page>
 
+<page title="FastaSlice" desc="Slice a FASTA input">
+
+
+<ul>
+<li><b>-e</b> (every)  default:1</li>
+<li><b>-L</b> (fragment size)  default: (same as -e)</li>
+</ul>
+<h2>Example:</h2>
+
+<pre>$ fastaslice -e 10 -L 20 &lt; nsp3.fasta | head
+
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:0-20
+MLKMESTQQMASSIINTSFE
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:10-30
+ASSIINTSFEAAVVAATSTL
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:20-40
+AAVVAATSTLELMGIQYDYN
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:30-50
+ELMGIQYDYNEIYTRVKSKF
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:40-60
+EIYTRVKSKFDYVMDDSGVK</pre>
+
+</page>
+
 
 </documentation>
