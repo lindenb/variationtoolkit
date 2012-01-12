@@ -128,14 +128,14 @@ and restart apache:
 
 Inserts a VCF in a sqlite3 database.
 <h2>Dependencies</h2>
-<url>http://www.sqlite.org/</url> : libraries and header.<br/>Define <code>SQLITE_LIB</code> and 
-<code>SQLITE_CFLAGS</code> in <code>config.mk</code> (see <url>HowToInstall</url> )
+<url>http://www.sqlite.org/</url> : libraries and header.<br/>Define "<code>SQLITE_LIB</code>" and 
+"<code>SQLITE_CFLAGS</code>" in <code>config.mk</code> (see <url>HowToInstall</url> )
 <h2>Options</h2>
 <ul>
 <li>-f (file) sqlite database (<b>REQUIRED</b>).</li>
 </ul>
 <h2>Schema</h2>
-A schema is available in <img src="http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg"/>
+A schema is available as SVG in http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg
 <h2>Example:</h2>
 <pre><![CDATA[$ vcf2sqlite -f db.sqlite file.vcf
 $ sqlite3 -line db.sqlite  "select * from VCFCALL LIMIT 4"
