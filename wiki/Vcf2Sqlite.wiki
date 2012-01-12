@@ -16,7 +16,7 @@ Define "`SQLITE_LIB`" and
 
 ==Schema==
 
-A schema is available as SVG in [http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg]
+A schema is available as SVG in http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg
 
 ==Example:==
 
