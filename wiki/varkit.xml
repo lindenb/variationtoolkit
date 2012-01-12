@@ -444,4 +444,18 @@ EIF4G1	D	240	Y	uc003fns.2	+	L	719	CTC	C	chr3	184039211	Exon 10
 
 </page>
 
+<page title="IgvControl" labels="ncurses,curses,visualization,vcf,igv,genome,browser,sam,bam" desc="simple curses-based VCF browser controlling IGV">
+
+igvControl displays the variations by calling IGV ( <url>http://www.broadinstitute.org/igv/</url> )
+to a defined view.
+<h2>Options:</h2>
+<ul>
+<li>-c (CHROM col) (default:1)</li>
+<li>-p (START col) (default:2)</li>
+</ul>
+<h3>Screenshot</h3>
+<img src="http://variationtoolkit.googlecode.com/svn/trunk/doc/igvcontrol.jpg"/>
+
+</page>
+
 </documentation>
