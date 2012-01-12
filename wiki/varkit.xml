@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<documentation>
+<page title="HowToInstall" desc="How to Install the Variation toolkit">
+
+<h2>Dependencies</h2>
+<ul>
+<li><b>Samtools</b>: Utilities for post-processing alignments in the SAM format. <pmid>19505943</pmid></li>
+<li><b>Tabix</b>: fast retrieval of sequence features from generic TAB-delimited files. <pmid>21208982</pmid></li>
+<li><b>mysql-dev</b>: the files and libraries for mysql.</li>
+<li><b>libxml2</b>: the C library for xml <url>http://xmlsoft.org/</url>.</li>
+<li><b>libxslt</b>: the C library for xslt <url>http://xmlsoft.org/XSLT/</url>.</li>
+<li><b>libcurl</b>: the C library for downloading URLs.</li>
+<li><b>jkentsrc</b>: (optional) Jim Kent's C library / Ucsc parsing bigbed, bigwig...</li>
+<li><b>sqlite3</b>: (optional) SQL database engine.</li>
+</ul>
+
+<h2>Building</h2>
+Download the latest version of varkit using <code>subversion</code>:
+
+<pre>svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only</pre>
+
+or update your current version by calling <code>svn update</code> in the  variationtoolkit folder.
+<pre>svn update</pre>
+<h2>Edit the Config file.</h2>
+Edit the file variationtoolkit/config.mk . You'll have to set the path to the sources of tabix (>=0.2.5), samtools (>=-0.1.18), etc..
+<pre>##path to SAMTOOLS
+SAMDIR=${HOME}/samtools-0.1.18
+##path to TABIX
+TABIXDIR=/home/lindenb/tabix-0.2.5
+##optional path to UCSC kent's src
+KENTDIR=${HOME}/src/kent/kent
+##optional path to google leveldb
+LEVELDBDIR=${HOME}/tmp/leveldb-read-only
+SQLITE_LIB=-lsqlite3
+SQLITE_CFLAGS=</pre>
+
+then type:
+<pre>
+make</pre>
+the binaries will be generated in the <b>bin/</b> folder.
+<h2>Compiling one program without dependencies</h2>
+If you don't want to install all the programs and just beed one program you can go in the `src` folder and ask for compiling the software. e.g:
+<pre>cd src
+make ../bin/fastatail
+$ make ../bin/fasta2tsv
+g++ -o ../bin/fasta2tsv fasta2tsv.cpp -O3 -Wall -lz</pre>
+</page>
+</documentation>
