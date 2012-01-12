@@ -1,4 +1,5 @@
 #summary Inserts a VCF in a sqlite3 database
+#labels VCF,sqlite,sql,database
 
 
 Inserts a VCF in a sqlite3 database.

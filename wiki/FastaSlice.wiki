@@ -1,6 +1,9 @@
 #summary Slice a FASTA input
+#labels fasta,sequence
 
 
+
+==Options:==
 
   * *-e* (every)  default:1
   * *-L* (fragment size)  default: (same as -e)

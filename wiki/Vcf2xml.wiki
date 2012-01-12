@@ -1,4 +1,5 @@
 #summary Transforms a VCF to xml
+#labels vcf,transform,format,xml,ngs
 
 
 

@@ -8,6 +8,19 @@
 <xsl:output method="text" encoding="UTF-8" />
 
 <xsl:template match="/documentation">
+<xsl:text>
+|| *Title* || *Description* ||
+</xsl:text>
+<xsl:for-each select="page">
+<xsl:text>|| [</xsl:text>
+<xsl:value-of select="@title"/>
+<xsl:text>] || </xsl:text>
+<xsl:value-of select="@desc"/>
+<xsl:text> ||
+</xsl:text>
+</xsl:for-each>
+<xsl:text>
+</xsl:text>
 <xsl:apply-templates select="page"/>
 </xsl:template> 
 
@@ -27,6 +40,12 @@
 </xsl:choose>
 <xsl:text>
 </xsl:text>
+<xsl:if test="@labels">
+<xsl:text>#labels </xsl:text>
+<xsl:value-of select="@labels"/>
+<xsl:text>
+</xsl:text>
+</xsl:if>
 <xsl:apply-templates/>
 </xsl:document>
 </xsl:template> 

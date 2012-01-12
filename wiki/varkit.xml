@@ -47,7 +47,7 @@ g++ -o ../bin/fasta2tsv fasta2tsv.cpp -O3 -Wall -lz</pre>
 </page>
 
 
-<page title="NgsProject" desc="CGI interface to Samtools tview. Visualize short reads alignments">
+<page title="NgsProject" desc="CGI interface to Samtools tview. Visualize short reads alignments" labels="samtools,bam,vcf,cgi,apache,web,httpd,ngs">
 
 This C++ program named ngsproject.cgi uses the samtools api, it allows any user to visualize all the alignments in a given NGS project. The projects and their BAMS are defined on the server side using a simple XML document.
 
@@ -124,7 +124,7 @@ and restart apache:
 </page>
 
 
-<page title="Vcf2Sqlite" desc="Inserts a VCF in a sqlite3 database">
+<page title="Vcf2Sqlite" desc="Inserts a VCF in a sqlite3 database" labels="VCF,sqlite,sql,database">
 
 Inserts a VCF in a sqlite3 database.
 <h2>Dependencies</h2>
@@ -172,7 +172,7 @@ sample_id = 1
 </page>
 
 
-<page title="Vcf2xml" desc="Transforms a VCF to xml">
+<page title="Vcf2xml" desc="Transforms a VCF to xml" labels="vcf,transform,format,xml,ngs">
 
 <h2>Dependencies</h2>
 <code>libxml</code> (see <url>HowToInstall</url> )
@@ -228,9 +228,9 @@ sample_id = 1
 </vcf>]]></pre>
 </page>
 
-<page title="FastaSlice" desc="Slice a FASTA input">
+<page title="FastaSlice" desc="Slice a FASTA input" labels="fasta,sequence">
 
-
+<h2>Options:</h2>
 <ul>
 <li><b>-e</b> (every)  default:1</li>
 <li><b>-L</b> (fragment size)  default: (same as -e)</li>
