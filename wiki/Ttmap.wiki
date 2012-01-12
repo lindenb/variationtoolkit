@@ -1,7 +1,6 @@
 #summary prints an ASCII genomic map
-#labels genome,browser,samtools,bam,sam,visualization
+#labels genome,browser,vcf,bed,visualization
 
-\subsection{ttmap}
 
 
 ==Options:==
@@ -16,9 +15,10 @@
 
 
 
+==Example:==
+
 
 {{{
-
 $ curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt.gz" |\
   gunzip -c |  grep chrM |\
   ttmap -c 2 -s 4 -e 5 -o 3 -n 1 -C 50
