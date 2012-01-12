@@ -39,6 +39,11 @@
 </xsl:text>
 </xsl:template>
 
+<xsl:template match="br">
+<xsl:text>
+</xsl:text>
+</xsl:template>
+
 <xsl:template match="pmid">
 <xsl:value-of select="concat('[http://www.ncbi.nlm.nih.gov/pubmed/',.,' pmid:',.,']')"/>
 </xsl:template>

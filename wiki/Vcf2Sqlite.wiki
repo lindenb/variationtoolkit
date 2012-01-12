@@ -1,0 +1,58 @@
+#summary Inserts a VCF in a sqlite3 database
+
+
+Inserts a VCF in a sqlite3 database.
+
+==Dependencies==
+
+[http://www.sqlite.org/ http://www.sqlite.org/] : libraries and header.
+Define `SQLITE_LIB` and 
+`SQLITE_CFLAGS` in `config.mk` (see [HowToInstall HowToInstall] )
+
+==Options==
+
+  * -f (file) sqlite database (*REQUIRED*).
+
+
+==Schema==
+
+A schema is available in [http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg]
+
+==Example:==
+
+
+{{{
+$ vcf2sqlite -f db.sqlite file.vcf
+$ sqlite3 -line db.sqlite  "select * from VCFCALL LIMIT 4"
+
+       id = 1
+   nIndex = 0
+vcfrow_id = 1
+sample_id = 1
+     prop = GT
+    value = 1/1
+
+       id = 2
+   nIndex = 1
+vcfrow_id = 1
+sample_id = 1
+     prop = PL
+    value = 46,6,0
+
+       id = 3
+   nIndex = 2
+vcfrow_id = 1
+sample_id = 1
+     prop = GQ
+    value = 10
+
+       id = 4
+   nIndex = 0
+vcfrow_id = 2
+sample_id = 1
+     prop = GT
+    value = 1/1
+
+
+}}}
+

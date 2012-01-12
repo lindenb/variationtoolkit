@@ -124,4 +124,52 @@ and restart apache:
 </page>
 
 
+<page title="Vcf2Sqlite" desc="Inserts a VCF in a sqlite3 database">
+
+Inserts a VCF in a sqlite3 database.
+<h2>Dependencies</h2>
+<url>http://www.sqlite.org/</url> : libraries and header.<br/>Define <code>SQLITE_LIB</code> and 
+<code>SQLITE_CFLAGS</code> in <code>config.mk</code> (see <url>HowToInstall</url> )
+<h2>Options</h2>
+<ul>
+<li>-f (file) sqlite database (<b>REQUIRED</b>).</li>
+</ul>
+<h2>Schema</h2>
+A schema is available in <img src="http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg"/>
+<h2>Example:</h2>
+<pre><![CDATA[$ vcf2sqlite -f db.sqlite file.vcf
+$ sqlite3 -line db.sqlite  "select * from VCFCALL LIMIT 4"
+
+       id = 1
+   nIndex = 0
+vcfrow_id = 1
+sample_id = 1
+     prop = GT
+    value = 1/1
+
+       id = 2
+   nIndex = 1
+vcfrow_id = 1
+sample_id = 1
+     prop = PL
+    value = 46,6,0
+
+       id = 3
+   nIndex = 2
+vcfrow_id = 1
+sample_id = 1
+     prop = GQ
+    value = 10
+
+       id = 4
+   nIndex = 0
+vcfrow_id = 2
+sample_id = 1
+     prop = GT
+    value = 1/1
+
+]]></pre>
+</page>
+
+
 </documentation>
