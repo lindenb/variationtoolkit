@@ -16,7 +16,6 @@
 <xsl:message>Generating <xsl:value-of select="concat(@title,'.wiki')"/>
 </xsl:message>
 <xsl:document href="{$filename}.wiki" method="text">
-<xsl:text>#</xsl:text>
 <xsl:choose>
 <xsl:when test="@desc">
   <xsl:value-of select="@desc"/>
