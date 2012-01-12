@@ -47,7 +47,7 @@ g++ -o ../bin/fasta2tsv fasta2tsv.cpp -O3 -Wall -lz</pre>
 </page>
 
 
-<page title="NgsProject" desc="CGI interface to Samtools tview. Visualize short reads alignments" labels="samtools,bam,vcf,cgi,apache,web,httpd,ngs">
+<page title="NgsProject" desc="CGI interface to Samtools tview. Visualize short reads alignments" labels="samtools,bam,vcf,cgi,apache,web,httpd,ngs,visualization">
 
 This C++ program named ngsproject.cgi uses the samtools api, it allows any user to visualize all the alignments in a given NGS project. The projects and their BAMS are defined on the server side using a simple XML document.
 
@@ -347,5 +347,40 @@ fixedStep chrom=chrM start=23 step=1 span=1
 (...)</pre>
 
 </page>
+
+<page title="Ttmap" labels="genome,browser,samtools,bam,sam,visualization" desc="prints an ASCII genomic map">
+\subsection{ttmap}
+
+<h2>Options:</h2>
+<ul>
+<li><b>-c</b> (int) chrom column</li>
+<li><b>-s</b> (int) start column</li>
+<li><b>-e</b> (int) end column default: start column</li>
+<li><b>-o</b> (int) strand column default (optional)</li>
+<li><b>-n</b> (int) name column default (optional)</li>
+<li><b>-d</b> (char) delimiter default:tab</li>
+<li><b>-C</b> (int) fix the number of output columns.</li>
+</ul>
+
+
+<pre><![CDATA[
+$ curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt.gz" |\
+  gunzip -c |  grep chrM |\
+  ttmap -c 2 -s 4 -e 5 -o 3 -n 1 -C 50
+
+>chrM:236-15998
+<              .              .              .     uc004coq.3
+    >          .              .              .     uc004cor.1
+    >          .              .              .     uc004cos.3
+               . >            .              .     uc011mfh.1
+               .       >      .              .     uc004cou.3
+               .          >   .              .     uc011mfi.1
+               .              . >            .     uc004cov.3
+               .              .      >       .     uc004cow.1
+               .              .       >      .     uc004cox.3
+               .              .              .>    uc004coy.2]]></pre>
+
+</page>
+
 
 </documentation>
