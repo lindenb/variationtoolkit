@@ -4,7 +4,7 @@
 using namespace std;
 
 XmlStream::XmlStream(std::istream& in):
-	in(&in),reader(0),dom(0)
+	in(&in),reader(0),dom(0),root(0),current(0)
     {
     const char* url=0;
     int options=0;
@@ -70,25 +70,32 @@ xmlDocPtr XmlStream::next()
 
 	     case XML_READER_TYPE_ELEMENT:
 		 {
+		 if(dom==0)
+		     {
+		     dom = ::xmlNewDoc(BAD_CAST "1.0");
+		     }
 
 
 		 xmlNodePtr node= 0;
-		 xmlNsPtr newNs=0;
 		 //no namespace defined
 		 if(xmlTextReaderConstNamespaceUri(reader)==0)
 		     {
 		     node=::xmlNewNode(0,xmlTextReaderConstLocalName(reader));
 		     }
+		 else if(root==0)
+		     {
+		     xmlNsPtr newNs=xmlNewGlobalNs(dom,"","");//DEPRECATED
+		     node=::xmlNewNode(newNs,xmlTextReaderConstLocalName(reader));
+
+		     }
 		 else
 		     {
-		     node=::xmlNewNode(0,xmlTextReaderConstLocalName(reader));
+			  node=::xmlNewNode(0,xmlTextReaderConstLocalName(reader));
+
 		     }
 
-
-
-		 if(dom==0)
+		 if(root==0)
 		     {
-		     dom = ::xmlNewDoc(BAD_CAST "1.0");
 		     ::xmlDocSetRootElement(dom, node);
 		     this->root=node;
 		     this->current=root;
@@ -98,6 +105,8 @@ xmlDocPtr XmlStream::next()
 		     ::xmlAddChild(this->current,node);
 		     this->current=node;
 		     }
+
+
 
 		 if(xmlTextReaderHasAttributes(reader))
 		     {
@@ -123,6 +132,7 @@ xmlDocPtr XmlStream::next()
 		 xmlNodePtr parent=this->current->parent;
 		 break;
 		 }
+	     case XML_READER_TYPE_SIGNIFICANT_WHITESPACE:
 	     case XML_READER_TYPE_TEXT:
 		 {
 		 const xmlChar* v = xmlTextReaderConstValue(reader);
@@ -132,17 +142,31 @@ xmlDocPtr XmlStream::next()
 		 }
 	     case XML_READER_TYPE_COMMENT:
 		 {
-		 xmlChar* v = xmlTextReaderValue(reader);
+		 const xmlChar* v = xmlTextReaderConstValue(reader);
 		 xmlNodePtr node= xmlNewComment(v);
-		 xmlFree(v);
 		 ::xmlAddChild(this->current,node);
 		 break;
 		 }
 	     default:
 		 {
+		 cerr << "unknown node type "<< nodeType  << endl;
 		 break;
 		 }
 	     }
 	}
     return dom;
     }
+
+#ifdef TEST_THIS_CODE
+int main(int argc,char** argv)
+    {
+    xmlDocPtr dom;
+    XmlStream app(cin);
+    while((dom=app.next())!=0)
+	{
+
+	}
+    return 0;
+    }
+
+#endif
