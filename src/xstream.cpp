@@ -47,6 +47,7 @@ int XmlStream::_xmlInputReadCallback(
     int n= (int) ((XmlStream*)context)->in->gcount();
     return n;
     }
+
 int XmlStream::_xmlInputCloseCallback(void * context)
     {
     ((XmlStream*)context)->in=0;
