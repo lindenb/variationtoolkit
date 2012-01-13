@@ -8,7 +8,7 @@ XmlStream::XmlStream(std::istream& in):
     {
     const char* url=0;
     int options=0;
-    reader=(void*)::xmlReaderForIO(
+    reader= ::xmlReaderForIO(
 	    XmlStream::_xmlInputReadCallback,
 	    XmlStream::_xmlInputCloseCallback,
 	     this,
@@ -31,13 +31,13 @@ void XmlStream::close()
 	}
     if(dom!=0)
 	{
-	::xmlDocFree(dom);
+	::xmlFreeDoc(dom);
 	dom=0;
 	}
     in=0;
     }
 
-int StreamXmlReader::_xmlInputReadCallback(
+int XmlStream::_xmlInputReadCallback(
 		 void * context,
 		 char * buffer,
 		 int len)
@@ -47,9 +47,9 @@ int StreamXmlReader::_xmlInputReadCallback(
     int n= (int) ((XmlStream*)context)->in->gcount();
     return n;
     }
-int StreamXmlReader::_xmlInputCloseCallback(void * context)
+int XmlStream::_xmlInputCloseCallback(void * context)
     {
-    ((StreamXmlReader*)context)->in=0;
+    ((XmlStream*)context)->in=0;
     return 0;
     }
 
@@ -72,17 +72,36 @@ xmlDocPtr XmlStream::next()
 		 {
 
 
-		 xmlNodePtr node=::xmlNewNode(0,0);
-		 if(dom==0)
+		 xmlNodePtr node= 0;
+		 xmlNsPtr newNs=0;
+		 //no namespace defined
+		 if(xmlTextReaderConstNamespaceUri(reader)==0)
 		     {
-		     dom = ::xmlNewDoc("1.0");
-		     ::xmlDocSetRootElement(dom, node);
+		     node=::xmlNewNode(0,xmlTextReaderConstLocalName(reader));
+		     }
+		 else
+		     {
+		     node=::xmlNewNode(0,xmlTextReaderConstLocalName(reader));
 		     }
 
 
-		 if(xmlTextReaderHasAttributes(CAST_READER(this)))
+
+		 if(dom==0)
 		     {
-		     int n_att=xmlTextReaderAttributeCount(CAST_READER(this));
+		     dom = ::xmlNewDoc(BAD_CAST "1.0");
+		     ::xmlDocSetRootElement(dom, node);
+		     this->root=node;
+		     this->current=root;
+		     }
+		 else
+		     {
+		     ::xmlAddChild(this->current,node);
+		     this->current=node;
+		     }
+
+		 if(xmlTextReaderHasAttributes(reader))
+		     {
+		     int n_att=xmlTextReaderAttributeCount(reader);
 		     for(int i=0;i< n_att;++i)
 			 {
 			 xmlTextReaderMoveToAttributeNo(reader,i);
@@ -91,42 +110,39 @@ xmlDocPtr XmlStream::next()
 			 xmlNewProp(node, BAD_CAST "attribute", v);
 			 xmlFree(v);
 			 }
-		     xmlTextReaderMoveToElement(CAST_READER(this));
+		     xmlTextReaderMoveToElement(reader);
 		     }
-		 if(xmlTextReaderIsEmptyElement(CAST_READER(this)))
+		 if(xmlTextReaderIsEmptyElement(reader))
 		     {
-		     EndElement* c=new EndElement;
-		     c->_name=new QName(*(e->_name));
-		     queue.push_back(c);
+
 		     }
 		 break;
 		 }
 	     case XML_READER_TYPE_END_ELEMENT:
 		 {
-		 EndElement* c=new EndElement;
-		 c->_name=new QName(makeQName());
-		 queue.push_back(c);
+		 xmlNodePtr parent=this->current->parent;
 		 break;
 		 }
 	     case XML_READER_TYPE_TEXT:
 		 {
-		 Text* t=new Text();
-		xmlChar* v = xmlTextReaderValue(CAST_READER(this));
-		 t->_data.assign((const char*)v);
-		 xmlFree(v);
-		queue.push_back(t);
+		 const xmlChar* v = xmlTextReaderConstValue(reader);
+		 xmlNodePtr node= xmlNewDocText(this->dom,v);
+		 ::xmlAddChild(this->current,node);
 		 break;
 		 }
 	     case XML_READER_TYPE_COMMENT:
 		 {
-		WHERE(nodeType);
+		 xmlChar* v = xmlTextReaderValue(reader);
+		 xmlNodePtr node= xmlNewComment(v);
+		 xmlFree(v);
+		 ::xmlAddChild(this->current,node);
 		 break;
 		 }
 	     default:
 		 {
-		WHERE(nodeType);
 		 break;
 		 }
 	     }
+	}
     return dom;
     }

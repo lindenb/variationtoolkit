@@ -10,11 +10,14 @@ class XmlStream
     public:
 	XmlStream(std::istream& in);
 	virtual ~XmlStream();
-	xmlDocPtr next():
+	xmlDocPtr next();
+	void close();
     private:
 	std::istream* in;
 	xmlTextReaderPtr reader;
 	xmlDocPtr dom;
+	xmlNodePtr root;
+	xmlNodePtr current;
 	static int _xmlInputReadCallback(
 			     void * context,
 			     char * buffer,
