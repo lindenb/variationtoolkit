@@ -1,0 +1,25 @@
+#summary Retrieves related NCBI records using NCBI-ELink
+#labels ncbi
+
+
+==Options==
+
+  * -f (ncbi-database-from) REQUIRED.
+  * -t (ncbi-database-to) REQUIRED.
+  * -d (delimiter) (default:tab)
+  * -c (column) index of column containing gi identifier for database-from.
+
+
+==Example==
+
+
+
+{{{
+
+$ echo -e "#Genbank_GI\n256041817" | ncbielink  -c 1 -f protein -t nucleotide
+
+#Genbank_GI	protein:nucleotide.linkName	protein:nucleotide.id
+256041817	protein_nuccore	256041816
+256041817	protein_nuccore_mrna	256041816
+}}}
+

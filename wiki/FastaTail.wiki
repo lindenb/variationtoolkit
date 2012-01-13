@@ -1,0 +1,24 @@
+#summary Prints the last sequences of a list of FASTA sequences
+#labels fasta
+
+
+==Options==
+
+  * -n number of sequences
+
+
+==Example==
+
+
+
+{{{
+
+$ fastaslice -e 50 -L 50 < rotavirus.fasta  |fastatail -n 2
+
+>gi|14662886|slice:200-250
+CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
+>gi|14662886|slice:250-275
+TTTGTAACCGGCCCCCCTTAAAACT
+
+}}}
+

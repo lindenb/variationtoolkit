@@ -1,0 +1,10 @@
+#summary colorizes some fasta sequences when printing to stdout.
+#labels fasta
+
+
+{{{
+
+$ cat input.fa | fasta2term
+
+}}}
+
