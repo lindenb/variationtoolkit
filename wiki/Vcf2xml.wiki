@@ -5,7 +5,26 @@
 
 ==Dependencies==
 
-`libxml` (see [HowToInstall HowToInstall] )
+`libxml` [http://xmlsoft.org/ http://xmlsoft.org/] ( see also: [HowToInstall HowToInstall] )
+
+==Compiling==
+
+
+{{{
+$ cd variationtoolkit/src/
+$ make ../bin/vcf2xml
+
+g++ -o ../bin/vcf2xml vcf2xml.cpp application.o -O3 -Wall `xml2-config --cflags --libs` -lz
+}}}
+
+
+==Usage:==
+
+
+{{{
+vcf2xml (file.vcf | stdin)
+}}}
+
 
 ==Example:==
 

@@ -125,11 +125,18 @@ and restart apache:
 
 
 <page title="Vcf2Sqlite" desc="Inserts a VCF in a sqlite3 database" labels="VCF,sqlite,sql,database">
-
-Inserts a VCF in a sqlite3 database.
+Inserts a Variant Call Format document (<b>VCF</b>) in a <a href="http://www.sqlite.org/">sqlite3</a> database.
 <h2>Dependencies</h2>
-<url>http://www.sqlite.org/</url> : libraries and header.<br/>Define "<code>SQLITE_LIB</code>" and 
+<url>http://www.sqlite.org/</url> : libraries and headers for sqlite3.
+<h2>Compilation</h2>
+Define "<code>SQLITE_LIB</code>" and 
 "<code>SQLITE_CFLAGS</code>" in <code>config.mk</code> (see <url>HowToInstall</url> )
+<pre>$ cd variationtoolkit/src/
+$ make ../bin/vcf2sqlite 
+
+if ! [ -z "$(SQLITE_LIB)" ] ;then g++ -o ../bin/vcf2sqlite vcf2sqlite.cpp xsqlite.cpp application.o -O3 -Wall -lz   ; else g++ -o ../bin/vcf2sqlite vcf2sqlite.cpp  -DNOSQLITE -O3 -Wall  ; fi</pre>
+<h2>Usage</h2>
+<pre>vcf2sqlite -f database.sqlite (file1.vcf file2... | stdin )</pre>
 <h2>Options</h2>
 <ul>
 <li>-f (file) sqlite database (<b>REQUIRED</b>).</li>
@@ -175,7 +182,14 @@ sample_id = 1
 <page title="Vcf2xml" desc="Transforms a VCF to xml" labels="vcf,transform,format,xml,ngs">
 
 <h2>Dependencies</h2>
-<code>libxml</code> (see <url>HowToInstall</url> )
+<code>libxml</code> <url>http://xmlsoft.org/</url> ( see also: <url>HowToInstall</url> )
+<h2>Compiling</h2>
+<pre>$ cd variationtoolkit/src/
+$ make ../bin/vcf2xml
+
+g++ -o ../bin/vcf2xml vcf2xml.cpp application.o -O3 -Wall `xml2-config --cflags --libs` -lz</pre>
+<h2>Usage:</h2>
+<pre>vcf2xml (file.vcf | stdin)</pre>
 <h2>Example:</h2>
 <pre><![CDATA[$ vcf2xml input.vcf | xmllint --format -
 

@@ -1,14 +1,32 @@
 #summary Inserts a VCF in a sqlite3 database
 #labels VCF,sqlite,sql,database
 
-
-Inserts a VCF in a sqlite3 database.
+Inserts a Variant Call Format document (*VCF*) in a sqlite3 database.
 
 ==Dependencies==
 
-[http://www.sqlite.org/ http://www.sqlite.org/] : libraries and header.
+[http://www.sqlite.org/ http://www.sqlite.org/] : libraries and headers for sqlite3.
+
+==Compilation==
+
 Define "`SQLITE_LIB`" and 
 "`SQLITE_CFLAGS`" in `config.mk` (see [HowToInstall HowToInstall] )
+
+{{{
+$ cd variationtoolkit/src/
+$ make ../bin/vcf2sqlite 
+
+if ! [ -z "$(SQLITE_LIB)" ] ;then g++ -o ../bin/vcf2sqlite vcf2sqlite.cpp xsqlite.cpp application.o -O3 -Wall -lz   ; else g++ -o ../bin/vcf2sqlite vcf2sqlite.cpp  -DNOSQLITE -O3 -Wall  ; fi
+}}}
+
+
+==Usage==
+
+
+{{{
+vcf2sqlite -f database.sqlite (file1.vcf file2... | stdin )
+}}}
+
 
 ==Options==
 

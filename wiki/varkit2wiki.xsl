@@ -85,6 +85,17 @@
 </xsl:text>
 </xsl:template>
 
+<xsl:template match="span">
+<xsl:apply-templates/>
+</xsl:template>
+
+<xsl:template match="div">
+<xsl:text>
+</xsl:text>
+<xsl:apply-templates/>
+<xsl:text>
+</xsl:text>
+</xsl:template>
 
 <xsl:template match="ul">
 <xsl:for-each select="li">
