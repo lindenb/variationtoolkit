@@ -2,6 +2,9 @@
 #labels vcf,transform,format,xml,ngs
 
 
+==Motivation==
+
+*vcf2xml* a "Variant Call Format" (VCF) document to XML so it can be later processed with xslt, xquery, etc...
 
 ==Dependencies==
 
