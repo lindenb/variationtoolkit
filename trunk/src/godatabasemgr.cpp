@@ -24,14 +24,14 @@
 
 using namespace std;
 
-
+#define RDF_NS "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
 class GoDatabaseManager:public AbstractApplication
     {
     public:
 	char* dataasename;
 	auto_ptr<Connection> connection;
-	auto_ptr<Statement> insert_goterm;
+
 
 	class RDFHandler:public XmlStream
 	       {
@@ -71,10 +71,19 @@ class GoDatabaseManager:public AbstractApplication
 		       "acn varchar(50) NOT NULL UNIQUE, "
 		       "xml TEXT NOT NULL "
 		       ")");
+		this->connection->execute(
+		   "create table if not exists TERM2REL("
+		   "acn varchar(50) NOT NULL, "
+		   "rel varchar(50) NOT NULL, "
+		    "target varchar(50) NOT NULL"
+		   ")");
+		this->connection->execute(
+		   "create index if not exists TERM2REL_ACN on TERM2REL.acn"
+		   );
+		this->connection->execute(
+		   "create index if not exists TERM2REL_TARGET on TERM2REL.target"
+		   );
 
-		insert_goterm = this->connection->prepare(
-		   "insert or REPLACE into TERM(acn,xml) values (?,?)"
-		    );
 		}
 
 	    }
@@ -107,6 +116,19 @@ class GoDatabaseManager:public AbstractApplication
 	    auto_ptr<RDFHandler> handler=auto_ptr<RDFHandler>(new RDFHandler(in));
 	    open(false);
 	    this->connection->begin();
+
+	    auto_ptr<Statement> insert_goterm = this->connection->prepare(
+	    		   "insert or REPLACE into TERM(acn,xml) values (?,?)"
+	    		    );
+
+	    auto_ptr<Statement> delete_term2rel= this->connection->prepare(
+		   "delete from TERM2REL where acn=?"
+		    );
+
+	    auto_ptr<Statement> insert_term2rel= this->connection->prepare(
+	   		   "insert or REPLACE into TERM2REL(ac,rel,target)"
+	   		    );
+
 	    for(;;)
 		{
 		xmlDocPtr doc= handler->next();
@@ -130,6 +152,34 @@ class GoDatabaseManager:public AbstractApplication
 		insert_goterm->bind_string(1,(const char*)acnstr);
 		insert_goterm->bind_string(2,(const char*)xml.c_str());
 		insert_variation->execute();
+
+		delete_term2rel->reset();
+		delete_term2rel->bind_string(1,(const char*)acnstr);
+		delete_term2rel->execute();
+
+		for(xmlNodePtr cur_node = root; cur_node; cur_node = xmlNextElementSibling(cur_node))
+		    {
+		    if(cur_node->type != XML_ELEMENT_NODE) continue;
+
+		    xmlChar* rsrc=xmlGetNsProp(cur_node,BAD_CAST "rdf:resource",BAD_CAST RDF_NS);
+		    if(rsrc==0) continue;
+		    const char* hash=strchr((const char*)rsrc,'#');
+		    if(hash!=0 &&
+			(
+			xmlStrEqual(cur_node->name,BAD_CAST "rdf:is_a") ||
+			xmlStrEqual(cur_node->name,BAD_CAST "rdf:part_of")
+			))
+			{
+			const char* colon=strchr((const char*)cur_node->name,':');
+			insert_term2rel->reset();
+			insert_term2rel->bind_string(1,(const char*)acnstr);
+			insert_term2rel->bind_string(2,(const char*)(colon+1));
+			insert_term2rel->bind_string(3,(const char*)(hash+1));
+			insert_term2rel->execute();
+			}
+		    xmlFree(rsrc);
+		    }
+
 		xmlFree(acnstr);
 		}
 	    this->connection->commit();
