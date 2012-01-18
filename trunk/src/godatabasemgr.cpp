@@ -17,6 +17,7 @@
 #include "numeric_cast.h"
 //#define NOWHERE
 #include "where.h"
+#include "xxml.h"
 #include "xstream.h"
 
 using namespace std;
@@ -28,7 +29,8 @@ class GoDatabaseManager:public AbstractApplication
     public:
 	char* dataasename;
 	auto_ptr<Connection> connection;
-	auto_ptr<Statement> select_descendants;
+	auto_ptr<Statement> select_term_stmt;
+
 
 	class RDFHandler:public XmlStream
 	       {
@@ -106,46 +108,83 @@ class GoDatabaseManager:public AbstractApplication
 		   "create index if not exists GOA_symbol on GOA(DB_Object_Symbol)"
 		   );
 		}
-	    this->select_descendants = this->connection->prepare(
-	       "select acn from TERM2REL where rel=? and target=?"
-		);
+	    select_term_stmt=this->connection->prepare("select xml from TERM where acn=?");
+	    }
+
+	auto_ptr<string> getTermXmlByAcn(const char* term)
+		{
+	       if(term==0) return auto_ptr<string>(0);
+		select_term_stmt->reset();
+		select_term_stmt->bind_string(1,term);
+		while(select_term_stmt->step()!=Statement::DONE)
+		    {
+		    return auto_ptr<string>(new string(select_term_stmt->get_string(1)));
+		    }
+		return auto_ptr<string>(0);
+		}
+
+
+	xmlDocPtr getTermDomByAcn(const char* term)
+	    {
+	    auto_ptr<string> ret=getTermXmlByAcn(term);
+	    if(ret.get()==0) return 0;
+	    xmlDocPtr dom=xmlParseMemory(ret->data(),(int)ret->size());
+	    if(dom==0)
+		{
+		THROW("CANNOT PARSE XML "<< ret->c_str());
+		}
+	    return dom;
 	    }
 
 
-	 void _find_descendants(const char* term,set<string>* terms)
+	 void _find_descendants(
+		 const char* term,
+		 set<string>* terms,
+		 Statement* select_descendants
+		 )
 		{
 		if(terms->find(term)!=terms->end()) return;
-		WHERE(term);
 		terms->insert(term);
 		select_descendants->reset();
-		select_descendants->bind_string(1,"is_a");
-		select_descendants->bind_string(2,term);
+		select_descendants->bind_string(1,term);
 		set<string> to_process;
 		while(select_descendants->step()!=Statement::DONE)
 		    {
-		    WHERE(term);
+
 		    const char* child=select_descendants->get_string(1);
-		    if(child==0)
-			{
-			WHERE("Uhh???" << term );
-			continue;
-			}
-WHERE(child);
+		    assert(child!=0);
 		    if(terms->find(child)!=terms->end()) continue;
 		    to_process.insert(child);
 		    }
 
-		for(set<string>::iterator r=to_process.begin();r!=to_process.end();++r)
+		for(set<string>::iterator r=to_process.begin();
+			r!=to_process.end();
+			++r)
 		    {
-		    _find_descendants(r->c_str(),terms);
+		    _find_descendants(r->c_str(),terms,select_descendants);
 		    }
 		}
-	    std::auto_ptr<set<string> > find_descendants(const char* term)
+
+	std::auto_ptr<set<string> > find_descendants(const char* term,const set<string>& relations)
+	    {
+	    ostringstream os;
+	    os << "select acn from TERM2REL where target=?";
+	    if(!relations.empty())
 		{
-		std::auto_ptr<set<string> > ret(new set<string>());
-		_find_descendants(term,ret.get());
-		return ret;
+		os << " and (";
+		for(set<string>::const_iterator r=relations.begin();r!=relations.end();++r)
+		    {
+		    if(r!=relations.begin()) os << " or ";
+		    os << " rel=\""<< (*r) << "\"";
+		    }
+		os << ")";
 		}
+	    string sql(os.str());
+	    std::auto_ptr<set<string> > ret(new set<string>());
+	    auto_ptr<Statement> select_descendants=this->connection->prepare(sql.c_str());
+	    _find_descendants(term,ret.get(),select_descendants.get());
+	    return ret;
+	    }
 
 	static  xmlNodePtr first( xmlNodePtr root,const xmlChar* name)
 	    {
@@ -158,17 +197,7 @@ WHERE(child);
 	    return 0;
 	    }
 
-	static int _xmlOutputWriteCallback(void * context,
-						 const char * buffer,
-						 int len)
-	    {
-	    ((std::string*)context)->append(buffer,len);
-	    return len;
-	    }
-	static int _xmlOutputCloseCallback(void * context)
-	    {
-	    return 0;
-	    }
+
 
 	void insert_go_rdf(std::istream& in)
 	    {
@@ -202,13 +231,8 @@ WHERE(child);
 	 	xmlChar *acnstr=xmlNodeGetContent(acn);
 	 	if(acnstr==0) continue;
 	 	std::string xml;
-	 	xmlOutputBufferPtr outbuf=::xmlOutputBufferCreateIO(
-	 		_xmlOutputWriteCallback,
-	 		_xmlOutputCloseCallback,
-			 (void*)&xml,
-			 0);
-	 	if(outbuf==0) THROW("Cannot xmlOutputBufferCreateIO");
-		xmlNodeDumpOutput(outbuf,doc,term,0,0,0);
+	 	xmlOutputBufferPtr outbuf=::xmlOutputBufferCreateString(&xml,0);
+	 	xmlNodeDumpOutput(outbuf,doc,term,0,0,0);
 		xmlOutputBufferClose(outbuf);
 		insert_goterm->reset();
 		insert_goterm->bind_string(1,(const char*)acnstr);
@@ -320,6 +344,8 @@ WHERE(child);
 	    out << " "<< argv[0] << " desc -f db.sqlite term1 term2 ... termn\n";
 	    out << " Options for :\n";
 	    out << "   -f (file) sqlite filename. (REQUIRED).\n";
+	    out << "   -r (rel) add a go relationship (OPTIONAL, default: it adds \"is_a\").\n";
+	    out << "   -x xml output\n";
 	    out << endl;
 	    }
 
@@ -436,8 +462,12 @@ WHERE(child);
 	    }
 
 
+
+
 	int main_descendants(int argc,char** argv,int optind)
 	    {
+	    bool xml_output=false;
+	    set<string> relationships;
 	    while(optind < argc)
 		{
 		if(std::strcmp(argv[optind],"-h")==0)
@@ -448,6 +478,14 @@ WHERE(child);
 		else if(strcmp(argv[optind],"-f")==0 && optind+1<argc)
 		    {
 		    dataasename=argv[++optind];
+		    }
+		else if(strcmp(argv[optind],"-r")==0 && optind+1<argc)
+		    {
+		    relationships.insert(argv[++optind]);
+		    }
+		else if(strcmp(argv[optind],"-x")==0)
+		    {
+		    xml_output=true;
 		    }
 		else if(argv[optind][0]=='-')
 		    {
@@ -467,8 +505,17 @@ WHERE(child);
 		this->usage(cerr,argc,argv);
 		return (EXIT_FAILURE);
 		}
+	    if(relationships.empty())
+		{
+		relationships.insert("is_a");
+		}
+
 	    set<string> terms;
 	    open(true);
+
+
+
+
 	    if(optind==argc)
 		{
 		cerr << "No term given."<< endl;
@@ -478,19 +525,47 @@ WHERE(child);
 		{
 		terms.insert(argv[optind++]);
 		}
+
+
+
 	    set<string> result;
 	    for(set<string>::iterator r=terms.begin();r!=terms.end();++r)
 		{
-		auto_ptr<set<string> > ret= this->find_descendants(r->c_str());
+		auto_ptr<set<string> > ret= this->find_descendants(r->c_str(),relationships);
 		result.insert(ret->begin(),ret->end());
 		}
-	    close();
 
-	    for(set<string>::iterator r=result.begin();r!=result.end();++r)
+	    if(xml_output)
 		{
-		cout << (*r) << endl;
+		cout << "<go:go xmlns:go='http://www.geneontology.org/dtds/go.dtd#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>\n"
+			 " <rdf:RDF>\n"
+			;
+		for(set<string>::iterator r=result.begin();r!=result.end();++r)
+		    {
+		    xmlDocPtr dom=getTermDomByAcn(r->c_str());
+		    if(dom==0)
+			{
+			cout << "<!-- CANNOT FIND "<< (*r) << " in DOM database ?? -->\n";
+			cerr << "Cannot find "<< (*r) << " in DOM database ?"<< endl;
+			continue;
+			}
+		    xmlOutputBufferPtr outbuf=::xmlOutputBufferCreateIOStream(&cout,0);
+		    if(outbuf==0) THROW("Cannot xmlOutputBufferCreateIO");
+		    xmlNodeDumpOutput(outbuf,dom,xmlDocGetRootElement(dom),0,0,0);
+		    xmlOutputBufferClose(outbuf);
+		    xmlFreeDoc(dom);
+		    cout  << endl;
+		    }
+		cout << " </rdf:RDF>\n</go:go>";
 		}
-
+	    else
+		{
+		for(set<string>::iterator r=result.begin();r!=result.end();++r)
+		    {
+		    cout << (*r) << endl;
+		    }
+		}
+	    close();
 	    return EXIT_SUCCESS;
 	    }
 
