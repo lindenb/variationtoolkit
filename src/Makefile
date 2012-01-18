@@ -189,7 +189,7 @@ $(BINDIR)/fasta2term: fasta2term.cpp
 	$(CPP) -o $@ $^  $(CFLAGS) 
 $(BINDIR)/xsltstream: xsltstream.cpp xstream.o application.o
 	$(CPP) -o $@ $^  $(CFLAGS) `xml2-config --cflags --libs` `xslt-config --cflags --libs` -lz
-$(BINDIR)/godbmgr: godatabasemgr.cpp xsqlite.cpp application.o xstream.o
+$(BINDIR)/godbmgr: godatabasemgr.cpp xsqlite.cpp application.o xstream.o xxml.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ -g `xml2-config --cflags `  $(SQLITE_CFLAGS)   -lz $(SQLITE_LIB) `xml2-config  --libs` ; else $(CPP) -o $@ godatabasemgr.cpp  -DNOSQLITE $(CFLAGS)  ; fi
 
 
@@ -267,6 +267,9 @@ cgi.o:cgi.cpp cgi.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 xstream.o: xstream.cpp xstream.h
 	$(CPP) -c -o $@ $< $(CFLAGS) `xml2-config --cflags `
+xxml.o: xxml.cpp xxml.h
+	$(CPP) -c -o $@ $< $(CFLAGS) `xml2-config --cflags `
+
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi

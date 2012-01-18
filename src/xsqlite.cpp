@@ -4,7 +4,7 @@
 #include <sqlite3.h>
 #include "xsqlite.h"
 #include "throw.h"
-
+#define VERIFY_INDEX(i) if(i<1)  THROW("error need a 1-based index but got "<< i)
 
 static std::string error_code(int err)
     {
@@ -244,31 +244,37 @@ int Statement::reset()
 
 int Statement::bind_double(int index1,double v)
     {
+    VERIFY_INDEX(index1);
     return ::sqlite3_bind_double( CAST_STMT(this),index1,v);
     }
 
 int Statement::bind_int(int index1,int32_t v)
     {
+    VERIFY_INDEX(index1);
     return ::sqlite3_bind_int( CAST_STMT(this),index1,v);
     }
 
 int Statement::bind_int(int index1,int64_t v)
     {
+    VERIFY_INDEX(index1);
     return ::sqlite3_bind_int64( CAST_STMT(this),index1,v);
     }
 
 int Statement::bind_null(int index1)
     {
+    VERIFY_INDEX(index1);
     return ::sqlite3_bind_null( CAST_STMT(this),index1);
     }
 
 int Statement::bind_string(int index1,const char* s)
     {
+    VERIFY_INDEX(index1);
     return this->bind_string(index1,s,strlen(s));
     }
 
 int Statement::bind_string(int index1,const char* s,std::size_t len)
     {
+    VERIFY_INDEX(index1);
     char* p=(char*)std::malloc((len+1)*sizeof(char));
     if(p==0) THROW("Out of memory cannot alloc "<<len);
     std::memcpy(p,s,len*sizeof(char));
@@ -279,21 +285,25 @@ int Statement::bind_string(int index1,const char* s,std::size_t len)
 
 double Statement::get_double(int index1)
     {
+    VERIFY_INDEX(index1);
     return  ::sqlite3_column_double(CAST_STMT(this),index1-1);
     }
 
 int32_t Statement::get_int32(int index1)
     {
+    VERIFY_INDEX(index1);
     return  ::sqlite3_column_int(CAST_STMT(this),index1-1);
     }
 
 int64_t Statement::get_int64(int index1)
     {
+    VERIFY_INDEX(index1);
     return  ::sqlite3_column_int64(CAST_STMT(this),index1-1);
     }
 
 const char* Statement::get_string(int index1)
     {
+    VERIFY_INDEX(index1);
     return  (const char*)::sqlite3_column_text(CAST_STMT(this),index1-1);
     }
 
