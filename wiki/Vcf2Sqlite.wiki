@@ -1,7 +1,7 @@
-#summary Inserts a VCF in a sqlite3 database
+#summary Inserts a VCF into a sqlite3 database
 #labels VCF,sqlite,sql,database
 
-Inserts a Variant Call Format document (*VCF*) in a sqlite3 database.
+Inserts a Variant Call Format document (*VCF*) into a sqlite3 database.
 
 ==Dependencies==
 
@@ -35,7 +35,7 @@ vcf2sqlite -f database.sqlite (file1.vcf file2... | stdin )
 
 ==Schema==
 
-A schema is available as SVG in [http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg]
+A schema of the database is available as SVG in [http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.svg]
 
 ==Example:==
 
