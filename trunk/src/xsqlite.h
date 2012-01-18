@@ -44,6 +44,8 @@ class Connection
 	void close();
 	/** execute */
 	int execute(const char* sql);
+	/*http://www.sqlite.org/lang_vacuum.html */
+	int compact();
 	int64_t last_insert_id();
 	std::auto_ptr<Statement> prepare(const char* s);
 	std::auto_ptr<Statement> prepare(const char* s,std::size_t len);

@@ -241,6 +241,11 @@ xmlDocPtr XmlStream::next()
 	        	     }
 	        	 break;
 	        	 }
+	             case XML_READER_TYPE_DOCUMENT_TYPE:
+	        	 {
+	        	 //skip?
+	        	 break;
+	        	 }
 	            default:
 	                {
 	                fprintf(stderr,"Ignoring node Type %d\n",nodeType);
