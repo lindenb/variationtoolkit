@@ -38,7 +38,9 @@ class Cigar
 
     };
 
-
+/**
+ * Pure Abstract class for SAMRecord
+ */
 class SAMRecord
     {
     protected:
@@ -68,6 +70,40 @@ class SAMRecord
 	virtual int32_t pos() const=0;
     };
 
+/**
+ *  implementation of SAMRecord, only a wrapper around  bam1_t*
+ * doesn't manage to manage/free memory
+ */
+class DelegateSAMRecord:public SAMRecord
+    {
+    public:
+	DelegateSAMRecord(bam1_t* ptr);
+	virtual ~DelegateSAMRecord();
+	virtual const char* readName() const;
+	virtual bool isForwardStrand() const;
+	virtual int32_t flag() const;
+	virtual int32_t size() const;
+	virtual int32_t tid() const;
+	virtual int32_t pos() const;
+    protected:
+	virtual const bam1_t* ptr() const;
+	virtual const uint8_t* _seq() const;
+	const bam1_core_t* core() const;
+	bam1_t* _ptr;
+    };
+
+/**
+ * DefaultSAMRecord: default implementation of a SAM record
+ * copy the _ptr
+ */
+class DefaultSAMRecord:public DelegateSAMRecord
+    {
+    public:
+	DefaultSAMRecord(bam1_t* ptr);
+	DefaultSAMRecord(const DefaultSAMRecord& cp);
+	virtual ~DefaultSAMRecord();
+	DefaultSAMRecord& operator=(const DefaultSAMRecord& cp);
+    };
 
 
 

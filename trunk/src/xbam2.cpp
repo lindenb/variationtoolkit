@@ -83,25 +83,7 @@ char SAMRecord::at(int32_t idx) const
 /***************************************************************************************/
 
 
-class DelegateSAMRecord:public SAMRecord
-    {
 
-    public:
-	DelegateSAMRecord(bam1_t* ptr);
-	virtual ~DelegateSAMRecord();
-	virtual const char* readName() const;
-	virtual bool isForwardStrand() const;
-	virtual int32_t flag() const;
-	virtual int32_t size() const;
-	virtual int32_t tid() const;
-	virtual int32_t pos() const;
-    protected:
-	virtual const bam1_t* ptr() const;
-	virtual const uint8_t* _seq() const;
-	const bam1_core_t* core() const;
-    private:
-	bam1_t* _ptr;
-    };
 
 DelegateSAMRecord::DelegateSAMRecord(bam1_t* ptr):_ptr(ptr)
     {
@@ -160,8 +142,30 @@ int32_t DelegateSAMRecord::pos() const
 
 /***************************************************************************************/
 /***************************************************************************************/
+DefaultSAMRecord::DefaultSAMRecord(bam1_t* src):DelegateSAMRecord(::bam_dup1(src))
+    {
+    if(_ptr==0) THROW("bam_dup1 failed");
+    }
+DefaultSAMRecord::DefaultSAMRecord(const DefaultSAMRecord& cp):DelegateSAMRecord(::bam_dup1(cp._ptr))
+    {
 
-
+    }
+DefaultSAMRecord::~DefaultSAMRecord()
+    {
+    if(_ptr!=0) bam_destroy1(_ptr);
+    }
+DefaultSAMRecord& DefaultSAMRecord::operator=(const DefaultSAMRecord& cp)
+    {
+    if(this!=&cp)
+	{
+	if(_ptr!=0) bam_destroy1(_ptr);
+	_ptr=::bam_dup1(cp._ptr);
+	if(_ptr==0) THROW("bam_dup1 failed");
+	}
+    return *this;
+    }
+/***************************************************************************************/
+/***************************************************************************************/
 BamFile2::BamFile2(const char* file) :fp(NULL),header(NULL),index(NULL),filename(file)
     {
 
@@ -382,8 +386,7 @@ const SAMRecord*  BamFile2::Iterator::next()
 	close();
 	return 0;
 	}
-    if(_sam!=0) delete _sam;
-    _sam=new DelegateSAMRecord(_rec);
+    if(_sam==0)  _sam=new DelegateSAMRecord(_rec);
     return _sam;
     }
 

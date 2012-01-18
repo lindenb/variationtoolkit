@@ -64,7 +64,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/protein2genome \
 	$(BINDIR)/cmpdepth \
 	$(BINDIR)/fasta2term \
-	$(CGI_BIN_DIR)/ngsproject.cgi
+	$(CGI_BIN_DIR)/ngsproject.cgi \
+	$(BINDIR)/xsltstream
 
 all:$(TARGET_BINARIES)
 
@@ -186,7 +187,8 @@ $(BINDIR)/cmpdepth: cmpdepth.cpp xbam2.o $(PARSESEG)
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 $(BINDIR)/fasta2term: fasta2term.cpp
 	$(CPP) -o $@ $^  $(CFLAGS) 
-
+$(BINDIR)/xsltstream: xsltstream.cpp xstream.o application.o
+	$(CPP) -o $@ $^  $(CFLAGS) `xml2-config --cflags --libs` `xslt-config --cflags --libs` -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
@@ -259,6 +261,8 @@ fastareader.o:fastareader.cpp fastareader.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 cgi.o:cgi.cpp cgi.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
+xstream.o: xstream.cpp xstream.h
+	$(CPP) -c -o $@ $< $(CFLAGS) `xml2-config --cflags `
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
@@ -317,4 +321,6 @@ clean-all:clean uninstall
 test:$(BINDIR)/redonstructvar
 	$<  -f /GENOTYPAGE/data/pubdb/ucsc/hg19/chromosomes/hg19.fa\
 	    -b jeter.bam.txt jeter.kg.txt
-test2:$(BINDIR)/ngsproject
+test2:
+	 g++ -DTEST_THIS_CODE -Wall xstream.cpp `xml2-config --cflags --libs`
+	 ./a.out jeter.xml
