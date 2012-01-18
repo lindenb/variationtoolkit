@@ -19,6 +19,7 @@
 #include "where.h"
 #include "xxml.h"
 #include "xstream.h"
+#include "cescape.h"
 
 using namespace std;
 
@@ -175,7 +176,7 @@ class GoDatabaseManager:public AbstractApplication
 		for(set<string>::const_iterator r=relations.begin();r!=relations.end();++r)
 		    {
 		    if(r!=relations.begin()) os << " or ";
-		    os << " rel=\""<< (*r) << "\"";
+		    os << " rel=\""<< CEscape(*r) << "\"";
 		    }
 		os << ")";
 		}
@@ -345,12 +346,13 @@ class GoDatabaseManager:public AbstractApplication
 	    out << " Options for :\n";
 	    out << "   -f (file) sqlite filename. (REQUIRED).\n";
 	    out << "   -r (rel) add a go relationship (OPTIONAL, default: it adds \"is_a\").\n";
-	    out << "   -x xml output\n";
+	    out << "   -t output: xml, goa\n";
 	    out << endl;
 	    }
 
 	int main_insertrdf(int argc,char** argv,int optind)
 		{
+		int output_fmt=0;
 		while(optind < argc)
 		    {
 		    if(std::strcmp(argv[optind],"-h")==0)
@@ -466,7 +468,7 @@ class GoDatabaseManager:public AbstractApplication
 
 	int main_descendants(int argc,char** argv,int optind)
 	    {
-	    bool xml_output=false;
+	    int output_format=0;
 	    set<string> relationships;
 	    while(optind < argc)
 		{
@@ -483,9 +485,17 @@ class GoDatabaseManager:public AbstractApplication
 		    {
 		    relationships.insert(argv[++optind]);
 		    }
-		else if(strcmp(argv[optind],"-x")==0)
+		else if(strcmp(argv[optind],"-t")==0 && optind+1<argc)
 		    {
-		    xml_output=true;
+		    char* fmt=argv[++optind];
+		    if(strcmp(argv[optind],"xml")==0)
+		    	{
+		    	output_format=1;
+		    	}
+		    else if(strcmp(argv[optind],"goa")==0)
+		    	{
+		    	output_format=2;
+		    	}
 		    }
 		else if(argv[optind][0]=='-')
 		    {
@@ -534,8 +544,8 @@ class GoDatabaseManager:public AbstractApplication
 		auto_ptr<set<string> > ret= this->find_descendants(r->c_str(),relationships);
 		result.insert(ret->begin(),ret->end());
 		}
-
-	    if(xml_output)
+	    /* XML format */
+	    if(output_format==1)
 		{
 		cout << "<go:go xmlns:go='http://www.geneontology.org/dtds/go.dtd#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>\n"
 			 " <rdf:RDF>\n"
@@ -558,6 +568,28 @@ class GoDatabaseManager:public AbstractApplication
 		    }
 		cout << " </rdf:RDF>\n</go:go>";
 		}
+	    else if(output_format==2) /* GOA format */
+	    	{
+	    	auto_ptr<Statement> select_goa=this->connection->prepare(
+	    		"select * from 	GOA where term=?"
+	    		);
+	    	
+	    	for(set<string>::iterator r=result.begin();
+	    		r!=result.end();++r)
+		    {
+		    select_goa->reset();
+		    select_goa->bind_string(1,(*r).c_str());
+		    while(select_goa->step()!=Statement::DONE)
+		    	{
+		    	for(int j=0;j< select_goa->column_count();++j)
+		    		{
+		    		if(j!=0) cout << "\t";
+		    		cout << select_goa->get_string(j+1);
+		    		}
+		    	cout << endl;
+		    	}
+		    }
+	    	}
 	    else
 		{
 		for(set<string>::iterator r=result.begin();r!=result.end();++r)

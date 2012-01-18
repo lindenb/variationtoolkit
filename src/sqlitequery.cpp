@@ -29,6 +29,7 @@
 #include "throw.h"
 #include "zstreambuf.h"
 #include "tokenizer.h"
+#include "cescape.h"
 
 using namespace std;
 
@@ -60,23 +61,8 @@ class SqliteQuery:public AbstractApplication
 
 	 string escape(string s)
 	 	 {
-		 ostringstream os;
-		 for(size_t i=0;i< s.size();++i)
-		     {
-		     switch(s[i])
-			 {
-			 case '\\': os << "\\\\"; break;
-			 case '\'': os << "\\\'"; break;
-			 case '\"': os << "\\\""; break;
-			 case '\t': os << "\\t"; break;
-			 case '\n': os << "\\n"; break;
-			 case '\r': os << "\\r"; break;
-			 case '\b': os << "\\b"; break;
-			 default:os << s[i];break;
-			 }
-		     }
-
-		 return os.str();
+		 CEscape esc(s);
+		 return  esc.str();
 	 	 }
 
 	 struct Shuttle
