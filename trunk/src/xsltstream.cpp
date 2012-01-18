@@ -45,13 +45,8 @@ class XsltStream:public AbstractApplication
 		   XsltStream* owner;
 		   Handler(std::istream& in,XsltStream* owner):XmlStream(in),owner(owner) {}
 		   virtual ~Handler() {}
-		   int depth(const xmlNodePtr element) const
-		       {
-		       if(element==0) return 0;
-		       if(element->type!=XML_ELEMENT_NODE) return depth(element->parent);
-		       return 1+depth(element->parent);
-		       }
-		   virtual bool isPivotNode(const xmlNodePtr element) const
+
+		   virtual bool isPivotNode(const xmlNodePtr element,int depth1) const
 		       {
 		       if(owner->target_name==0 && owner->target_depth<0 )
 			   {
@@ -67,7 +62,7 @@ class XsltStream:public AbstractApplication
 			   }
 		       if(owner->target_depth!=-1)
 			   {
-			   if(depth(element)!=owner->target_depth)
+			   if(depth1!=owner->target_depth)
 			       {
 			       return false;
 			       }
@@ -116,7 +111,7 @@ class XsltStream:public AbstractApplication
 			THROW("Cannot transform XML 2 HTML.");
 			}
 		    xmlOutputBufferPtr outbuff=xmlOutputBufferCreateFile(stdout,0);
-		    if(outbuff!=0)
+		    if(outbuff==0)
 			{
 			THROW("xmlOutputBufferCreateFile failed");
 			}

@@ -31,6 +31,14 @@ void XmlStream::setAllowComments(bool b)
     allow_comments=b;
     }
 
+
+int XmlStream::depth(const xmlNodePtr element)
+   {
+   if(element==0) return 0;
+   if(element->type!=XML_ELEMENT_NODE) return depth(element->parent);
+   return 1+depth(element->parent);
+   }
+
 void XmlStream::close()
     {
     WHERE("");
@@ -67,10 +75,16 @@ int XmlStream::_xmlInputCloseCallback(void * context)
     return 0;
     }
 
-bool XmlStream::isPivotNode(const xmlNodePtr element) const
+bool XmlStream::isPivotNode(const xmlNodePtr element,int depth) const
     {
     return element!=0 && element->parent==root;
     }
+
+xmlNodePtr XmlStream::getCurrentPivot() const
+    {
+    return pivot;
+    }
+
 
 xmlDocPtr XmlStream::next()
     {
@@ -187,7 +201,7 @@ xmlDocPtr XmlStream::next()
 	                 if(current!=0 )
 	                     {
 
-	                     if(isPivotNode(current))
+	                     if(isPivotNode(current,depth(current)))
 	                	 {
 	                	 WHERE("OK it's a PIVOT: "<< current->name);
 	                	 pivot=current;
