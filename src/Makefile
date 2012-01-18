@@ -189,6 +189,10 @@ $(BINDIR)/fasta2term: fasta2term.cpp
 	$(CPP) -o $@ $^  $(CFLAGS) 
 $(BINDIR)/xsltstream: xsltstream.cpp xstream.o application.o
 	$(CPP) -o $@ $^  $(CFLAGS) `xml2-config --cflags --libs` `xslt-config --cflags --libs` -lz
+$(BINDIR)/godbmgr: godatabasemgr.cpp xsqlite.cpp application.o xstream.o
+	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ $(CFLAGS) `xml2-config --cflags `  $(SQLITE_CFLAGS)   -lz $(SQLITE_LIB) `xml2-config  --libs` ; else $(CPP) -o $@ vcf2sqlite.cpp  -DNOSQLITE $(CFLAGS)  ; fi
+
+
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^

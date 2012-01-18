@@ -10,14 +10,19 @@ class XmlStream
     public:
 	XmlStream(std::istream& in);
 	virtual ~XmlStream();
+	/** returns the next DOM fragment, the class XmlStream is responsible for releasing the memory */
 	xmlDocPtr next();
 	virtual void close();
 	/** enable/disable comments */
 	void setAllowComments(bool b);
 	/** return wether the current node is the pivot node
 	 * default behavior : elements under the root node
+	 * @param element the element
+	 * @param depth1 depth for this element. root is '1'
 	 */
-	virtual bool isPivotNode(const xmlNodePtr element) const;
+	virtual bool isPivotNode(const xmlNodePtr element,int depth1) const;
+	/* get the current pivot node, can be called only after next() */
+	virtual  xmlNodePtr getCurrentPivot() const;
     private:
 	std::istream* in;
 	xmlTextReaderPtr reader;
@@ -31,6 +36,8 @@ class XmlStream
 			     char * buffer,
 			     int len);
 	static int _xmlInputCloseCallback(void * context);
+	/** utility, return the depth of an ELEMENT: root is '1' */
+	static int  depth(const xmlNodePtr element);
     };
 
 
