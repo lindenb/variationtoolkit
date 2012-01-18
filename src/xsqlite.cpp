@@ -136,6 +136,13 @@ int Connection::execute(const char* sql)
     return 0;
     }
 
+//http://www.sqlite.org/lang_vacuum.html
+int Connection::compact()
+    {
+    return execute("VACUUM");
+    }
+
+
 
 void Connection::begin()
     {
@@ -272,22 +279,22 @@ int Statement::bind_string(int index1,const char* s,std::size_t len)
 
 double Statement::get_double(int index1)
     {
-    return  ::sqlite3_column_double(CAST_STMT(this),index1);
+    return  ::sqlite3_column_double(CAST_STMT(this),index1-1);
     }
 
 int32_t Statement::get_int32(int index1)
     {
-    return  ::sqlite3_column_int(CAST_STMT(this),index1);
+    return  ::sqlite3_column_int(CAST_STMT(this),index1-1);
     }
 
 int64_t Statement::get_int64(int index1)
     {
-    return  ::sqlite3_column_int64(CAST_STMT(this),index1);
+    return  ::sqlite3_column_int64(CAST_STMT(this),index1-1);
     }
 
 const char* Statement::get_string(int index1)
     {
-    return  (const char*)::sqlite3_column_text(CAST_STMT(this),index1);
+    return  (const char*)::sqlite3_column_text(CAST_STMT(this),index1-1);
     }
 
 #ifdef TEST_THIS_CODE
