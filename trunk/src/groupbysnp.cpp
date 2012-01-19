@@ -53,8 +53,10 @@ class GroupBySnp:public AbstractApplication
 	bool use_ref_alt;
 	vector<vector<string> > buffer;
 	set<string,SmartComparator> sampleNames;
+	/* asked by Juliette A.  to rescue her lost samples */
+	bool print_a_count_by_pair;
 
-	GroupBySnp()
+	GroupBySnp():print_a_count_by_pair(false)
 	    {
 	    chromcol=0;
 	    poscol=1;
@@ -123,7 +125,10 @@ class GroupBySnp:public AbstractApplication
 			first=false;
 			cout << front[*r];
 			}
-		for(set<string,SmartComparator>::iterator r2=sampleNames.begin();r2!=sampleNames.end();++r2)
+		for(set<string,SmartComparator>::iterator r2=sampleNames.begin();
+			r2!=sampleNames.end();
+			++r2
+			)
 			{
 			bool sample_found=false;
 			for(size_t i=0;i< buffer.size();++i)
@@ -150,7 +155,34 @@ class GroupBySnp:public AbstractApplication
 					}
 				}
 			}
-		cout << tokenizer.delim << samples.size() << endl;
+		cout << tokenizer.delim << samples.size();
+
+		/* asked by Juliette A.  to rescue her lost samples */
+		if(print_a_count_by_pair)
+		    {
+		    for(set<string,SmartComparator>::iterator r2=sampleNames.begin();
+			r2!=sampleNames.end();
+			++r2
+			)
+			{
+			set<string,SmartComparator>::iterator r3=r2;
+			++r3;
+			while(r3!=sampleNames.end())
+			    {
+			    bool found=false;
+			    for(size_t i=0;i< buffer.size();++i)
+				{
+				if(!(buffer[i][samplecol].compare(*r2)==0 ||
+				     buffer[i][samplecol].compare(*r3)==0)) continue;
+				found=true;
+				break;
+				}
+			    cout << "\t"<< (found?1:0);
+			    ++r3;
+			    }
+			}
+		    }
+		cout << endl;
 
 		buffer.clear();
 		}
@@ -204,7 +236,26 @@ class GroupBySnp:public AbstractApplication
 							cout << tokenizer.delim  << (*r2) <<":"<< tokens[*r];
 							}
 					}
-				cout << tokenizer.delim << "count.samples" << endl;
+				cout << tokenizer.delim << "count.samples";
+
+				/* asked by Juliette A.  to rescue her lost samples */
+				if(print_a_count_by_pair)
+				    {
+				    for(set<string,SmartComparator>::iterator r2=sampleNames.begin();
+					r2!=sampleNames.end();
+					++r2
+					)
+					{
+					set<string,SmartComparator>::iterator r3=r2;
+					++r3;
+					while(r3!=sampleNames.end())
+					    {
+					    cout << "\t"<< "pair("<< (*r2)<<"|"<<(*r3) << ")";
+					    ++r3;
+					    }
+					}
+				    }
+				cout << endl;
 				continue;
 				}
 
@@ -241,6 +292,7 @@ class GroupBySnp:public AbstractApplication
 		out << "  -T 1,2,3,4 columns indexes on top.\n";
 		out << "  -L 5,6,7 columns indexes on left.\n";
 		out << "  -n <name1,name2,name3> add this sample name.\n";
+		out << "  -c print a count by pair.\n";
 		out << "(stdin|vcf|vcf.gz)\n";
 		}
 
@@ -322,6 +374,10 @@ int main(int argc,char** argv)
    			{
    			use_ref_alt=false;
    			}
+   		else if(std::strcmp(argv[optind],"-c")==0)
+		    {
+		    print_a_count_by_pair=true;
+		    }
    		else if(
    				(std::strcmp(argv[optind],"-d")==0 ||
    				 std::strcmp(argv[optind],"--delim")==0) && optind+1< argc)
