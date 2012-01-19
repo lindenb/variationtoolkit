@@ -65,7 +65,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/cmpdepth \
 	$(BINDIR)/fasta2term \
 	$(CGI_BIN_DIR)/ngsproject.cgi \
-	$(BINDIR)/xsltstream
+	$(BINDIR)/xsltstream \
+	$(BINDIR)/godbmgr
 
 all:$(TARGET_BINARIES)
 
