@@ -61,5 +61,5 @@ This tool also takes an option '-e' for a query over the samples. e.g: "variatio
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

@@ -127,5 +127,5 @@ insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

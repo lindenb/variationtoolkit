@@ -39,5 +39,5 @@ $ cat sample2vcf.tsv | tr -d ' ' |\
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

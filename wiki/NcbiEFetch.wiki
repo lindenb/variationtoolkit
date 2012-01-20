@@ -99,5 +99,5 @@ $ (echo "#Gene-Id"; seq 105 2 110)  | ncbiefetch -c 1 -D gene
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

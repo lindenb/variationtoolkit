@@ -28,5 +28,5 @@ gi|14662886|slice:250-275	TTTGTAACCGGCCCCCCTTAAAACT
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

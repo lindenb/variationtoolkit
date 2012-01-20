@@ -75,5 +75,5 @@ g++ -o ../bin/fasta2tsv fasta2tsv.cpp -O3 -Wall -lz
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

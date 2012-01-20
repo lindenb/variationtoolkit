@@ -55,5 +55,5 @@ chr1	2475134	rs3091239	.	.	.	Deleted in new
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

@@ -203,5 +203,5 @@ $30	count.samples	4
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

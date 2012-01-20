@@ -9,5 +9,5 @@ The tools reading and writing VCF-like files use '+1' as the index of the first 
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

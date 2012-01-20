@@ -65,5 +65,5 @@ chrX	1001	nan	nan	nan	nan	nan
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

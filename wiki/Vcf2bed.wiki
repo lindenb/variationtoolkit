@@ -43,5 +43,5 @@ chr1	889157	889158	rs56262069_G_C	51	+
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

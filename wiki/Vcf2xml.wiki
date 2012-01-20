@@ -88,5 +88,5 @@ $ vcf2xml input.vcf | xmllint --format -
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

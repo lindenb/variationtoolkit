@@ -48,5 +48,5 @@ $4	annotation   	poly(A) binding protein, cytoplasmic 1; Binds the...
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

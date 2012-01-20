@@ -73,5 +73,5 @@ EIF4G1	D	240	Y	uc003fns.2	+	L	719	CTC	C	chr3	184039211	Exon 10
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

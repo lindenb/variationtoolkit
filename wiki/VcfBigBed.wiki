@@ -72,5 +72,5 @@ chrX	1	!N/A	!N/A	!N/A
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

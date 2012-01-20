@@ -106,5 +106,5 @@ sudo /etc/init.d/apache2 restart
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

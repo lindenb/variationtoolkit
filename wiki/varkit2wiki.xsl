@@ -57,7 +57,7 @@
 <xsl:text>
 
 
-&gt;g:plusone size="medium"&gt;&lt;/g:plusone&gt;
+&lt;g:plusone size="medium"&gt;&lt;/g:plusone&gt;
 
 </xsl:text>
 </xsl:document>

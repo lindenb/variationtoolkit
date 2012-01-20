@@ -412,5 +412,5 @@ GO:0003674
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

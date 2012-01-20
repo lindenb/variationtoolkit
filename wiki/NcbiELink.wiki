@@ -27,5 +27,5 @@ $ echo -e "#Genbank_GI\n256041817" | ncbielink  -c 1 -f protein -t nucleotide
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 

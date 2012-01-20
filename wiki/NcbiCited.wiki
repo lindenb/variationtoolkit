@@ -28,5 +28,5 @@ NOTCH2	21378989	2	22046109
 
 
 
->g:plusone size="medium"></g:plusone>
+<g:plusone size="medium"></g:plusone>
 
