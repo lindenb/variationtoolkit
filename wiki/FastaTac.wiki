@@ -1,5 +1,6 @@
 #summary Reverse the order of some fasta sequences
 #labels fasta
+<wiki:toc max_depth="1" />
 
 
 ==Example==
@@ -22,4 +23,9 @@ CAGGTTGCCCTTCTCTCAGCGCCAGTTACAGGCCCATTTCCCAGTCAAGT
 CACTCCTTTCACAAATCCCGAATTCTCTATCTAACTAACATTTGGCATAT
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

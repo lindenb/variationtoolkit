@@ -1,5 +1,6 @@
 #summary colorizes some fasta sequences when printing to stdout.
 #labels fasta
+<wiki:toc max_depth="1" />
 
 
 {{{
@@ -7,4 +8,9 @@
 $ cat input.fa | fasta2term
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

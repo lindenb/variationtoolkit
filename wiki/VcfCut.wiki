@@ -1,5 +1,6 @@
 #summary (very) simple 'cut this region'
 #labels vcf
+<wiki:toc max_depth="1" />
 
 .
 
@@ -28,4 +29,9 @@ $ curl -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of
 }}}
 
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

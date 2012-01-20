@@ -1,5 +1,6 @@
 #summary Intersection VCF/BigWig
 #labels bigwig,wiggle,wig,vcf,genomics,ngs,ucsc
+<wiki:toc max_depth="1" />
 
 
 
@@ -60,4 +61,9 @@ chrX	1001	nan	nan	nan	nan	nan
 }}}
 
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

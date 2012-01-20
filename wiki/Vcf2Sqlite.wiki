@@ -1,5 +1,6 @@
 #summary Inserts a VCF into a sqlite3 database
 #labels VCF,sqlite,sql,database
+<wiki:toc max_depth="1" />
 
 Inserts a Variant Call Format document (*VCF*) into a sqlite3 database.
 
@@ -74,4 +75,9 @@ sample_id = 1
 
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

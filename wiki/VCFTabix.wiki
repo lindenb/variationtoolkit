@@ -1,5 +1,6 @@
 #summary Intersection VCF/Tabix
 #labels tabix,ngs,vcf
+<wiki:toc max_depth="1" />
 
 
 
@@ -61,4 +62,9 @@ $ gunzip -c data.vcf.gz |\
 (...)
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

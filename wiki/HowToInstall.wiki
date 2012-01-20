@@ -1,5 +1,6 @@
 #summary How to Install the Variation toolkit
 #labels documentation,install,make,build,makefile
+<wiki:toc max_depth="1" />
 
 
 
@@ -70,4 +71,9 @@ make ../bin/fastatail
 $ make ../bin/fasta2tsv
 g++ -o ../bin/fasta2tsv fasta2tsv.cpp -O3 -Wall -lz
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

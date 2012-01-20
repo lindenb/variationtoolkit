@@ -1,5 +1,6 @@
 #summary Visualization of the mutations in the UCSC genes
 #labels ucsc,vcf,ngs,visualization,postscript
+<wiki:toc max_depth="1" />
 
 Reads an ordered VCF (ordered by CHROM/POS and optionaly by SAMPLE) , connect to an UCSC database a print the
 variation in postscript.
@@ -34,4 +35,9 @@ $ cat sample2vcf.tsv | tr -d ' ' |\
   ucscgenesps --host localhost --user username --port 3316 -s 11 > result.ps 
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

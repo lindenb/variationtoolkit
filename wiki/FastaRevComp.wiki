@@ -1,5 +1,6 @@
 #summary reverse complement FASTA sequences
 #labels fasta
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -28,4 +29,9 @@ GAATGGTGGGGCAGCCCTTC
 AAGGGCTGCCCCACCATTCA
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

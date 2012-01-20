@@ -1,5 +1,6 @@
 #summary reads some VCFs, appends a column with the sample name
 #labels vcf,ngs,sample
+<wiki:toc max_depth="1" />
 
 
 
@@ -49,4 +50,9 @@ Y 21154466 rs10465460 T A 99 0 . GT:GQ:DP:FLT 1/1:99:134:0 Sample20
 Y 21154529 . G A 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample20
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

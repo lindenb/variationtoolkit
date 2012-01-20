@@ -1,5 +1,6 @@
 #summary Take as input a position on a protein and an uniprot ACN, connect to  pfam.sanger.ac.uk and answers wether a amino acid is contained in a 'match'.
 #labels pfma,vcf,motif,mutation
+<wiki:toc max_depth="1" />
 
 
 
@@ -77,4 +78,9 @@ $8	pfam.class	.
 <<<	6
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

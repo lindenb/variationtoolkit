@@ -46,7 +46,20 @@
 <xsl:text>
 </xsl:text>
 </xsl:if>
+
+<xsl:if test="count(//h3)&gt;0">
+<xsl:text>&lt;wiki:toc max_depth="1" /&gt;
+</xsl:text>
+</xsl:if>
+
 <xsl:apply-templates/>
+
+<xsl:text>
+
+
+&gt;g:plusone size="medium"&gt;&lt;/g:plusone&gt;
+
+</xsl:text>
 </xsl:document>
 </xsl:template> 
 

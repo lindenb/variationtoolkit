@@ -1,5 +1,6 @@
 #summary Creates a pivot table with the data(samples)=f(SNP)
 #labels vcf,snp,ngs
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -198,4 +199,9 @@ $30	count.samples	4
 (...)
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

@@ -1,5 +1,6 @@
 #summary Extract a field from the INFO column of a VCF file
 #labels ngs,vcf
+<wiki:toc max_depth="1" />
 
 
 
@@ -34,4 +35,9 @@ rs2453040
 rs2124109
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

@@ -1,5 +1,6 @@
 #summary Prints the BAM alignments around variations.
 #labels samtools,vcf,bam,sam,alignments,visualization
+<wiki:toc max_depth="1" />
 
 Original code from samtools ttview : Heng Li, Bob Handsaker, Jue Ruan, Colin Hercus, Petr Danecek
 
@@ -53,4 +54,9 @@ aggttttataaaac****aattaagtctacagagcaactacgcgNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
                                                                
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

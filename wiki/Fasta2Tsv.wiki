@@ -1,5 +1,6 @@
 #summary prints Fasta Sequences as Tab delimited values
 #labels fasta
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -23,4 +24,9 @@ gi|14662886|slice:200-250	CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
 gi|14662886|slice:250-275	TTTGTAACCGGCCCCCCTTAAAACT
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

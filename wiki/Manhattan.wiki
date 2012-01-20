@@ -1,5 +1,6 @@
 #summary draws a manhattan plot as a postscript file
 #labels ngs,vcf,postscript,visualization,chart,graph
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -53,4 +54,9 @@ $ evince result.ps
 
 [http://variationtoolkit.googlecode.com/svn/trunk/doc/manhattan2.eps http://variationtoolkit.googlecode.com/svn/trunk/doc/manhattan2.eps]
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

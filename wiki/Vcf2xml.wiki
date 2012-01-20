@@ -1,5 +1,6 @@
 #summary Transforms a VCF to xml
 #labels vcf,transform,format,xml,ngs
+<wiki:toc max_depth="1" />
 
 
 ==Motivation==
@@ -83,4 +84,9 @@ $ vcf2xml input.vcf | xmllint --format -
   </body>
 </vcf>
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

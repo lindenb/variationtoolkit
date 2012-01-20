@@ -1,5 +1,6 @@
 #summary Calls the service: EMBL String interactors
 #labels embl,string,interactions
+<wiki:toc max_depth="1" />
 
 Calls the service: EMBL String interactors ( [http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html] ).
 
@@ -60,4 +61,9 @@ $7	preferredName	DLL1
 }}}
 
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

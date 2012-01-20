@@ -1,5 +1,6 @@
 #summary Fetch a record from the NCBI database
 #labels ncbi,pubmed,gene,snp,taxonomy,protein,nucleotide
+<wiki:toc max_depth="1" />
 
 Currently supported databases: pubmed , nucleotide, protein, snp , gene and taxonomy.
 
@@ -94,4 +95,9 @@ $ (echo "#Gene-Id"; seq 105 2 110)  | ncbiefetch -c 1 -D gene
 
 }}}
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

@@ -1,4 +1,5 @@
 #summary applies a XSLT stylesheet to some fragments of a SAX/XML stream.
+<wiki:toc max_depth="1" />
 
 *xsltstream* is the C++ version of my old java program (see also: [http://plindenbaum.blogspot.com/2010/02/processing-large-xml-documents-with.html http://plindenbaum.blogspot.com/2010/02/processing-large-xml-documents-with.html] ). It applies a XSLT stylesheet
 to a fragment of a large XML document. It avoids to load the whole XML document in memory.  
@@ -122,4 +123,9 @@ insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2
 (...)
 }}}
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

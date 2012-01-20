@@ -1,5 +1,6 @@
 #summary sort/uniq on FASTA sequences
 #labels fasta
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -30,4 +31,9 @@ AAT
 
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

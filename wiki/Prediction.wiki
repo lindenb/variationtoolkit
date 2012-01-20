@@ -1,5 +1,6 @@
 #summary basic variation predictor
 #labels ngs,snp,variation,vcf,genomics,protein,prediction
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -130,4 +131,9 @@ $18	prediction.wild.aa       	M
 (...)
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

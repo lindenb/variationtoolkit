@@ -1,5 +1,6 @@
 #summary Prints the DNA context of a variation using a genome indexed with samtools faidx and its GC percent
 #labels vcf,ngs,genome,genomics,dna,sequence,gc,bed
+<wiki:toc max_depth="1" />
 
 
 
@@ -37,4 +38,9 @@ chr1 887560 rs3748595 A C 99 0 . GT:GQ:DP:FLT 1/1:99:40:0 CCAGGCTGAC A AGTCAGGCT
 (...)
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

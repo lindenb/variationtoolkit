@@ -1,5 +1,6 @@
 #summary Slice a FASTA input
 #labels fasta,sequence
+<wiki:toc max_depth="1" />
 
 
 
@@ -28,4 +29,9 @@ ELMGIQYDYNEIYTRVKSKF
 EIYTRVKSKFDYVMDDSGVK
 }}}
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

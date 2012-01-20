@@ -1,5 +1,6 @@
 #summary Compute the intersection for an ordered VCF/BED with another source
 #labels bed,vcf
+<wiki:toc max_depth="1" />
 
 Compute the intersection for an ordered VCF (ordered by CHROM/POS) with another source ordered by CHROM/POS.
 
@@ -113,4 +114,9 @@ $28
 
 
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

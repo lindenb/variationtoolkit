@@ -1,5 +1,6 @@
 #summary Utilities for Gene Ontology
 #labels go,ontology,sqlite,xml,rdf
+<wiki:toc max_depth="1" />
 
 A set of tools for GeneOntology:[http://geneontology.org http://geneontology.org] based on the sqlite library.
 
@@ -32,6 +33,7 @@ vcf2godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | st
 }}}
 
 
+
 ==Program: loadrdf==
 
 Load the RDF/XML GO database ([http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz]) into the sqlite database.
@@ -56,8 +58,11 @@ godbmgr loadrdf -f database.sqlite (stdin|file)
 $ curl -s "http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz" |\
   gunzip -c |\
   godbmgr loadrdf -f database.sqlite
+}}}
 
+list the content of the database:
 
+{{{
 $ sqlite3 -separator '  ' -header  database.sqlite 'select * from TERM where acn="GO:0000007"'
 acn	xml
 GO:0000007	<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0000007">
@@ -98,8 +103,14 @@ godbmgr loadgoa -f database.sqlite (stdin|file)
 $  curl -s "ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz" |\
      gunzip -c |\
      godbmgr loadgoa -f database.sqlite
+}}}
 
-$ sqlite3 -line   jeter.sqlite 'select * from GOA where term="GO:0005385" limit 2' 
+list the content of the database:
+
+{{{
+
+
+$ sqlite3 -line   database.sqlite 'select * from GOA where term="GO:0005385" limit 2' 
               DB = UniProtKB
     DB_Object_ID = B3KU87
 DB_Object_Symbol = SLC30A6
@@ -397,4 +408,9 @@ $ echo -e "#MyACN\nGO:0003674\nGO:0001618\n" |\
 GO:0003674
 }}}
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

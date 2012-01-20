@@ -1,5 +1,6 @@
 #summary Prints the last sequences of a list of FASTA sequences
 #labels fasta
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -21,4 +22,9 @@ CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
 TTTGTAACCGGCCCCCCTTAAAACT
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

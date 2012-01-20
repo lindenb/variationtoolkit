@@ -1,5 +1,6 @@
 #summary Verticalize a table
 #labels tool,unix,table
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -35,4 +36,9 @@ $1	#CHROM   	1
 (...)
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

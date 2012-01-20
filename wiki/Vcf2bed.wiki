@@ -1,5 +1,6 @@
 #summary Generates a BED file from a VCF
 #labels vcf,bed
+<wiki:toc max_depth="1" />
 
 
 ==Options==
@@ -38,4 +39,9 @@ chr1	889157	889158	rs56262069_G_C	51	+
 (...)
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

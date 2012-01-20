@@ -1,5 +1,6 @@
 #summary CGI interface to Samtools tview. Visualize short reads alignments
 #labels samtools,bam,vcf,cgi,apache,web,httpd,ngs,visualization
+<wiki:toc max_depth="1" />
 
 
 This C++ program named ngsproject.cgi uses the samtools api, it allows any user to visualize all the alignments in a given NGS project. The projects and their BAMS are defined on the server side using a simple XML document.
@@ -101,4 +102,9 @@ sudo /etc/init.d/apache2 restart
 ==Screenshot==
 
 [http://variationtoolkit.googlecode.com/svn/trunk/doc/ngsproject.jpg]
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

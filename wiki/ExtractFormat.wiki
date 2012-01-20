@@ -1,5 +1,6 @@
 #summary Extract a field from the FORMAT column of a VCF file.
 #labels ngs,vcf
+<wiki:toc max_depth="1" />
 
 
 
@@ -32,4 +33,9 @@ $ gunzip -c data.vcf.gz |\
      11 1/2
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

@@ -1,5 +1,6 @@
 #summary Calls the service: EMBL String resolve
 #labels embl,string,interactions
+<wiki:toc max_depth="1" />
 
 Calls the service: EMBL String resolve ([http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html] ).
 
@@ -43,4 +44,9 @@ $4	annotation   	poly(A) binding protein, cytoplasmic 1; Binds the...
 <<<	4
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

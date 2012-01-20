@@ -1,5 +1,6 @@
 #summary Calls the service: EMBL String interactions
 #labels embl,string,interactions
+<wiki:toc max_depth="1" />
 
 Calls the service: EMBL String interactions ( [http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html] ).
 
@@ -53,4 +54,9 @@ $7	labelA         	RBPJ
 
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

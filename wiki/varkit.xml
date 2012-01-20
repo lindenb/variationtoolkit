@@ -2454,6 +2454,7 @@ $ make ../bin/godbmgr
 if ! [ -z "-lsqlite3" ] ;then g++ -o ../bin/godbmgr godatabasemgr.cpp xsqlite.cpp application.o xstream.o xxml.o -g `xml2-config --cflags `  /usr/include/sqlite3.h   -lz -lsqlite3 `xml2-config  --libs` ; else g++ -o ../bin/godbmgr godatabasemgr.cpp  -DNOSQLITE -O3 -Wall  ; fi</pre>
 <h2>Usage</h2>
 <pre>vcf2godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin )</pre>
+
 <h2>Program: loadrdf</h2>
 Load the RDF/XML GO database (<url>http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz</url>) into the sqlite database.
 <h3>Usage</h3>
@@ -2465,10 +2466,9 @@ Load the RDF/XML GO database (<url>http://archive.geneontology.org/latest-termdb
 <h3>Example</h3>
 <pre><![CDATA[$ curl -s "http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz" |\
   gunzip -c |\
-  godbmgr loadrdf -f database.sqlite
-
-
-$ sqlite3 -separator '  ' -header  database.sqlite 'select * from TERM where acn="GO:0000007"'
+  godbmgr loadrdf -f database.sqlite]]></pre>
+list the content of the database:
+<pre><![CDATA[$ sqlite3 -separator '  ' -header  database.sqlite 'select * from TERM where acn="GO:0000007"'
 acn	xml
 GO:0000007	<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0000007">
             <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0000007</go:accession>
@@ -2492,9 +2492,11 @@ inserts the database for GOA into a sqlite database (e.g: <url>ftp://ftp.ebi.ac.
 <h3>Examples</h3>
 <pre><![CDATA[$  curl -s "ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz" |\
      gunzip -c |\
-     godbmgr loadgoa -f database.sqlite
+     godbmgr loadgoa -f database.sqlite]]></pre>
+list the content of the database:
+<pre><![CDATA[
 
-$ sqlite3 -line   jeter.sqlite 'select * from GOA where term="GO:0005385" limit 2' 
+$ sqlite3 -line   database.sqlite 'select * from GOA where term="GO:0005385" limit 2' 
               DB = UniProtKB
     DB_Object_ID = B3KU87
 DB_Object_Symbol = SLC30A6

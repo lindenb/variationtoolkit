@@ -1,5 +1,6 @@
 #summary Generates two mutated homologous sequences from a fasta file
 #labels simulation,fasta,snp,variations
+<wiki:toc max_depth="1" />
 
 .
 
@@ -26,4 +27,9 @@ $ tar tvf chrom.tar
 -rw-r--r-- 0/0             203 2011-12-09 13:56 chrom/mutations.txt
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

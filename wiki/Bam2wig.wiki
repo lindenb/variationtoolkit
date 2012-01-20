@@ -1,5 +1,6 @@
 #summary Creates a WIG file for the coverage of a BAM file
 #labels wig,wiggle,bam,ngs,samtools,sam
+<wiki:toc max_depth="1" />
 
 
 
@@ -27,4 +28,9 @@ fixedStep chrom=chrM start=23 step=1 span=1
 (...)
 }}}
 
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 

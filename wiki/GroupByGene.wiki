@@ -1,5 +1,6 @@
 #summary transposes a VCF table with a 'GENE' and a 'SAMPLE' column and ouput a new table: count(Gene)=f(SAMPLE)
 #labels ngs,sample,vcf
+<wiki:toc max_depth="1" />
 
 
 
@@ -38,4 +39,9 @@ A4GNT	3	137843106	137850003	4	3	3	3	3	3	0
 (...)
 
 }}}
+
+
+
+
+>g:plusone size="medium"></g:plusone>
 
