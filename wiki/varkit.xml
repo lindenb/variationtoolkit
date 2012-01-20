@@ -2670,6 +2670,7 @@ $6	DB_Object_Name,Synonym	Neurogenic locus notch homolog protein 2
 $7	DB_Object_Type        	NOTC2_HUMAN|NOTCH2|IPI00297655|Q5T3X7|Q99734|Q9H240
 $8  	???                   	protein]]></pre>
 <h2>Program: grep</h2>
+filters the line having an identifier (gene...) that is a children of a given GO term.
 <h3>Usage</h3>
 <pre>godbmgr grep -f db.sqlite [options] (stdin|files)</pre>
 <h3>Options</h3>

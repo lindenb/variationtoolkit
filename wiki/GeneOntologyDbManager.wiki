@@ -373,6 +373,7 @@ $8  	???                   	protein
 
 ==Program: grep==
 
+filters the line having an identifier (gene...) that is a children of a given GO term.
 
 ===Usage===
 
