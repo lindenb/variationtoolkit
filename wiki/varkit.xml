@@ -2453,7 +2453,7 @@ $ make ../bin/godbmgr
 
 if ! [ -z "-lsqlite3" ] ;then g++ -o ../bin/godbmgr godatabasemgr.cpp xsqlite.cpp application.o xstream.o xxml.o -g `xml2-config --cflags `  /usr/include/sqlite3.h   -lz -lsqlite3 `xml2-config  --libs` ; else g++ -o ../bin/godbmgr godatabasemgr.cpp  -DNOSQLITE -O3 -Wall  ; fi</pre>
 <h2>Usage</h2>
-<pre>vcf2godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin )</pre>
+<pre>godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin )</pre>
 
 <h2>Program: loadrdf</h2>
 Load the RDF/XML GO database (<url>http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz</url>) into the sqlite database.

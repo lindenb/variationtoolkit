@@ -29,7 +29,7 @@ if ! [ -z "-lsqlite3" ] ;then g++ -o ../bin/godbmgr godatabasemgr.cpp xsqlite.cp
 
 
 {{{
-vcf2godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin )
+godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin )
 }}}
 
 
