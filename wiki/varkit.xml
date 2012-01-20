@@ -510,6 +510,7 @@ This tool also takes an option '-e' for a query over the samples. e.g: "variatio
 <li>-T 1,2,3,4,... columns indexes on top.</li>
 <li>-L 5,6,7,... columns indexes on left.</li>
 <li>-n (name1,name2,name3,...) add this sample name.</li>
+<li>-c print a count by pair. This option loop over each pair of samples adds a column ('0' or '1') telling if a variation was found in both samples in the pair.</li>
 </ul>
 <h3>Examples</h3>
 Read the VCF data and generate a pivot table.
@@ -2438,7 +2439,259 @@ insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2
 
 </page>
 
+<page title="GeneOntologyDbManager" labels="go,ontology,sqlite,xml,rdf" desc="Utilities for Gene Ontology">
+<p>A set of tools for GeneOntology:<url>http://geneontology.org</url> based on the <a href="http://www.sqlite.org/">sqlite</a> library.</p>
+<h2>Dependencies</h2>
+<url>http://www.sqlite.org/</url> : libraries and headers for sqlite3<br/>
+<code>libxml</code> <url>http://xmlsoft.org/</url> ( see also: <url>HowToInstall</url> )<br/>
+<b>libxslt</b>: the C library for xslt <url>http://xmlsoft.org/XSLT/</url>.
+<h2>Compilation</h2>
+Define "<code>SQLITE_LIB</code>" and 
+"<code>SQLITE_CFLAGS</code>" in <code>config.mk</code> (see <url>HowToInstall</url> )
+<pre>$ cd variationtoolkit/src/
+$ make ../bin/godbmgr 
 
+if ! [ -z "-lsqlite3" ] ;then g++ -o ../bin/godbmgr godatabasemgr.cpp xsqlite.cpp application.o xstream.o xxml.o -g `xml2-config --cflags `  /usr/include/sqlite3.h   -lz -lsqlite3 `xml2-config  --libs` ; else g++ -o ../bin/godbmgr godatabasemgr.cpp  -DNOSQLITE -O3 -Wall  ; fi</pre>
+<h2>Usage</h2>
+<pre>vcf2godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin )</pre>
+<h2>Program: loadrdf</h2>
+Load the RDF/XML GO database (<url>http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz</url>) into the sqlite database.
+<h3>Usage</h3>
+<pre>godbmgr loadrdf -f database.sqlite (stdin|file)</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the sqlite database</li>
+</ul>
+<h3>Example</h3>
+<pre><![CDATA[$ curl -s "http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz" |\
+  gunzip -c |\
+  godbmgr loadrdf -f database.sqlite
+
+
+$ sqlite3 -separator '  ' -header  database.sqlite 'select * from TERM where acn="GO:0000007"'
+acn	xml
+GO:0000007	<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0000007">
+            <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0000007</go:accession>
+            <go:name xmlns:go="http://www.geneontology.org/dtds/go.dtd#">low-affinity zinc ion transmembrane transporter activity</go:name>
+            <go:definition xmlns:go="http://www.geneontology.org/dtds/go.dtd#">Catalysis of the transfer of a solute or solutes from one side of a membrane to the other according to the reaction: Zn2+ = Zn2+, probably powered by proton motive force. In low affinity transport the transporter is able to bind the solute only if it is present at very high concentrations.</go:definition>
+            <go:is_a xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:resource="http://www.geneontology.org/go#GO:0005385"/>
+        </go:term>
+
+
+$ sqlite3 -separator '  ' -header  database.sqlite 'select * from TERM2REL where acn="GO:0000007"'
+acn	rel	target
+GO:0000007	is_a	GO:0005385]]></pre>
+<h2>Program: loadgoa</h2>
+inserts the database for GOA into a sqlite database (e.g: <url>ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz</url>)
+<h3>Usage</h3>
+<pre>godbmgr loadgoa -f database.sqlite (stdin|file)</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the sqlite database</li>
+</ul>
+<h3>Examples</h3>
+<pre><![CDATA[$  curl -s "ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz" |\
+     gunzip -c |\
+     godbmgr loadgoa -f database.sqlite
+
+$ sqlite3 -line   jeter.sqlite 'select * from GOA where term="GO:0005385" limit 2' 
+              DB = UniProtKB
+    DB_Object_ID = B3KU87
+DB_Object_Symbol = SLC30A6
+            term = GO:0005385
+  DB_Object_Name = cDNA FLJ45816 fis, clone NT2RP7019682, highly similar to Homo sapiens solute carrier family 30 (zinc transporter), member 6 (SLC30A6), mRNA
+         Synonym = B3KU87_HUMAN|SLC30A6|hCG_23082|IPI01009565|B7WP49
+  DB_Object_Type = protein
+
+              DB = UniProtKB
+    DB_Object_ID = B5MCR8
+DB_Object_Symbol = SLC30A6
+            term = GO:0005385
+  DB_Object_Name = Solute carrier family 30 (Zinc transporter), member 6, isoform CRA_b
+         Synonym = B5MCR8_HUMAN|SLC30A6|hCG_23082|IPI00894292
+  DB_Object_Type = protein
+
+]]></pre>
+<h2>Program: desc</h2>
+print the descendants (children) of a given GO node.
+<h3>Usage</h3>
+<pre>godbmgr desc -f db.sqlite [options] term1 term2 ... termn</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-r</b> (rel) add a go relationship (<url>http://www.obofoundry.org/ro/</url>) (OPTIONAL, default: it adds "is_a").</li>
+<li><b>-t</b> output: xml, goa ,tsv ,acn</li>
+</ul>
+<h3>Examples</h3>
+<h4>Default output</h4>
+<pre><![CDATA[$ godbmgr desc -f database.sqlite "GO:0005385"
+GO:0000006
+GO:0000007
+GO:0005385
+GO:0015341
+GO:0015633
+GO:0016463
+GO:0022883]]></pre>
+<h4>xml/rdf output</h4>
+<pre><![CDATA[
+$ godbmgr desc -f database.sqlite  -t xml "GO:0005385" | head
+
+<go:go xmlns:go='http://www.geneontology.org/dtds/go.dtd#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+ <rdf:RDF>
+<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0000006">
+            <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0000006</go:accession>
+            <go:name xmlns:go="http://www.geneontology.org/dtds/go.dtd#">high affinity zinc uptake transmembrane transporter activity</go:name>
+            <go:definition xmlns:go="http://www.geneontology.org/dtds/go.dtd#">Catalysis of the transfer of a solute or solutes from one side of a membrane to the other according to the reaction: Zn2+(out) = Zn2+(in), probably powered by proton motive force. In high affinity transport the transporter is able to bind the solute even if it is only present at very low concentrations.</go:definition>
+            <go:is_a xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:resource="http://www.geneontology.org/go#GO:0005385"/>
+        </go:term>
+<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0000007">
+            <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0000007</go:accession>
+]]></pre>
+<h4>GOA output</h4>
+<pre><![CDATA[$godbmgr desc -f database.sqlite -t goa  "GO:0005385"
+
+UniProtKB	B3KU87	SLC30A6	GO:0005385	cDNA FLJ45816 fis, clone NT2RP7019682, highly similar to Homo sapiens solute carrier family 30 (zinc transporter), member 6 (SLC30A6), mRNA	B3KU87_HUMAN|SLC30A6|hCG_23082|IPI01009565|B7WP49	protein
+UniProtKB	B5MCR8	SLC30A6	GO:0005385	Solute carrier family 30 (Zinc transporter), member 6, isoform CRA_b	B5MCR8_HUMAN|SLC30A6|hCG_23082|IPI00894292	protein
+(..)
+UniProtKB	Q99726	SLC30A3	GO:0015633	Zinc transporter 3	ZNT3_HUMAN|ZNT3|SLC30A3|IPI00293793|Q8TC03protein
+]]></pre>
+<h4>TSV output</h4>
+<pre><![CDATA[$ godbmgr desc -f database.sqlite  -t tsv "GO:0022857" |\
+    cut -c 1-100 |\
+    head
+#go:accession	go.name	go.def
+GO:0000006	high affinity zinc uptake transmembrane transporter activity	Catalysis of the transfer of
+GO:0000007	low-affinity zinc ion transmembrane transporter activity	Catalysis of the transfer of a s
+GO:0000064	L-ornithine transmembrane transporter activity	Catalysis of the transfer of L-ornithine f
+GO:0000095	S-adenosylmethionine transmembrane transporter activity	Catalysis of the transfer of S-ad
+GO:0000099	sulfur amino acid transmembrane transporter activity	Catalysis of the transfer of sulfur 
+GO:0000100	S-methylmethionine transmembrane transporter activity	Catalysis of the transfer of S-meth
+GO:0000102	L-methionine secondary active transmembrane transporter activity	Catalysis of the transfe
+GO:0000227	oxaloacetate secondary active transmembrane transporter activity	Catalysis of the transfe
+GO:0000269	toxin export channel activity	Enables the energy independent passage of toxins, sized les
+(...)
+]]></pre>
+
+<h2>Program: desc</h2>
+prints the descendants (children) of a given node.
+<h3>Usage</h3>
+<pre>godbmgr desc -f db.sqlite [options] term1 term2 ... termn</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-r</b> (rel) add a go relationship (<url>http://www.obofoundry.org/ro/</url>) (OPTIONAL, default: it adds "is_a").</li>
+<li><b>-t</b> output: xml, goa ,tsv ,acn</li>
+</ul>
+<h3>Examples</h3>
+<h4>Default output</h4>
+<pre><![CDATA[$ godbmgr asc -f database.sqlite "GO:0022857"
+GO:0003674
+GO:0005215
+GO:0022857
+all]]></pre>
+<h4>xml/rdf output</h4>
+<pre><![CDATA[
+$ godbmgr asc -f database.sqlite  -t xml "GO:0022857" | head
+
+<go:go xmlns:go='http://www.geneontology.org/dtds/go.dtd#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+ <rdf:RDF>
+<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0003674">
+            <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0003674</go:accession>
+            <go:name xmlns:go="http://www.geneontology.org/dtds/go.dtd#">molecular_function</go:name>
+            <go:synonym xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0005554</go:synonym>
+            <go:synonym xmlns:go="http://www.geneontology.org/dtds/go.dtd#">molecular function</go:synonym>
+            <go:synonym xmlns:go="http://www.geneontology.org/dtds/go.dtd#">molecular function unknown</go:synonym>
+            <go:definition xmlns:go="http://www.geneontology.org/dtds/go.dtd#">Elemental activities, such as catalysis or binding, describing the actions of a gene product at the molecular level. A given gene product may exhibit one or more molecular functions.</go:definition>
+            <go:comment xmlns:go="http://www.geneontology.org/dtds/go.dtd#">Note that, in addition to forming the root of the molecular function ontology, this term is recommended for use for the annotation of gene products whose molecular function is unknown. Note that when this term is used for annotation, it indicates that no information was available about the molecular function of the gene product annotated as of the date the annotation was made; the evidence code ND, no data, is used to indicate this.</go:comment>
+]]></pre>
+<h4>GOA output</h4>
+<pre><![CDATA[$godbmgr desc -f database.sqlite -t goa  "GO:0005385"
+
+UniProtKB	B3KU87	SLC30A6	GO:0005385	cDNA FLJ45816 fis, clone NT2RP7019682, highly similar to Homo sapiens solute carrier family 30 (zinc transporter), member 6 (SLC30A6), mRNA	B3KU87_HUMAN|SLC30A6|hCG_23082|IPI01009565|B7WP49	protein
+UniProtKB	B5MCR8	SLC30A6	GO:0005385	Solute carrier family 30 (Zinc transporter), member 6, isoform CRA_b	B5MCR8_HUMAN|SLC30A6|hCG_23082|IPI00894292	protein
+(..)
+UniProtKB	Q99726	SLC30A3	GO:0015633	Zinc transporter 3	ZNT3_HUMAN|ZNT3|SLC30A3|IPI00293793|Q8TC03protein
+]]></pre>
+<h4>TSV output</h4>
+<pre><![CDATA[$ godbmgr asc -f database.sqlite  -t tsv "GO:0022857"   
+#go:accession	go.name	go.def
+GO:0003674	molecular_function	Elemental activities, such as catalysis or binding, describing the actions of a gene product at the molecular level. A given gene product may exhibit one or more molecular functions.
+GO:0005215	transporter activity	Enables the directed movement of substances (such as macromolecules, small molecules, ions) into, out of or within a cell, or between cells.
+GO:0022857	transmembrane transporter activity	Enables the transfer of a substance from one side of a membrane to the other.
+all	all	.
+]]></pre>
+
+<h2>program goa</h2>
+Annotate a TSV file with the GOA annotation.
+<h3>Usage</h3>
+<pre>godbmgr goa -f db.sqlite [options] (stdin|files)</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-c</b> (column index) REQUIRED. The observed column.</li>
+</ul>
+<h3>Example</h3>
+<pre><![CDATA[$ echo -e "#MyGene\nHello\nNOTCH2" |\
+   godbmgr goa -c 1 -f database.sqlite  |\
+   head -n 4 |\
+   verticalize
+
+>>>	2
+$1	#MyGene               	Hello
+$2	DB                    	.
+$3	DB_Object_ID          	.
+$4	DB_Object_Symbol      	.
+$5	term                  	.
+$6	DB_Object_Name,Synonym	.
+$7	DB_Object_Type        	.
+$8  	???                   	.
+<<<	2
+
+>>>	3
+$1	#MyGene               	NOTCH2
+$2	DB                    	UniProtKB
+$3	DB_Object_ID          	Q04721
+$4	DB_Object_Symbol      	NOTCH2
+$5	term                  	GO:0001709
+$6	DB_Object_Name,Synonym	Neurogenic locus notch homolog protein 2
+$7	DB_Object_Type        	NOTC2_HUMAN|NOTCH2|IPI00297655|Q5T3X7|Q99734|Q9H240
+$8  	???                   	protein
+<<<	3
+
+>>>	4
+$1	#MyGene               	NOTCH2
+$2	DB                    	UniProtKB
+$3	DB_Object_ID          	Q04721
+$4	DB_Object_Symbol      	NOTCH2
+$5	term                  	GO:0004872
+$6	DB_Object_Name,Synonym	Neurogenic locus notch homolog protein 2
+$7	DB_Object_Type        	NOTC2_HUMAN|NOTCH2|IPI00297655|Q5T3X7|Q99734|Q9H240
+$8  	???                   	protein]]></pre>
+<h2>Program: grep</h2>
+<h3>Usage</h3>
+<pre>godbmgr grep -f db.sqlite [options] (stdin|files)</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-c</b> (column index) REQUIRED. The column containing a GO:acn</li>
+<li><b>-v</b> inverse selection</li>
+<li><b>-t</b> (GO:acn) add a GO term in the filter (One is REQUIRED).</li>
+<li><b>-r</b> (rel) add a go relationship  (<url>http://www.obofoundry.org/ro/</url>) (OPTIONAL, default: it adds "is_a").</li>
+</ul>
+<h3>Example</h3>
+<pre><![CDATA[$ 
+$ echo -e "#MyACN\nGO:0003674\nGO:0001618\n" |\
+  godbmgr grep -f database.sqlite -c 1 -t GO:0004872 -t GO:0004879 
+
+#MyACN
+GO:0001618
+$ echo -e "#MyACN\nGO:0003674\nGO:0001618\n" |\
+  godbmgr grep -f database.sqlite -c 1 -t GO:0004872 -t GO:0004879 -v
+
+#MyACN
+GO:0003674]]></pre>
+
+</page>
 
 
 </documentation>

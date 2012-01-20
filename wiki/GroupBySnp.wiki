@@ -14,6 +14,7 @@
   * -T 1,2,3,4,... columns indexes on top.
   * -L 5,6,7,... columns indexes on left.
   * -n (name1,name2,name3,...) add this sample name.
+  * -c print a count by pair. This option loop over each pair of samples adds a column ('0' or '1') telling if a variation was found in both samples in the pair.
 
 
 ===Examples===
