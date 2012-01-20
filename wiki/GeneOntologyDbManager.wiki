@@ -226,15 +226,15 @@ GO:0000269	toxin export channel activity	Enables the energy independent passage 
 
 
 
-==Program: desc==
+==Program: asc==
 
-prints the descendants (children) of a given node.
+prints the ascendants (parents) of a given node.
 
 ===Usage===
 
 
 {{{
-godbmgr desc -f db.sqlite [options] term1 term2 ... termn
+godbmgr asc -f db.sqlite [options] term1 term2 ... termn
 }}}
 
 
