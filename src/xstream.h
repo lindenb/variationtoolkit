@@ -23,6 +23,8 @@ class XmlStream
 	virtual bool isPivotNode(const xmlNodePtr element,int depth1) const;
 	/* get the current pivot node, can be called only after next() */
 	virtual  xmlNodePtr getCurrentPivot() const;
+	/** utility, return the depth of an ELEMENT: root is '1' */
+	static int  depth(const xmlNodePtr element);
     private:
 	std::istream* in;
 	xmlTextReaderPtr reader;
@@ -36,8 +38,6 @@ class XmlStream
 			     char * buffer,
 			     int len);
 	static int _xmlInputCloseCallback(void * context);
-	/** utility, return the depth of an ELEMENT: root is '1' */
-	static int  depth(const xmlNodePtr element);
     };
 
 

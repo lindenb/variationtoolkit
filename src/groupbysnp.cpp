@@ -169,15 +169,14 @@ class GroupBySnp:public AbstractApplication
 			++r3;
 			while(r3!=sampleNames.end())
 			    {
-			    bool found=false;
+			    bool foundr2=false;
+			    bool foundr3=false;
 			    for(size_t i=0;i< buffer.size();++i)
 				{
-				if(!(buffer[i][samplecol].compare(*r2)==0 ||
-				     buffer[i][samplecol].compare(*r3)==0)) continue;
-				found=true;
-				break;
+				if(buffer[i][samplecol].compare(*r2)==0) foundr2=true;
+				if(buffer[i][samplecol].compare(*r3)==0) foundr3=true;
 				}
-			    cout << "\t"<< (found?1:0);
+			    cout << "\t"<< (foundr2 && foundr3 ?1:0);
 			    ++r3;
 			    }
 			}
