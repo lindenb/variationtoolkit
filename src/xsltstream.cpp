@@ -17,6 +17,7 @@
 #include <cctype>
 #include <map>
 #include <iostream>
+#include <memory>
 #include <stdint.h>
 #include <libxslt/xslt.h>
 #include <libxslt/xsltInternals.h>
