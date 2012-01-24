@@ -7,22 +7,46 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
+#include <cstring>
+#include <cstdlib>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include "xtabix.h"
 #include "auto_vector.h"
 #include "segments.h"
+#include "xxml.h"
+#include "throw.h"
+#include "tokenizer.h"
 
 using namespace std;
 class Instance;
 
+enum  RenderStatus
+    {
+    CURSOR_OK=0,
+    CURSOR_BREAK=1
+    };
+
 class Renderer
     {
     public:
+	std::ostream* out;
 	Instance* instance;
-	virtual void begin(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)=0;
-	virtual void handle(const std::vector<std::string>& tokens,uint64_t nLine)=0;
-	virtual void end()=0;
+	Renderer():out(&cout),instance(0)
+	    {
+	    }
+	virtual ~Renderer()
+	    {
+	    if(out!=0) out->flush();
+	    }
+	virtual void startDocument()=0;
+	virtual void endDocument()=0;
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)=0;
+	virtual void endQuery()=0;
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)=0;
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)=0;
+	virtual void endInstance()=0;
     };
 
 class Named
@@ -70,8 +94,9 @@ class Table:public Named
 		const char* line=cursor->next(&len);
 		if(line==0) break;
 		++nLine;
-		tokenizer.split(line);
-		renderer->handle(tokens,nLine);
+		//string s(line);
+		tokenizer.split(line,tokens);
+		if(renderer->handle(tokens,nLine)!=CURSOR_OK) break;
 		}
 	    }
     };
@@ -87,9 +112,9 @@ class Instance:public Named
 	    if(table==0 || chrom==0 || chromStart>=chromEnd) return;
 	    Tabix tabix(path.c_str(),true);
 	    std::auto_ptr<Tabix::Cursor> c=tabix.cursor(chrom,chromStart,chromEnd);
-	    renderer->begin(this,chrom,chromStart,chromEnd);
+	    renderer->startInstance(this,chrom,chromStart,chromEnd);
 	    table->scan(c.get(),renderer);
-	    renderer->end();
+	    renderer->endInstance();
 	    }
 	void scan(const ChromStartEnd* position,Renderer* renderer)
 	    {
@@ -109,7 +134,7 @@ class Model
 	    if(att!=0)
 		 {
 		 named->label.assign((const char*)att);
-		 named->description.assign(table->label);
+		 named->description.assign(named->label);
 		 xmlFree(att);
 		 }
 	    att=::xmlGetProp(root,BAD_CAST "desc");
@@ -117,7 +142,7 @@ class Model
 	    if(att==0) att=::xmlGetProp(root,BAD_CAST "comment");
 	    if(att!=0)
 		 {
-		 named->description.assign(table->label);
+		 named->description.assign(named->label);
 		 xmlFree(att);
 		 }
 	    }
@@ -133,7 +158,6 @@ class Model
 
 	void read(xmlDocPtr dom)
 	    {
-	    int32_t id_generator=0;
 	    map<string,Table*> id2table;
 	    xmlNodePtr root= xmlDocGetRootElement(dom);
 	    //get the TABLES
@@ -192,7 +216,7 @@ class Model
 		Instance* instance=new Instance;
 		instance->table=(titer->second);
 
-		xmlChar* att=::xmlGetProp(c1,BAD_CAST "id");
+		att=::xmlGetProp(c1,BAD_CAST "id");
 		if(att==0) att=::xmlGetProp(c1,BAD_CAST "name");
 		if(att==0) THROW("no @id in instance");
 		instance->id.assign((const char*)att);
@@ -228,6 +252,113 @@ class Model
 	    }
     };
 
+class AbstractXMlRenderer:public Renderer
+    {
+    protected:
+	xmlOutputBufferPtr buffer;
+	xmlTextWriterPtr writer;
+    public:
+	AbstractXMlRenderer()
+	    {
+	    buffer= ::xmlOutputBufferCreateIOStream(&cout,0);
+	    writer = ::xmlNewTextWriter(buffer);
+	    }
+	virtual ~AbstractXMlRenderer()
+	    {
+	    if(writer!=0) ::xmlFreeTextWriter(writer);
+	    if(buffer!=0) ::xmlOutputBufferClose(buffer);
+	    }
+	virtual void startDocument()=0;
+	virtual void endDocument()=0;
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)=0;
+	virtual void endQuery()=0;
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)=0;
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)=0;
+	virtual void endInstance()=0;
+    };
+
+class XMlRenderer:public AbstractXMlRenderer
+    {
+    public:
+	XMlRenderer()
+	    {
+	    }
+
+	virtual ~XMlRenderer()
+	    {
+
+	    }
+
+	virtual void startDocument()
+	    {
+	    ::xmlTextWriterStartDocument(writer,0,0,0);
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "tabix");
+	    }
+	virtual void endDocument()
+	    {
+	    ::xmlTextWriterEndElement(writer);
+	    ::xmlTextWriterFlush(writer);
+	    out->flush();
+	    }
+
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "query");
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "chrom",BAD_CAST chrom);
+	    ::xmlTextWriterWriteAttr<int32_t>(writer,BAD_CAST "chromStart",chromStart);
+	    ::xmlTextWriterWriteAttr<int32_t>(writer,BAD_CAST "chromEnd",chromEnd);
+	    }
+	virtual void endQuery()
+	    {
+	    ::xmlTextWriterEndElement(writer);
+	    }
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    this->instance=instance;
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "type",BAD_CAST instance->id.c_str());
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "label",BAD_CAST instance->label.c_str());
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "description",BAD_CAST instance->description.c_str());
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "head");
+	    for(size_t i=0;i< instance->table->columns.size();++i)
+		{
+		Column* col= instance->table->columns.at(i);
+		if(col->ignore) continue;
+		::xmlTextWriterStartElement(writer,BAD_CAST "column");
+		 ::xmlTextWriterWriteAttr<string>(writer,BAD_CAST "id",col->name);
+		 ::xmlTextWriterWriteAttr<string>(writer,BAD_CAST "label",col->label);
+		 ::xmlTextWriterWriteText<string>(writer,col->description);
+		::xmlTextWriterEndElement(writer);//head
+		}
+	    ::xmlTextWriterEndElement(writer);//head
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "body");
+	    }
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
+	    {
+	    ::xmlTextWriterStartElement(writer,BAD_CAST instance->id.c_str());
+	    ::xmlTextWriterWriteAttr<uint64_t>(writer,BAD_CAST "index",nLine);
+	    for(size_t i=0;i< this->instance->table->columns.size();++i)
+		{
+		Column* col= instance->table->columns.at(i);
+		if(col->ignore) continue;
+		::xmlTextWriterStartElement(writer,BAD_CAST col->name.c_str());
+		if(i<tokens.size())
+		    {
+		    ::xmlTextWriterWriteText<string>(writer,tokens[i]);
+		    }
+		::xmlTextWriterEndElement(writer);
+		}
+	    ::xmlTextWriterEndElement(writer);//tr
+	    return CURSOR_OK;
+	    }
+	virtual void endInstance()
+	    {
+	    ::xmlTextWriterEndElement(writer);//body
+	    ::xmlTextWriterEndElement(writer);
+	    }
+
+    };
+
 class TabixServer
     {
     public:
@@ -248,6 +379,12 @@ class TabixServer
 	    cerr << endl;
 	    }
 
+
+	auto_ptr<Renderer> createRenderer()
+	    {
+	    auto_ptr<Renderer> render(new XMlRenderer);
+	    return render;
+	    }
 
 	virtual int main(int argc,char** argv)
 	    {
@@ -306,7 +443,7 @@ class TabixServer
 		    }
 		++optind;
 		}
-	    if(!ignore_instance_id.empty() && !only_instance_id)
+	    if(!ignore_instance_id.empty() && !only_instance_id.empty())
 		{
 		cerr << "Both 'ignore' and 'always' use instance id have been defined._n";
 		usage(cerr,argc,argv);
@@ -321,13 +458,60 @@ class TabixServer
 	    model.read(xmlConfig);
 	    if(optind==argc)
 		{
-		//just print the instances of tables
-		//TODO
+		cout << "#id\tlabel\tdescription\n";
+		for(size_t i=0;
+		    i< model.instances.size();
+		    ++i)
+		    {
+		    Instance* instance=model.instances.at(i);
+		    cout << instance->id
+			    << "\t"
+			    << instance->label
+			    << "\t"
+			    << instance->description
+			    << endl;
+		    }
+		return EXIT_SUCCESS;
 		}
-	    else
-		{
 
+	    auto_ptr<Renderer> renderer= createRenderer();
+	    renderer->startDocument();
+	    while(optind<argc)
+		{
+		extern std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s);
+
+		char* arg=argv[optind++];
+		auto_ptr<vector<ChromStartEnd> > segs=parseSegments(arg);
+		if(segs.get()==0)
+		    {
+		    cerr << "Bad segment:"<< arg << endl;
+		    return (EXIT_FAILURE);
+		    }
+		for(size_t j=0;j< segs->size();++j)
+		    {
+		    const ChromStartEnd& segment=segs->at(j);
+		    renderer->startQuery(segment.chrom.c_str(),segment.start,segment.end);
+
+		    for(size_t i=0;
+			i< model.instances.size();
+			++i)
+			{
+			Instance* instance=model.instances.at(i);
+			if(!ignore_instance_id.empty() && ignore_instance_id.find(instance->id)!=ignore_instance_id.end())
+			    {
+			    continue;
+			    }
+			if(!only_instance_id.empty() && only_instance_id.find(instance->id)==only_instance_id.end())
+			    {
+			    continue;
+			    }
+
+			instance->scan(&segment,renderer.get());
+			}
+		    }
+		renderer->endQuery();
 		}
+	    renderer->endDocument();
 	    return EXIT_SUCCESS;
 	    }
     };
