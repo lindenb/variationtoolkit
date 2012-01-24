@@ -5,11 +5,16 @@
 Original code from samtools ttview : Heng Li, Bob Handsaker, Jue Ruan, Colin Hercus, Petr Danecek
 
 ==Download==
-Download the sources from Google-Code using subversion.
+Download the sources from Google-Code using subversion:....
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}
- and edit the `variationtoolkit/congig.mk` file.
+... or update the sources of an existing installation... 
+{{{
+cd variationtoolkit
+svn update
+}}}
+... and edit the `variationtoolkit/congig.mk` file.
 
 ==Options==
 

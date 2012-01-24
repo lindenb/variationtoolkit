@@ -5,11 +5,16 @@
 to a fragment of a large XML document. It avoids to load the whole XML document in memory.  
 
 ==Download==
-Download the sources from Google-Code using subversion.
+Download the sources from Google-Code using subversion:....
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}
- and edit the `variationtoolkit/congig.mk` file.
+... or update the sources of an existing installation... 
+{{{
+cd variationtoolkit
+svn update
+}}}
+... and edit the `variationtoolkit/congig.mk` file.
 
 ==Dependencies==
 

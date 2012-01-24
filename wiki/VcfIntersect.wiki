@@ -5,11 +5,16 @@
 Compute the intersection for an ordered VCF (ordered by CHROM/POS) with another source ordered by CHROM/POS.
 
 ==Download==
-Download the sources from Google-Code using subversion.
+Download the sources from Google-Code using subversion:....
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}
- and edit the `variationtoolkit/congig.mk` file.
+... or update the sources of an existing installation... 
+{{{
+cd variationtoolkit
+svn update
+}}}
+... and edit the `variationtoolkit/congig.mk` file.
 
 ==Options==
 

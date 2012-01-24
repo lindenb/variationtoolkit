@@ -5,11 +5,16 @@
 Calls the service: EMBL String resolve ([http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html] ).
 
 ==Download==
-Download the sources from Google-Code using subversion.
+Download the sources from Google-Code using subversion:....
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}
- and edit the `variationtoolkit/congig.mk` file.
+... or update the sources of an existing installation... 
+{{{
+cd variationtoolkit
+svn update
+}}}
+... and edit the `variationtoolkit/congig.mk` file.
 
 ==Options==
 

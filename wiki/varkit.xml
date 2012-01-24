@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE projects [
-<!ENTITY download "<h2>Download</h2>Download the sources from Google-Code using <a href='http://subversion.apache.org/'>subversion</a>.<pre>svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only</pre> and edit the <code>variationtoolkit/congig.mk</code> file.">
+<!ENTITY download "<h2>Download</h2>Download the sources from Google-Code using <a href='http://subversion.apache.org/'>subversion:...</a>.<pre>svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only</pre>... or update the sources of an existing installation... <pre>cd variationtoolkit
+svn update</pre>... and edit the <code>variationtoolkit/congig.mk</code> file.">
 ]>
 <documentation>
 <page title="HowToInstall" desc="How to Install the Variation toolkit" labels="documentation,install,make,build,makefile">
