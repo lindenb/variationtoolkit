@@ -4,6 +4,13 @@
 *xsltstream* is the C++ version of my old java program (see also: [http://plindenbaum.blogspot.com/2010/02/processing-large-xml-documents-with.html http://plindenbaum.blogspot.com/2010/02/processing-large-xml-documents-with.html] ). It applies a XSLT stylesheet
 to a fragment of a large XML document. It avoids to load the whole XML document in memory.  
 
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
+
 ==Dependencies==
 
 the libxml and libxslt C libraries.

@@ -4,6 +4,12 @@
 
 Calls the service: EMBL String interactors ( [http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html] ).
 
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
 
 
 ==Options==

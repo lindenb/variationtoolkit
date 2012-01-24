@@ -1,8 +1,14 @@
-#summary Extract a field from the INFO column of a VCF file
+#summary Extracts a field from the INFO column of a VCF file
 #labels ngs,vcf
 <wiki:toc max_depth="1" />
 
 
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
 
 ==Options:==
 

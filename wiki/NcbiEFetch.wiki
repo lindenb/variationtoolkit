@@ -4,6 +4,13 @@
 
 Currently supported databases: pubmed , nucleotide, protein, snp , gene and taxonomy.
 
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
+
 ==Options==
 
   * -D (database) (default pubmed)

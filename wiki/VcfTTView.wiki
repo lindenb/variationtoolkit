@@ -4,6 +4,13 @@
 
 Original code from samtools ttview : Heng Li, Bob Handsaker, Jue Ruan, Colin Hercus, Petr Danecek
 
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
+
 ==Options==
 
   * -c (chrom Column) (1)

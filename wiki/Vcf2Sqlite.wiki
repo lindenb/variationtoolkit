@@ -4,6 +4,13 @@
 
 Inserts a Variant Call Format document (*VCF*) into a sqlite3 database.
 
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
+
 ==Dependencies==
 
 [http://www.sqlite.org/ http://www.sqlite.org/] : libraries and headers for sqlite3.

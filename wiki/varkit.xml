@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE projects [
+<!ENTITY download "<h2>Download</h2>Download the sources from Google-Code using <a href='http://subversion.apache.org/'>subversion</a>.<pre>svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only</pre> and edit the <code>variationtoolkit/congig.mk</code> file.">
+]>
 <documentation>
 <page title="HowToInstall" desc="How to Install the Variation toolkit" labels="documentation,install,make,build,makefile">
 
@@ -13,7 +16,7 @@
 <li><b>jkentsrc</b>: (optional) Jim Kent's C library / Ucsc parsing bigbed, bigwig...</li>
 <li><b>sqlite3</b>: (optional) SQL database engine.</li>
 </ul>
-
+&download;
 <h2>Building</h2>
 Download the latest version of varkit using <code>subversion</code>:
 
@@ -50,7 +53,7 @@ g++ -o ../bin/fasta2tsv fasta2tsv.cpp -O3 -Wall -lz</pre>
 <page title="NgsProject" desc="CGI interface to Samtools tview. Visualize short reads alignments" labels="samtools,bam,vcf,cgi,apache,web,httpd,ngs,visualization">
 
 This C++ program named ngsproject.cgi uses the samtools api, it allows any user to visualize all the alignments in a given NGS project. The projects and their BAMS are defined on the server side using a simple XML document.
-
+&download;
 <h1>How to install on apache/httpd</h1>
 add the path to the cgi directory in the configuration file variationtoolkit/config.mk
 
@@ -126,6 +129,7 @@ and restart apache:
 
 <page title="Vcf2Sqlite" desc="Inserts a VCF into a sqlite3 database" labels="VCF,sqlite,sql,database">
 Inserts a Variant Call Format document (<b>VCF</b>) into a <a href="http://www.sqlite.org/">sqlite3</a> database.
+&download;
 <h2>Dependencies</h2>
 <url>http://www.sqlite.org/</url> : libraries and headers for sqlite3.
 <h2>Compilation</h2>
@@ -180,6 +184,7 @@ sample_id = 1
 
 
 <page title="Vcf2xml" desc="Transforms a VCF to xml" labels="vcf,transform,format,xml,ngs">
+&download;
 <h2>Motivation</h2>
 <b>vcf2xml</b> a &quot;Variant Call Format&quot; (VCF) document to XML so it can be later processed with <a href="http://www.w3.org/TR/xslt">xslt</a>, <a href="http://www.w3.org/TR/xquery/">xquery</a>, etc...
 <h2>Dependencies</h2>
@@ -244,7 +249,7 @@ g++ -o ../bin/vcf2xml vcf2xml.cpp application.o -O3 -Wall `xml2-config --cflags 
 </page>
 
 <page title="FastaSlice" desc="Slice a FASTA input" labels="fasta,sequence">
-
+&download;
 <h2>Options:</h2>
 <ul>
 <li><b>-e</b> (every)  default:1</li>
@@ -268,9 +273,8 @@ EIYTRVKSKFDYVMDDSGVK</pre>
 </page>
 
 <page title="Scanvcf" desc="reads some VCFs, appends a column with the sample name" labels="vcf,ngs,sample">
-
-
 Reads a strean with two columns: a <b>Sample-Name</b> and the <b>file path to a VCF</b>(.gz).
+&download;
 <pre>#VCF	SAMPLE
 /path/to/file1a.vcf.gz	Sample1
 /path/to/file1b.vcf.gz	Sample1
@@ -308,8 +312,8 @@ Y 21154529 . G A 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample20
 </pre>
 </page>
 
-<page title="ExtractInfo" desc="Extract a field from the INFO column of a VCF file" labels="ngs,vcf">
-
+<page title="ExtractInfo" desc="Extracts a field from the INFO column of a VCF file" labels="ngs,vcf">
+&download;
 <h2>Options:</h2>
 <ul>
 <li><b>-c</b> (info-column-infex) (7)</li>
@@ -339,8 +343,8 @@ rs2124109
 </page>
 
 
-<page title="ExtractFormat" labels="ngs,vcf" desc="Extract a field from the FORMAT column of a VCF file.">
-
+<page title="ExtractFormat" labels="ngs,vcf" desc="Extracts a field from the FORMAT column of a VCF file.">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-f (format-column-infex) (8)</li>
@@ -371,6 +375,7 @@ $ gunzip -c data.vcf.gz |\
 
 <page title="NcbiEFetch" labels="ncbi,pubmed,gene,snp,taxonomy,protein,nucleotide" desc="Fetch a record from the NCBI database">
 Currently supported databases: pubmed , nucleotide, protein, snp , gene and taxonomy.
+&download;
 <h2>Options</h2>
 <ul>
 <li>-D (database) (default pubmed)</li>
@@ -446,6 +451,7 @@ $ (echo "#Gene-Id"; seq 105 2 110)  | ncbiefetch -c 1 -D gene
 
 
 <page title="SamplesPerSnp" labels="vcf,ngs,sample" desc="Appends a column with the number of Samples per Variation">
+&download;
 <h2>Options</h2>
 <ul>
 <li>--delim (char) or -d  (char) (delimiter) default:tab</li>
@@ -498,6 +504,7 @@ This tool also takes an option '-e' for a query over the samples. e.g: "variatio
 
 
 <page title="GroupBySnp" labels="vcf,snp,ngs" desc="Creates a pivot table with the data(samples)=f(SNP)">
+&download;
 <h2>Options</h2>
 <ul>
 <li>--delim (char) or -d  (char) (delimiter) default:tab</li>
@@ -694,7 +701,7 @@ $30	count.samples	4
 
 
 <page title="NumericSplit" labels="ngs,vcf" desc="A simple numeric splitter">
-
+&download;
 <h2>Options</h2>
 <ul>
 <li>-c (column-infex) (-1)</li>
@@ -736,7 +743,7 @@ $ cat list.tsv | scanvcf  |\
 </page>
 
 <page title="GroupByGene" labels="ngs,sample,vcf" desc="transposes a VCF table with a 'GENE' and a 'SAMPLE' column and ouput a new table: count(Gene)=f(SAMPLE)">
-
+&download;
 <h2>Options</h2>
 <ul>
 <li>--delim (char) delimiter default:tab</li>
@@ -772,7 +779,7 @@ A4GNT	3	137843106	137850003	4	3	3	3	3	3	0
 
 
 <page title="NormalizeChrom" labels="ngs,vcf" desc="Normalizes the name of a chromosome to/from UCSC/ENSEMBL">
-.
+&download;
 <h2>Options</h2>
 <ul>
 <li>-i (string) ignore lines starting with this string.</li>
@@ -799,7 +806,7 @@ MT	30
 
 
 <page title="DnaContext" labels="vcf,ngs,genome,genomics,dna,sequence,gc,bed" desc="Prints the DNA context of a variation using a genome indexed with samtools faidx and its GC percent">
-
+&download;
 <h2>Options</h2>
 <ul>
 <li>-c (chrom Column) (1)</li>
@@ -833,6 +840,7 @@ chr1 887560 rs3748595 A C 99 0 . GT:GQ:DP:FLT 1/1:99:40:0 CCAGGCTGAC A AGTCAGGCT
 
 
 <page title="Prediction" labels="ngs,snp,variation,vcf,genomics,protein,prediction" desc="basic variation predictor">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (column-delimiter) (default:tab)</li>
@@ -963,6 +971,7 @@ $18	prediction.wild.aa       	M
 
 
 <page title="Manhattan" labels="ngs,vcf,postscript,visualization,chart,graph" desc="draws a manhattan plot as a postscript file">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-c (int) CHROM column default:1</li>
@@ -1008,7 +1017,7 @@ $ evince result.ps
 
 
 <page title="NcbiESearch" labels="ncbi,entrez" desc="Search NCBI/Entrez">
-:
+&download;
 <h2>Options</h2>
 <ul>
 <li>-D (database) (default pubmed)</li>
@@ -1038,6 +1047,7 @@ Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
 
 <page title="VcfTTView" labels="samtools,vcf,bam,sam,alignments,visualization" desc="Prints the BAM alignments around variations.">
 Original code from samtools ttview : Heng Li, Bob Handsaker, Jue Ruan, Colin Hercus, Petr Danecek
+&download;
 <h2>Options</h2>
 <ul>
 <li>-c (chrom Column) (1)</li>
@@ -1088,7 +1098,7 @@ aggttttataaaac****aattaagtctacagagcaactacgcgNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 
 
 <page title="VCFTabix" labels="tabix,ngs,vcf" desc="Intersection VCF/Tabix">
-
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (char) column delimiter. default: TAB</li>
@@ -1138,6 +1148,7 @@ $ gunzip -c data.vcf.gz |\
 
 
 <page title="MysqlQuery" labels="mysql,database" desc="Sends a mysql query for each row">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (char) delimiter default:tab</li>
@@ -1179,6 +1190,7 @@ $3	description	Homo sapiens cDNA FLJ31670 fis, clone NT2RI2004984.
 
 
 <page title="MysqlUcsc" labels="vcf,ngs,mysql,database,ucsc" desc="Intersection VCF/UCSC mysql data.">
+&download;
 <h2>Options</h2>
 <ul>
 <li>--delim (char) delimiter default:tab</li>
@@ -1223,7 +1235,7 @@ chr1 110709719 rs7527375 T C 99 0 . GT:GQ:DP:FLT 1/0:99:31:0 1429 chr1 110709719
 
 
 <page title="VcfBigWig" labels="bigwig,wiggle,wig,vcf,genomics,ngs,ucsc" desc="Intersection VCF/BigWig">
-
+&download;
 <h2>Options</h2>
 <ul>
 <li>-f (bigwig file)</li>
@@ -1276,7 +1288,7 @@ chrX	1001	nan	nan	nan	nan	nan
 
 
 <page title="VcfBigBed" labels="ucsc,vcf,genomics,bed,bigbed" desc="Intersection VCF/BigBed">
-
+&download;
 <h2>Options</h2>
 <ul>
 <li>-f (BigBed file)</li>
@@ -1336,6 +1348,7 @@ chrX	1	!N/A	!N/A	!N/A
 
 
 <page title="Verticalize" labels="tool,unix,table" desc="Verticalize a table">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d or --delim (char) delimiter default:tab</li>
@@ -1367,6 +1380,7 @@ $1	#CHROM   	1
 </page>
 
 <page title="UniProt" labels="uniprot,vcf" desc="Take as input a position on a protein and an uniprot ACN, connect to uniprot.org and answers wether a amino acid is contained in a 'feature'">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (char) delimiter default:tab</li>
@@ -1481,7 +1495,7 @@ $9	uniprot.ref     	.
 
 
 <page title="PfamScan" labels="pfma,vcf,motif,mutation" desc="Take as input a position on a protein and an uniprot ACN, connect to  pfam.sanger.ac.uk and answers wether a amino acid is contained in a 'match'.">
-
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (char) delimiter default:tab</li>
@@ -1554,6 +1568,7 @@ $8	pfam.class	.
 </page>
 
 <page title="Vcf2bed" labels="vcf,bed" desc="Generates a BED file from a VCF">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (column-delimiter) (default:tab)</li>
@@ -1590,7 +1605,7 @@ chr1	889157	889158	rs56262069_G_C	51	+
 
 <page title="EmblStringSesolve" labels="embl,string,interactions" desc="Calls the service: EMBL String resolve">
 Calls the service: EMBL String resolve (<url>http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html</url> ).
-
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (char) delimiter default:tab</li>
@@ -1630,7 +1645,7 @@ $4	annotation   	poly(A) binding protein, cytoplasmic 1; Binds the...
 
 <page title="EmblStringInteractors" labels="embl,string,interactions" desc="Calls the service: EMBL String interactors">
 Calls the service: EMBL String interactors ( <url>http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html</url> ).
-
+&download;
 
 <h2>Options</h2>
 <ul>
@@ -1684,7 +1699,7 @@ $7	preferredName	DLL1
 
 </page>
 
-
+&download;
 
 <page title="EmblStringInteractions" labels="embl,string,interactions" desc="Calls the service: EMBL String interactions">
 Calls the service: EMBL String interactions ( <url>http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html</url> ).
@@ -1738,8 +1753,7 @@ $7	labelA         	RBPJ
 
 
 <page title="VcfCut" labels="vcf" desc="(very) simple 'cut this region'">
-.
-
+&download;
 <pre><![CDATA[
 $ curl -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of4intersection.20100804.sites.vcf.gz" |\
    gunzip -c | grep -v "##" |\
@@ -1767,6 +1781,7 @@ $ curl -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of
 <page title="UcscGenesPs" labels="ucsc,vcf,ngs,visualization,postscript" desc="Visualization of the mutations in the UCSC genes">
 Reads an ordered VCF (ordered by CHROM/POS and optionaly by SAMPLE) , connect to an UCSC database a print the
 variation in postscript.
+&download;
 <h2>Options</h2>
 <ul>
 <li>-c (int) CHROM column default:1</li>
@@ -1797,6 +1812,7 @@ $ cat sample2vcf.tsv | tr -d ' ' |\
 
 <page title="VcfIntersect" labels="bed,vcf" desc="Compute the intersection for an ordered VCF/BED with another source">
 Compute the intersection for an ordered VCF (ordered by CHROM/POS) with another source ordered by CHROM/POS.
+&download;
 <h2>Options</h2>
 <ul>
 <li>-f (external url/file) [required]</li>
@@ -1907,7 +1923,7 @@ $28
 
 
 <page title="Bam2wig" desc="Creates a WIG file for the coverage of a BAM file" labels="wig,wiggle,bam,ngs,samtools,sam">
-
+&download;
 <h2>Options:</h2>
 <ul>
 <li><b>-z</b> (int) number of depth=0 accepted before starting a new WIG file</li>
@@ -1932,7 +1948,7 @@ fixedStep chrom=chrM start=23 step=1 span=1
 </page>
 
 <page title="Ttmap" labels="genome,browser,vcf,bed,visualization" desc="prints an ASCII genomic map">
-
+&download;
 <h2>Options:</h2>
 <ul>
 <li><b>-c</b> (int) chrom column</li>
@@ -1966,6 +1982,7 @@ fixedStep chrom=chrM start=23 step=1 span=1
 
 <page title="VcfLiftOver" labels="ucsc,bed,vcf" desc="Use the UCSC C API to process the data with 'liftOver'">
 Note: I saw some regions where the UCSC API seems to be broken and exit.
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (char) column delimiter. default: TAB</li>
@@ -2012,7 +2029,7 @@ chr1	2475134	rs3091239	.	.	.	Deleted in new
 
 
 <page title="BackLocate" labels="protein,ucsc,mutation,variation" desc="convert a protein variation to a genomic position">
-.
+&download;
 <h2>Options</h2>
 <ul>
 <li>-g (column) gene name default:1</li>
@@ -2079,7 +2096,7 @@ EIF4G1	D	240	Y	uc003fns.2	+	L	719	CTC	C	chr3	184039211	Exon 10
 
 
 <page title="GenomeSim" labels="simulation,fasta,snp,variations" desc="Generates two mutated homologous sequences from a fasta file">
-.
+&download;
 <h2>Options</h2>
 <ul>
 <li>-o (file.tar) output tar file. contains chromosomes and mutations.</li>
@@ -2105,6 +2122,7 @@ $ tar tvf chrom.tar
 
 
 <page title="FastaSortUniq" labels="fasta" desc="sort/uniq on FASTA sequences">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-u uniq</li>
@@ -2132,6 +2150,7 @@ AAT
 
 
 <page title="FastaRevComp" labels="fasta" desc="reverse complement FASTA sequences">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-p print original sequence.</li>
@@ -2157,6 +2176,7 @@ AAGGGCTGCCCCACCATTCA
 
 
 <page title="FastaTail" labels="fasta" desc="Prints the last sequences of a list of FASTA sequences">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-n number of sequences</li>
@@ -2174,6 +2194,7 @@ TTTGTAACCGGCCCCCCTTAAAACT
 </page>
 
 <page title="Fasta2Term" labels="fasta" desc="colorizes some fasta sequences when printing to stdout.">
+&download;
 <pre><![CDATA[
 $ cat input.fa | fasta2term
 ]]></pre>
@@ -2183,6 +2204,7 @@ $ cat input.fa | fasta2term
 
 
 <page title="Fasta2Tsv" labels="fasta" desc="prints Fasta Sequences as Tab delimited values">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-d (char) delimiter. default: tab</li>
@@ -2202,6 +2224,7 @@ gi|14662886|slice:250-275	TTTGTAACCGGCCCCCCTTAAAACT
 </page>
 
 <page title="FastaTac" labels="fasta" desc="Reverse the order of some fasta sequences">
+&download;
 <h2>Example</h2>
 
 <pre><![CDATA[
@@ -2221,6 +2244,7 @@ CACTCCTTTCACAAATCCCGAATTCTCTATCTAACTAACATTTGGCATAT
 </page>
 
 <page title="NcbiELink" labels="ncbi" desc="Retrieves related NCBI records using NCBI-ELink">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-f (ncbi-database-from) REQUIRED.</li>
@@ -2240,6 +2264,7 @@ $ echo -e "#Genbank_GI\n256041817" | ncbielink  -c 1 -f protein -t nucleotide
 
 
 <page title="NcbiCited" labels="ncbi" desc="Retrieves  NCBI/Pubmed records citing a pmid using NCBI-ELink">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-p show pmids.</li>
@@ -2261,6 +2286,7 @@ NOTCH2	21378989	2	22046109]]></pre></page>
 
 
 <page title="Protein2Genome" labels="ucsc,bed" desc="Maps a protein start/end back to the genome">
+&download;
 <h2>Options</h2>
 <ul>
 <li>-p (column) protein name column default:1</li>
@@ -2345,6 +2371,7 @@ The tools reading and writing VCF-like files use '+1' as the index of the first 
 <page title="XsltStream" label="xslt,xml,stream" desc="applies a XSLT stylesheet to some fragments of a SAX/XML stream.">
 <b>xsltstream</b> is the C++ version of my <a href="http://code.google.com/p/lindenb/wiki/Xsltstream">old java program</a> (see also: <url>http://plindenbaum.blogspot.com/2010/02/processing-large-xml-documents-with.html</url> ). It applies a XSLT stylesheet
 to a fragment of a large XML document. It avoids to load the whole XML document in memory.  
+&download;
 <h2>Dependencies</h2>
 the libxml and libxslt C libraries.
 <h2>Compilation</h2>
@@ -2441,6 +2468,7 @@ insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2
 
 <page title="GeneOntologyDbManager" labels="go,ontology,sqlite,xml,rdf" desc="Utilities for Gene Ontology">
 <p>A set of tools for GeneOntology:<url>http://geneontology.org</url> based on the <a href="http://www.sqlite.org/">sqlite</a> library.</p>
+&download;
 <h2>Dependencies</h2>
 <url>http://www.sqlite.org/</url> : libraries and headers for sqlite3<br/>
 <code>libxml</code> <url>http://xmlsoft.org/</url> ( see also: <url>HowToInstall</url> )<br/>

@@ -16,6 +16,12 @@
   * *sqlite3*: (optional) SQL database engine.
 
 
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
 
 ==Building==
 

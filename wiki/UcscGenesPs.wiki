@@ -5,6 +5,13 @@
 Reads an ordered VCF (ordered by CHROM/POS and optionaly by SAMPLE) , connect to an UCSC database a print the
 variation in postscript.
 
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
+
 ==Options==
 
   * -c (int) CHROM column default:1

@@ -2,9 +2,14 @@
 #labels vcf,ngs,sample
 <wiki:toc max_depth="1" />
 
-
-
 Reads a strean with two columns: a *Sample-Name* and the *file path to a VCF*(.gz).
+
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
 
 {{{
 #VCF	SAMPLE

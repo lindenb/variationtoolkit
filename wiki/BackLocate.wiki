@@ -2,7 +2,13 @@
 #labels protein,ucsc,mutation,variation
 <wiki:toc max_depth="1" />
 
-.
+
+==Download==
+Download the sources from Google-Code using subversion.
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+ and edit the `variationtoolkit/congig.mk` file.
 
 ==Options==
 
