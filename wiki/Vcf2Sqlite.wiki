@@ -43,7 +43,7 @@ vcf2sqlite -f database.sqlite (file1.vcf file2... | stdin )
 
 ==Options==
 
-  * -f (file) sqlite database (*REQUIRED*).
+  * -f (file) [http://www.sqlite.org/ sqlite3] database (*REQUIRED*).
 
 
 ==Schema==

@@ -151,7 +151,7 @@ if ! [ -z "$(SQLITE_LIB)" ] ;then g++ -o ../bin/vcf2sqlite vcf2sqlite.cpp xsqlit
 <pre>vcf2sqlite -f database.sqlite (file1.vcf file2... | stdin )</pre>
 <h2>Options</h2>
 <ul>
-<li>-f (file) sqlite database (<b>REQUIRED</b>).</li>
+<li>-f (file) &sqlite; database (<b>REQUIRED</b>).</li>
 </ul>
 <h2>Schema</h2>
 A schema for the database is available as SVG in: <img src="http://variationtoolkit.googlecode.com/svn/wiki/schema01.png"/>
@@ -2475,10 +2475,10 @@ insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2
 </page>
 
 <page title="GeneOntologyDbManager" labels="go,ontology,sqlite,xml,rdf" desc="Utilities for Gene Ontology">
-<p>A set of tools for GeneOntology:<url>http://geneontology.org</url> based on the <a href="http://www.sqlite.org/">sqlite</a> library.</p>
+<p>A set of tools for GeneOntology:<url>http://geneontology.org</url> based on the &sqlite; library.</p>
 &download;
 <h2>Dependencies</h2>
-<url>http://www.sqlite.org/</url> : libraries and headers for sqlite3<br/>
+<url>http://www.sqlite.org/</url> : libraries and headers for &sqlite;<br/>
 <code>libxml</code> <url>http://xmlsoft.org/</url> ( see also: <url>HowToInstall</url> )<br/>
 <b>libxslt</b>: the C library for xslt <url>http://xmlsoft.org/XSLT/</url>.
 <h2>Compilation</h2>
@@ -2492,12 +2492,12 @@ if ! [ -z "-lsqlite3" ] ;then g++ -o ../bin/godbmgr godatabasemgr.cpp xsqlite.cp
 <pre>godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin )</pre>
 
 <h2>Program: loadrdf</h2>
-Load the RDF/XML GO database (<url>http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz</url>) into the sqlite database.
+Load the RDF/XML GO database (<url>http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz</url>) into the &sqlite; database.
 <h3>Usage</h3>
 <pre>godbmgr loadrdf -f database.sqlite (stdin|file)</pre>
 <h3>Options</h3>
 <ul>
-<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-f</b> (filename) the &sqlite; database</li>
 </ul>
 <h3>Example</h3>
 <pre><![CDATA[$ curl -s "http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz" |\
@@ -2518,12 +2518,12 @@ $ sqlite3 -separator '  ' -header  database.sqlite 'select * from TERM2REL where
 acn	rel	target
 GO:0000007	is_a	GO:0005385]]></pre>
 <h2>Program: loadgoa</h2>
-inserts the database for GOA into a sqlite database (e.g: <url>ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz</url>)
+inserts the database for GOA into a &sqlite; database (e.g: <url>ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz</url>)
 <h3>Usage</h3>
 <pre>godbmgr loadgoa -f database.sqlite (stdin|file)</pre>
 <h3>Options</h3>
 <ul>
-<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-f</b> (filename) the &sqlite; database</li>
 </ul>
 <h3>Examples</h3>
 <pre><![CDATA[$  curl -s "ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz" |\
@@ -2556,7 +2556,7 @@ print the descendants (children) of a given GO node.
 <pre>godbmgr desc -f db.sqlite [options] term1 term2 ... termn</pre>
 <h3>Options</h3>
 <ul>
-<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-f</b> (filename) the &sqlite; database</li>
 <li><b>-r</b> (rel) add a go relationship (<url>http://www.obofoundry.org/ro/</url>) (OPTIONAL, default: it adds "is_a").</li>
 <li><b>-t</b> output: xml, goa ,tsv ,acn</li>
 </ul>
@@ -2616,7 +2616,7 @@ prints the ascendants (parents) of a given node.
 <pre>godbmgr asc -f db.sqlite [options] term1 term2 ... termn</pre>
 <h3>Options</h3>
 <ul>
-<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-f</b> (filename) the &sqlite; database</li>
 <li><b>-r</b> (rel) add a go relationship (<url>http://www.obofoundry.org/ro/</url>) (OPTIONAL, default: it adds "is_a").</li>
 <li><b>-t</b> output: xml, goa ,tsv ,acn</li>
 </ul>
@@ -2665,7 +2665,7 @@ Annotate a TSV file with the GOA annotation.
 <pre>godbmgr goa -f db.sqlite [options] (stdin|files)</pre>
 <h3>Options</h3>
 <ul>
-<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-f</b> (filename) the &sqlite; database</li>
 <li><b>-c</b> (column index) REQUIRED. The observed column.</li>
 </ul>
 <h3>Example</h3>
@@ -2711,7 +2711,7 @@ filters the line having an identifier (gene...) that is a children of a given GO
 <pre>godbmgr grep -f db.sqlite [options] (stdin|files)</pre>
 <h3>Options</h3>
 <ul>
-<li><b>-f</b> (filename) the sqlite database</li>
+<li><b>-f</b> (filename) the &sqlite; database</li>
 <li><b>-c</b> (column index) REQUIRED. The column containing a GO:acn</li>
 <li><b>-v</b> inverse selection</li>
 <li><b>-t</b> (GO:acn) add a GO term in the filter (One is REQUIRED).</li>

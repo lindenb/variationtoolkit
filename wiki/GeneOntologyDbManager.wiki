@@ -2,7 +2,7 @@
 #labels go,ontology,sqlite,xml,rdf
 <wiki:toc max_depth="1" />
 
-A set of tools for GeneOntology:[http://geneontology.org http://geneontology.org] based on the [http://www.sqlite.org/ sqlite] library.
+A set of tools for GeneOntology:[http://geneontology.org http://geneontology.org] based on the [http://www.sqlite.org/ sqlite3] library.
 
 ==Download==
 Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
@@ -18,7 +18,7 @@ svn update
 
 ==Dependencies==
 
-[http://www.sqlite.org/ http://www.sqlite.org/] : libraries and headers for sqlite3
+[http://www.sqlite.org/ http://www.sqlite.org/] : libraries and headers for [http://www.sqlite.org/ sqlite3]
 
 `libxml` [http://xmlsoft.org/ http://xmlsoft.org/] ( see also: [HowToInstall HowToInstall] )
 
@@ -48,7 +48,7 @@ godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin 
 
 ==Program: loadrdf==
 
-Load the RDF/XML GO database ([http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz]) into the sqlite database.
+Load the RDF/XML GO database ([http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz]) into the [http://www.sqlite.org/ sqlite3] database.
 
 ===Usage===
 
@@ -60,7 +60,7 @@ godbmgr loadrdf -f database.sqlite (stdin|file)
 
 ===Options===
 
-  * *-f* (filename) the sqlite database
+  * *-f* (filename) the [http://www.sqlite.org/ sqlite3] database
 
 
 ===Example===
@@ -93,7 +93,7 @@ GO:0000007	is_a	GO:0005385
 
 ==Program: loadgoa==
 
-inserts the database for GOA into a sqlite database (e.g: [ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz])
+inserts the database for GOA into a [http://www.sqlite.org/ sqlite3] database (e.g: [ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz])
 
 ===Usage===
 
@@ -105,7 +105,7 @@ godbmgr loadgoa -f database.sqlite (stdin|file)
 
 ===Options===
 
-  * *-f* (filename) the sqlite database
+  * *-f* (filename) the [http://www.sqlite.org/ sqlite3] database
 
 
 ===Examples===
@@ -157,7 +157,7 @@ godbmgr desc -f db.sqlite [options] term1 term2 ... termn
 
 ===Options===
 
-  * *-f* (filename) the sqlite database
+  * *-f* (filename) the [http://www.sqlite.org/ sqlite3] database
   * *-r* (rel) add a go relationship ([http://www.obofoundry.org/ro/ http://www.obofoundry.org/ro/]) (OPTIONAL, default: it adds "is_a").
   * *-t* output: xml, goa ,tsv ,acn
 
@@ -252,7 +252,7 @@ godbmgr asc -f db.sqlite [options] term1 term2 ... termn
 
 ===Options===
 
-  * *-f* (filename) the sqlite database
+  * *-f* (filename) the [http://www.sqlite.org/ sqlite3] database
   * *-r* (rel) add a go relationship ([http://www.obofoundry.org/ro/ http://www.obofoundry.org/ro/]) (OPTIONAL, default: it adds "is_a").
   * *-t* output: xml, goa ,tsv ,acn
 
@@ -336,7 +336,7 @@ godbmgr goa -f db.sqlite [options] (stdin|files)
 
 ===Options===
 
-  * *-f* (filename) the sqlite database
+  * *-f* (filename) the [http://www.sqlite.org/ sqlite3] database
   * *-c* (column index) REQUIRED. The observed column.
 
 
@@ -397,7 +397,7 @@ godbmgr grep -f db.sqlite [options] (stdin|files)
 
 ===Options===
 
-  * *-f* (filename) the sqlite database
+  * *-f* (filename) the [http://www.sqlite.org/ sqlite3] database
   * *-c* (column index) REQUIRED. The column containing a GO:acn
   * *-v* inverse selection
   * *-t* (GO:acn) add a GO term in the filter (One is REQUIRED).
