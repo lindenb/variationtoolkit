@@ -84,6 +84,14 @@
 <xsl:value-of select="concat('[',.,' ',.,']')"/>
 </xsl:template>
 
+
+<xsl:template match="a">
+<a>
+<xsl:attribute name="href" select="@href"/>
+<xsl:apply-templates/>
+</a>
+</xsl:template>
+
 <xsl:template match="img">
 <xsl:text>
 </xsl:text>
