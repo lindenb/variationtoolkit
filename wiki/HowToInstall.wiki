@@ -8,16 +8,16 @@
 
   * *Samtools*: Utilities for post-processing alignments in the SAM format. [http://www.ncbi.nlm.nih.gov/pubmed/19505943 pmid:19505943]
   * *Tabix*: fast retrieval of sequence features from generic TAB-delimited files. [http://www.ncbi.nlm.nih.gov/pubmed/21208982 pmid:21208982]
-  * *mysql-dev*: the files and libraries for mysql.
+  * *mysql-dev*: the files and libraries for the mysql database.
   * *libxml2*: the C library for xml [http://xmlsoft.org/ http://xmlsoft.org/].
   * *libxslt*: the C library for xslt [http://xmlsoft.org/XSLT/ http://xmlsoft.org/XSLT/].
   * *libcurl*: the C library for downloading URLs.
   * *jkentsrc*: (optional) Jim Kent's C library / Ucsc parsing bigbed, bigwig...
-  * *sqlite3*: (optional) SQL database engine.
+  * *sqlite3*: (optional) SQL database engine ([http://www.sqlite.org http://www.sqlite.org]).
 
 
 ==Download==
-Download the sources from Google-Code using subversion:....
+Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}

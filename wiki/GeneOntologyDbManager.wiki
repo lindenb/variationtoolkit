@@ -2,10 +2,10 @@
 #labels go,ontology,sqlite,xml,rdf
 <wiki:toc max_depth="1" />
 
-A set of tools for GeneOntology:[http://geneontology.org http://geneontology.org] based on the sqlite library.
+A set of tools for GeneOntology:[http://geneontology.org http://geneontology.org] based on the [http://www.sqlite.org/ sqlite] library.
 
 ==Download==
-Download the sources from Google-Code using subversion:....
+Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}

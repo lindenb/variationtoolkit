@@ -4,7 +4,7 @@
 
 
 ==Download==
-Download the sources from Google-Code using subversion:....
+Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}

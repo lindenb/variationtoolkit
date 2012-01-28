@@ -4,7 +4,7 @@
 
 
 ==Download==
-Download the sources from Google-Code using subversion:....
+Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}
@@ -17,7 +17,7 @@ svn update
 
 ==Motivation==
 
-*vcf2xml* a "Variant Call Format" (VCF) document to XML so it can be later processed with xslt, xquery, etc...
+*vcf2xml* a "Variant Call Format" ([http://www.1000genomes.org/wiki/Analysis/Variant+Call+Format/vcf-variant-call-format-version-40 VCF]) document to XML so it can be later processed with [http://www.w3.org/TR/xslt xslt], [http://www.w3.org/TR/xquery/ xquery], etc...
 
 ==Dependencies==
 

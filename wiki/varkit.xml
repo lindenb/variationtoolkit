@@ -6,6 +6,9 @@ svn update</pre>... and edit the <code>variationtoolkit/congig.mk</code> file.">
 
 <!ENTITY vcf "<a href='http://www.1000genomes.org/wiki/Analysis/Variant+Call+Format/vcf-variant-call-format-version-40'>VCF</a>">
 
+
+<!ENTITY sqlite "<a href='http://www.sqlite.org/'>sqlite3</a>" >
+
 ]>
 <documentation>
 <page title="HowToInstall" desc="How to Install the Variation toolkit" labels="documentation,install,make,build,makefile">
@@ -14,12 +17,12 @@ svn update</pre>... and edit the <code>variationtoolkit/congig.mk</code> file.">
 <ul>
 <li><b>Samtools</b>: Utilities for post-processing alignments in the SAM format. <pmid>19505943</pmid></li>
 <li><b>Tabix</b>: fast retrieval of sequence features from generic TAB-delimited files. <pmid>21208982</pmid></li>
-<li><b>mysql-dev</b>: the files and libraries for mysql.</li>
+<li><b>mysql-dev</b>: the files and libraries for the mysql database.</li>
 <li><b>libxml2</b>: the C library for xml <url>http://xmlsoft.org/</url>.</li>
 <li><b>libxslt</b>: the C library for xslt <url>http://xmlsoft.org/XSLT/</url>.</li>
 <li><b>libcurl</b>: the C library for downloading URLs.</li>
 <li><b>jkentsrc</b>: (optional) Jim Kent's C library / Ucsc parsing bigbed, bigwig...</li>
-<li><b>sqlite3</b>: (optional) SQL database engine.</li>
+<li><b>sqlite3</b>: (optional) SQL database engine (<url>http://www.sqlite.org</url>).</li>
 </ul>
 &download;
 <h2>Building</h2>
@@ -133,7 +136,7 @@ and restart apache:
 
 
 <page title="Vcf2Sqlite" desc="Inserts a VCF into a sqlite3 database" labels="VCF,sqlite,sql,database">
-Inserts a Variant Call Format document (&vcf;) into a <a href="http://www.sqlite.org/">sqlite3</a> database.
+Inserts a Variant Call Format document (&vcf;) into a &sqlite; database.
 &download;
 <h2>Dependencies</h2>
 <url>http://www.sqlite.org/</url> : libraries and headers for sqlite3.

@@ -5,7 +5,7 @@
 Compute the intersection for an ordered VCF (ordered by CHROM/POS) with another source ordered by CHROM/POS.
 
 ==Download==
-Download the sources from Google-Code using subversion:....
+Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}

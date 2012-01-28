@@ -85,11 +85,12 @@
 </xsl:template>
 
 
-<xsl:template match="a">
-<a>
-<xsl:attribute name="href" select="@href"/>
-<xsl:apply-templates/>
-</a>
+<xsl:template match="a[@href]">
+<xsl:text>[</xsl:text>
+<xsl:value-of select="@href"/>
+<xsl:text> </xsl:text>
+<xsl:value-of select="."/>
+<xsl:text>]</xsl:text>
 </xsl:template>
 
 <xsl:template match="img">

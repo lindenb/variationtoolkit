@@ -5,7 +5,7 @@
 Reads a strean with two columns: a *Sample-Name* and the *file path to a VCF*(.gz).
 
 ==Download==
-Download the sources from Google-Code using subversion:....
+Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}

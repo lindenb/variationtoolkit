@@ -5,7 +5,7 @@
 Calls the service: EMBL String resolve ([http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html] ).
 
 ==Download==
-Download the sources from Google-Code using subversion:....
+Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
 {{{
 svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
 }}}
