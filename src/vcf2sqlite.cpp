@@ -35,6 +35,7 @@ class VcfToSqlite:public AbstractApplication
 	auto_ptr<Statement> insert_vcfmeta;
 	auto_ptr<Statement> insert_sample;
 	auto_ptr<Statement> select_sample;
+	auto_ptr<Statement> insert_samplefile;
 	auto_ptr<Statement> insert_variation;
 	auto_ptr<Statement> select_variation;
 	auto_ptr<Statement> insert_vcfrow;
@@ -102,6 +103,19 @@ class VcfToSqlite:public AbstractApplication
 	    insert_sample = this->connection->prepare(
 	       "insert into SAMPLE(name) values (?)"
 		);
+	    /* SAMPLE2VCFFILE */
+	    this->connection->execute(
+		   "create table if not exists SAMPLE2VCFFILE("
+		    COLUMN_ID
+		    COLUMN_CREATED
+		    "vcffile_id INT NOT NULL REFERENCES VCFFILE(id) ON DELETE CASCADE,"
+		    "sample_id INT NOT NULL REFERENCES SAMPLE(id) ON DELETE CASCADE,"
+		    "nIndex INT NOT NULL DEFAULT -1"
+		   ")");
+	    this->insert_samplefile = this->connection->prepare(
+		   "insert into SAMPLE2VCFFILE(vcffile_id,sample_id,nIndex) values (?,?,?)"
+		    );
+
 	    /* VARIATIONS */
 	    this->connection->execute(
 	       "create table if not exists VARIATION("
@@ -296,7 +310,14 @@ class VcfToSqlite:public AbstractApplication
 		    if(tokens[8].compare("FORMAT")!=0) THROW("Expected 'FORMAT' in column 9 of " << line);
 		    for(size_t i=9;i< tokens.size();++i)
 			{
-			samples_ids.push_back(get_sample_id_by_name(tokens[i].c_str()));
+			int64_t sample_id = get_sample_id_by_name(tokens[i].c_str());
+			samples_ids.push_back(sample_id);
+
+			insert_samplefile->reset();
+			insert_samplefile->bind_int(1,vcf_file_id);
+			insert_samplefile->bind_int(2,sample_id);
+			insert_samplefile->bind_int(3,(int32_t)i-8);
+			insert_samplefile->execute();
 			}
 		    }
 		else if(state==1 && !line.empty() && line[0]!='#')
