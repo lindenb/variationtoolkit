@@ -68,18 +68,18 @@
 <xsl:template match="img">
 <a>
 <xsl:attribute name="href">
-<xsl:value-of select="."/>
+<xsl:value-of select="@src"/>
 </xsl:attribute>
 <img>
 <xsl:attribute name="src">
-<xsl:value-of select="."/>
+<xsl:value-of select="@src"/>
 </xsl:attribute>
 </img>
 </a>
 </xsl:template>
 
 <xsl:template match="pre">
-<pre>
+<pre style="margin:10px; background-color: black; color: white; padding:10px; font-size:120%; overflow:auto;">
 <xsl:if test="@style">
 <xsl:attribute name="style">
 <xsl:value-of select="@style"/>

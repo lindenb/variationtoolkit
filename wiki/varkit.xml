@@ -154,7 +154,7 @@ if ! [ -z "$(SQLITE_LIB)" ] ;then g++ -o ../bin/vcf2sqlite vcf2sqlite.cpp xsqlit
 <li>-f (file) &sqlite; database (<b>REQUIRED</b>).</li>
 </ul>
 <h2>Schema</h2>
-A schema for the database is available as SVG in: <img src="http://variationtoolkit.googlecode.com/svn/wiki/schema01.png"/>
+<img src="http://variationtoolkit.googlecode.com/svn/wiki/schema01.png"/>
 <h2>Example:</h2>
 <pre><![CDATA[$ vcf2sqlite -f db.sqlite file.vcf
 $ sqlite3 -line db.sqlite  "select * from VCFCALL LIMIT 4"
