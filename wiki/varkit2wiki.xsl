@@ -85,7 +85,11 @@
 </xsl:template>
 
 <xsl:template match="img">
-<xsl:value-of select="concat('[',@src,']')"/>
+<xsl:text>
+</xsl:text>
+<xsl:value-of select="@src"/>
+<xsl:text>
+</xsl:text>
 </xsl:template>
 
 <xsl:template match="pre">

@@ -48,7 +48,9 @@ vcf2sqlite -f database.sqlite (file1.vcf file2... | stdin )
 
 ==Schema==
 
-A schema for the database is available as SVG in: [http://variationtoolkit.googlecode.com/svn/trunk/doc/schema01.png]
+A schema for the database is available as SVG in: 
+http://variationtoolkit.googlecode.com/svn/wiki/schema01.png
+
 
 ==Example:==
 
