@@ -16,6 +16,7 @@
 <xsl:template match="page">
 <div>
 <h3><xsl:value-of select="@title"/></h3>
+<p><b><xsl:value-of select="@title"/></b> is a C++ tool that is part of my <a href="http://code.google.com/p/variationtoolkit/">Variation Toolkit</a>.</p>
 <p><xsl:value-of select="@desc"/></p>
 <xsl:apply-templates/>
 </div>
