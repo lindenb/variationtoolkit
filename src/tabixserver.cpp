@@ -18,6 +18,9 @@
 #include "xxml.h"
 #include "throw.h"
 #include "tokenizer.h"
+#ifdef CGI_VERSION
+#include "cgi.h"
+#endif
 
 using namespace std;
 class Instance;
@@ -363,7 +366,71 @@ class TabixServer
     {
     public:
 	Model model;
+	std::string format;
+#ifdef CGI_VERSION
+	CGI cgi;
+	streambuf* stdbuf;;
+	cgistreambuf* cgibuff;
+	std::string title;
 
+	TabixServer():format("xml"),stdbuf(cout.rdbuf()),cgibuff(0),title("Tabix server")
+	    {
+	    cgibuff=new cgistreambuf(stdbuf);
+	    cout.rdbuf(cgibuff);
+	    }
+
+	~TabixServer()
+	    {
+	    cout.flush();
+	    cout.rdbuf(stdbuf);
+	    delete cgibuff;
+	    }
+
+
+
+
+#else
+	std::string xml_path;
+
+	TabixServer():format("xml")
+	    {
+
+	    }
+	~TabixServer()
+	    {
+
+	    }
+#endif
+
+	xmlDocPtr load_project_file()
+		{
+#ifndef CGI_VERSION
+	    const char* project_xml=xml_path.c_str();
+#else
+	    char* project_xml=getenv("NGS_PROJECT_PATH");
+#endif
+
+		if(project_xml==NULL)
+		    {
+		    quit(0,0,"Cannot get $NGS_PROJECT_PATH.");
+		    }
+		xmlDocPtr doc=::xmlParseFile(project_xml);
+		if(doc==0)
+		    {
+		    quit(0,0,"Cannot load xml NGS_PROJECT_PATH.");
+		    }
+		return doc;
+		}
+
+	std::string script_name()
+	    {
+	    string name;
+	    char* s=getenv("SCRIPT_NAME");
+	    if(s!=0) name.assign(s);
+	    return name;
+	    }
+
+#ifndef CGI_VERSION
 	virtual void usage(ostream& out,int argc,char** argv)
 	    {
 	    out << argv[0] << " Pierre Lindenbaum PHD. 2012.\n";
@@ -378,15 +445,184 @@ class TabixServer
 	    out << "  -u (instance-id) always use this instance-id (optional)." << endl;
 	    cerr << endl;
 	    }
+#endif
+
+
 
 
 	auto_ptr<Renderer> createRenderer()
 	    {
-	    auto_ptr<Renderer> render(new XMlRenderer);
+	    auto_ptr<Renderer> render(0);
+	    if(format.compare("xml")==0)
+		{
+		render.reset(new XMlRenderer);
+#ifndef CGI_VERSION
+		cgibuff->setContentType("text/xml");
+#endif
+		}
+	    else
+		{
+		render.reset(new XMlRenderer);
+#ifndef CGI_VERSION
+		cgibuff->setContentType("text/xml");
+#endif
+		}
 	    return render;
 	    }
 
-	virtual int main(int argc,char** argv)
+#ifdef CGI_VERSION
+
+	void header()
+	    {
+	    cgibuff->setContentType("text/html");
+	    //cout << "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
+	    cout << "<html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en'><head>"
+		<< "<title>" << xmlEscape(title) << "</title>"
+		<< "<style type='text/css'>"
+		<< "label { text-align:right; margin:5px;}\n"
+			"dl {padding: 0.5em;}\n"
+			"dt {float: left; clear: left; width: 190px; text-align: right; font-weight: bold; color:darkgray;}\n"
+			"dt:after { content: \":\"; }\n"
+			"dd { margin: 0 0 0 200px; padding: 0 0 0.5em 0; }\n"
+			"button {font-size:200%;min-width:100px;border: 1px solid; background-image:-moz-linear-gradient( top, gray, lightgray );margin:5px;}\n"
+			"button:hover {background-image:-moz-linear-gradient( top, lightgray, gray );}\n"
+			".code {font-family:monospace;font-size:14pt;color:white;background-color:black;max-width:100%;max-height:400px;overflow:auto;padding:20px;}\n"
+			"p.desc { border-style:solid; border-width:1px; border-radius: 5px; background-color:lightgray;padding:20px;margin:20px;color:black;}\n"
+			".bigtitle {text-align:center;padding:10px;text-shadow: 3px 3px 4px gray; font-size:200%;}\n"
+		<< "</style>"
+		<< "</head><body>";
+	    }
+
+	void footer()
+	    {
+	    cout << "<hr/><div style='font-size:50%;'>";
+	    cout << "<a href='http://plindenbaum.blogspot.com'>Pierre Lindenbaum PhD</a><br/>";
+	    cout << "Last compilation " << __DATE__ << " at " << __TIME__ << ".<br/>";
+	    //cout << "<pre>"; cgi.dump(cout); cout << "</pre>";
+	    cout << "</div></body></html>";
+	    cout.flush();
+	    }
+
+	void print_main()
+	    {
+	    header();
+	    cout << "<div>";
+	    cout << "<form method='GET' action='" << script_name() << "'>";
+	    cout << "<input type='hidden' name='action' value='tabix.show'/>";
+	    /* region box */
+	    cout << "<div style='text-align:center;font-size:200%; margin:50px;'>";
+	    cout << "<label for='query'>Position: </label>";
+	    cout << "<input type='text' name='q' value='' id='query' style='padding:10px;font-size:100%;' title='position' placeholder='chrom:start-end' required='true'/>";
+	    cout << "</div>";
+
+	    /* list instances in a <DL/> list */
+	    cout << "<dl>";
+	    for(map<string,Instance*> r=model.id2instance.begin();
+		 r!=model.id2instance.end();
+		 ++r)
+		{
+		cout << "<dt>";
+		cout << "<input type='checkbox' name='t' value='" << r->id << "'/>";
+		cout << "<label >"<<  r->second->label << "</label>";
+		cout << "</dt>";
+
+		cout << "<dd>";
+		cout << r->second->description ;
+		cout << "</dd>";
+		}
+	    cout << "</dl>";
+	    cout << "</form>";
+	    cout << "</div>";
+	    footer();
+	    }
+
+	void quit(const char* mime,int status,const char* message)
+	    {
+	    cgibuff->setContentType(mime==0?"text/plain":mime);
+	    cgibuff->setStatus(status==0?SC_BAD_REQUEST:status);
+	    cout << (message==NULL?"error":message) << "\n";
+	    cout.flush();
+	    exit(EXIT_SUCCESS);
+	    }
+
+	void run()
+	    {
+	    auto_ptr<Renderer> renderer= createRenderer();
+	    renderer->startDocument();
+	    while(optind<argc)
+		{
+		extern std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s);
+
+		char* arg=argv[optind++];
+		auto_ptr<vector<ChromStartEnd> > segs=parseSegments(arg);
+		if(segs.get()==0)
+		    {
+		    cerr << "Bad segment:"<< arg << endl;
+		    return (EXIT_FAILURE);
+		    }
+		for(size_t j=0;j< segs->size();++j)
+		    {
+		    const ChromStartEnd& segment=segs->at(j);
+		    renderer->startQuery(segment.chrom.c_str(),segment.start,segment.end);
+
+		    for(size_t i=0;
+			i< model.instances.size();
+			++i)
+			{
+			Instance* instance=model.instances.at(i);
+			if(!ignore_instance_id.empty() && ignore_instance_id.find(instance->id)!=ignore_instance_id.end())
+			    {
+			    continue;
+			    }
+			if(!only_instance_id.empty() && only_instance_id.find(instance->id)==only_instance_id.end())
+			    {
+			    continue;
+			    }
+
+			instance->scan(&segment,renderer.get());
+			}
+		    }
+		renderer->endQuery();
+		}
+	    renderer->endDocument();
+	    }
+
+	int main(int argc,char** argv)
+	    {
+	    try
+		{
+		if(
+		   !cgi.parse() ||
+		   !cgi.contains("action") ||
+		   cgi.contains("action","home"))
+		    {
+		    print_main();
+		    }
+		else if(cgi.contains("action","tabix.show"))
+		    {
+		    run();
+		    }
+		else
+		    {
+		    print_main();
+		    }
+		}
+	    catch(exception& err)
+		{
+		quit(0,0,err.what());
+		}
+	    return EXIT_SUCCESS;
+	    }
+#else
+
+	void quit(const char* mime,int status,const char* message)
+		{
+		cout << (message==NULL?"error":message) << "\n";
+		cout.flush();
+		exit(EXIT_FAILURE);
+		}
+
+	int main(int argc,char** argv)
 	    {
 	    set<string> ignore_instance_id;
 	    set<string> only_instance_id;
@@ -514,6 +750,7 @@ class TabixServer
 	    renderer->endDocument();
 	    return EXIT_SUCCESS;
 	    }
+#endif
     };
 
 
