@@ -163,6 +163,7 @@ class Model
 	    {
 	    map<string,Table*> id2table;
 	    xmlNodePtr root= xmlDocGetRootElement(dom);
+	    if(root==0 || !::xmlStrEqual(root->name,BAD_CAST "config")) THROW("root!=config");
 	    //get the TABLES
 	    for(xmlNodePtr c1 = xmlFirstElementChild(root); c1!=0; c1 = xmlNextElementSibling(c1))
 		{
