@@ -18,6 +18,7 @@
 #include "xxml.h"
 #include "throw.h"
 #include "tokenizer.h"
+#include "xmlescape.h"
 #ifdef CGI_VERSION
 #include "cgi.h"
 #endif
@@ -43,6 +44,10 @@ class Renderer
 	    {
 	    if(out!=0) out->flush();
 	    }
+	virtual void comment(std::string s)
+	    {
+
+	    }
 	virtual void startDocument()=0;
 	virtual void endDocument()=0;
 	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)=0;
@@ -50,6 +55,7 @@ class Renderer
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)=0;
 	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)=0;
 	virtual void endInstance()=0;
+
     };
 
 class Named
@@ -165,7 +171,7 @@ class Model
 	    xmlNodePtr root= xmlDocGetRootElement(dom);
 	    if(root==0 || !::xmlStrEqual(root->name,BAD_CAST "config")) THROW("root!=config");
 	    //get the TABLES
-	    for(xmlNodePtr c1 = xmlFirstElementChild(root); c1!=0; c1 = xmlNextElementSibling(c1))
+	    for(xmlNodePtr c1 = root->children; c1!=0; c1 = c1->next)
 		{
 		if (c1->type != XML_ELEMENT_NODE) continue;
 		if(!::xmlStrEqual(c1->name,BAD_CAST "table")) continue;
@@ -180,7 +186,8 @@ class Model
 		tables.push_back(table);
 		id2table.insert(make_pair<string,Table*>(table->id,table));
 
-		 for(xmlNodePtr c2 = xmlFirstElementChild(c1); c2!=0; c2 = xmlNextElementSibling(c2))
+
+		for(xmlNodePtr c2 = c1->children; c2!=0; c2 = c2->next)
 		    {
 		    if (c2->type != XML_ELEMENT_NODE) continue;
 		    if(!::xmlStrEqual(c2->name,BAD_CAST "column")) continue;
@@ -191,6 +198,28 @@ class Model
 		    xmlFree(att);
 		    table->columns.push_back(column);
 
+		    if(column->name.compare("chrom")==0 && table->chromColumn==0)
+			{
+			table->chromColumn=column;
+			}
+		    else if(column->name.compare("chromStart") && table->chromStartColumn==0)
+			{
+			table->chromStartColumn=column;
+			}
+		    else if(column->name.compare("chromEnd") && table->chromEndColumn==0)
+			{
+			table->chromEndColumn=column;
+			}
+		    else if(column->name.compare("txStart") && table->chromStartColumn==0)
+			{
+			table->chromStartColumn=column;
+			}
+		    else if(column->name.compare("txEnd") && table->chromEndColumn==0)
+			{
+			table->chromEndColumn=column;
+			}
+
+
 		    att=::xmlGetProp(c2,BAD_CAST "ignore");
 		    if(att!=0)
 			{
@@ -200,9 +229,12 @@ class Model
 
 		    _label_and_desc(c2,column);
 		    }
+		if(table->chromColumn==0)   THROW("Cannot chrom column for table " << table->id);
+		if(table->chromStartColumn==0)   THROW("Cannot chromStart column for table " << table->id);
+		if(table->chromEndColumn==0)   THROW("Cannot chromEnd column for table " << table->id);
 		}
 	    //get the INSTANCE OF TABLES
-	    for(xmlNodePtr c1 = xmlFirstElementChild(root); c1!=0; c1 = xmlNextElementSibling(c1))
+	    for(xmlNodePtr c1 = root->children; c1!=0; c1 = c1->next)
 		{
 		if (c1->type != XML_ELEMENT_NODE) continue;
 		if(!::xmlStrEqual(c1->name,BAD_CAST "instance")) continue;
@@ -256,6 +288,78 @@ class Model
 	    }
     };
 
+
+class TextRenderer:public Renderer
+    {
+    private:
+	int n_printed;
+    public:
+	TextRenderer():n_printed(0)
+	    {
+
+	    }
+	virtual ~TextRenderer()
+	    {
+	    cout.flush();
+	    }
+	virtual void startDocument()
+	    {
+
+	    }
+	virtual void endDocument()
+	    {
+
+	    }
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+
+	    }
+	virtual void endQuery()
+	    {
+
+	    }
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    if(n_printed>0) cout << "\\\\" << endl;
+	    cout << "##instance.label="<< instance->label << endl;
+	    cout << "##instance.desc="<< instance->description << endl;
+	    cout << "##region="<<chrom << ":" << chromStart<<"-" << chromEnd << endl;
+	    cout << "#";
+	    bool found=false;
+	    for(size_t i=0;i< instance->table->columns.size();++i)
+	    		{
+	    		Column* col= instance->table->columns.at(i);
+	    		if(col->ignore) continue;
+	    		if(found) cout << "\t";
+	    		found=true;
+	    		cout << col->label;
+	    		}
+	    cout << endl;
+	    }
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
+	    {
+	    bool found=false;
+	    for(size_t i=0;i< this->instance->table->columns.size();++i)
+		{
+		Column* col= instance->table->columns.at(i);
+		if(col->ignore) continue;
+		if(found) cout << "\t";
+		if(i>=tokens.size()) continue;
+		found=true;
+		cout << tokens[i];
+		}
+	    return CURSOR_OK;
+	    }
+	virtual void endInstance()
+	    {
+	    n_printed++;
+	    }
+	virtual void comment(const std::string s)
+	    {
+
+	    }
+    };
+
 class AbstractXMlRenderer:public Renderer
     {
     protected:
@@ -279,6 +383,10 @@ class AbstractXMlRenderer:public Renderer
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)=0;
 	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)=0;
 	virtual void endInstance()=0;
+	virtual void comment(const std::string s)
+	    {
+	    ::xmlTextWriterWriteComment(writer,BAD_CAST s.c_str());
+	    }
     };
 
 class XMlRenderer:public AbstractXMlRenderer
@@ -363,18 +471,122 @@ class XMlRenderer:public AbstractXMlRenderer
 
     };
 
+
+class HtmlRenderer:public AbstractXMlRenderer
+    {
+    public:
+	HtmlRenderer()
+	    {
+	    }
+
+	virtual ~HtmlRenderer()
+	    {
+
+	    }
+
+	virtual void startDocument()
+	    {
+	    //::xmlTextWriterStartDocument(writer,0,0,0);
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "html");
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "body");
+	    }
+	virtual void endDocument()
+	    {
+	    ::xmlTextWriterEndElement(writer);//body
+	    ::xmlTextWriterEndElement(writer);//html
+	    ::xmlTextWriterFlush(writer);
+	    out->flush();
+	    }
+
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "div");
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "class",BAD_CAST "query");
+
+
+	    ostringstream os;
+	    os << chrom << ":" <<chromStart << "-" << chromEnd;
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "h2");
+	    ::xmlTextWriterWriteText<string>(writer,os.str());
+	    ::xmlTextWriterEndElement(writer);//h2
+	    }
+	virtual void endQuery()
+	    {
+	    ::xmlTextWriterEndElement(writer);//div
+	    ::xmlTextWriterEndElement(writer);
+	    }
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    this->instance=instance;
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "div");
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "class",BAD_CAST "instance");
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "h3");
+	    ::xmlTextWriterWriteText<string>(writer,instance->label);
+	    ::xmlTextWriterEndElement(writer);//h3
+
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "p");
+	    ::xmlTextWriterWriteText<string>(writer,instance->description);
+	    ::xmlTextWriterEndElement(writer);
+
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "thead");
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "tr");
+
+
+
+	    for(size_t i=0;i< instance->table->columns.size();++i)
+		{
+		Column* col= instance->table->columns.at(i);
+		if(col->ignore) continue;
+		::xmlTextWriterStartElement(writer,BAD_CAST "th");
+		 ::xmlTextWriterWriteText<string>(writer,col->label);
+		::xmlTextWriterEndElement(writer);//th
+		}
+	    ::xmlTextWriterEndElement(writer);//tr
+	    ::xmlTextWriterEndElement(writer);//thead
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "tbody");
+	    }
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
+	    {
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "tr");
+	    for(size_t i=0;i< this->instance->table->columns.size();++i)
+		{
+		Column* col= instance->table->columns.at(i);
+		if(col->ignore) continue;
+		::xmlTextWriterStartElement(writer,BAD_CAST "td");
+		if(i<tokens.size())
+		    {
+		    ::xmlTextWriterWriteText<string>(writer,tokens[i]);
+		    }
+		::xmlTextWriterEndElement(writer);
+		}
+	    ::xmlTextWriterEndElement(writer);//tr
+	    return CURSOR_OK;
+	    }
+	virtual void endInstance()
+	    {
+	    ::xmlTextWriterEndElement(writer);//tbody
+	    ::xmlTextWriterEndElement(writer);//table
+	    ::xmlTextWriterEndElement(writer);//div
+	    }
+
+    };
+
 class TabixServer
     {
     public:
 	Model model;
-	std::string format;
+
 #ifdef CGI_VERSION
 	CGI cgi;
 	streambuf* stdbuf;;
 	cgistreambuf* cgibuff;
 	std::string title;
 
-	TabixServer():format("xml"),stdbuf(cout.rdbuf()),cgibuff(0),title("Tabix server")
+	TabixServer():stdbuf(cout.rdbuf()),cgibuff(0),title("Tabix server")
 	    {
 	    cgibuff=new cgistreambuf(stdbuf);
 	    cout.rdbuf(cgibuff);
@@ -392,7 +604,7 @@ class TabixServer
 
 #else
 	std::string xml_path;
-
+	std::string format;
 	TabixServer():format("xml")
 	    {
 
@@ -408,17 +620,17 @@ class TabixServer
 #ifndef CGI_VERSION
 	    const char* project_xml=xml_path.c_str();
 #else
-	    char* project_xml=getenv("NGS_PROJECT_PATH");
+	    char* project_xml=getenv("TABIX_SERVER_PATH");
 #endif
 
 		if(project_xml==NULL)
 		    {
-		    quit(0,0,"Cannot get $NGS_PROJECT_PATH.");
+		    quit(0,0,"Cannot get $TABIX_SERVER_PATH.");
 		    }
 		xmlDocPtr doc=::xmlParseFile(project_xml);
 		if(doc==0)
 		    {
-		    quit(0,0,"Cannot load xml NGS_PROJECT_PATH.");
+		    quit(0,0,"Cannot load xml TABIX_SERVER_PATH.");
 		    }
 		return doc;
 		}
@@ -453,12 +665,40 @@ class TabixServer
 
 	auto_ptr<Renderer> createRenderer()
 	    {
+#ifdef CGI_VERSION
+	    string format("html");
+
+	    const char* fmt=cgi.getParameter("format");
+	    if(fmt!=0)
+		{
+		format.assign(fmt);
+		//string s(fmt);
+		//s.append("_ICI_");
+		//cgi.setParameter("format",s.c_str());
+		}
+
+#endif
 	    auto_ptr<Renderer> render(0);
 	    if(format.compare("xml")==0)
 		{
 		render.reset(new XMlRenderer);
 #ifndef CGI_VERSION
 		cgibuff->setContentType("text/xml");
+#endif
+
+		}
+	    else if(format.compare("html")==0 || format.compare("xhtml")==0)
+		{
+		render.reset(new HtmlRenderer);
+#ifndef CGI_VERSION
+		cgibuff->setContentType("text/html");
+#endif
+		}
+	    else if(format.compare("txt")==0 || format.compare("text")==0)
+		{
+		render.reset(new TextRenderer);
+#ifndef CGI_VERSION
+		cgibuff->setContentType("text/plain");
 #endif
 		}
 	    else
@@ -467,6 +707,7 @@ class TabixServer
 #ifndef CGI_VERSION
 		cgibuff->setContentType("text/xml");
 #endif
+
 		}
 	    return render;
 	    }
@@ -504,9 +745,20 @@ class TabixServer
 	    cout.flush();
 	    }
 
+	void loadModel()
+	    {
+	    xmlDocPtr dom=load_project_file();
+	    model.read(dom);
+	    xmlFreeDoc(dom);
+	    }
+
 	void print_main()
 	    {
+	    loadModel();
 	    header();
+
+
+
 	    cout << "<div>";
 	    cout << "<form method='GET' action='" << script_name() << "'>";
 	    cout << "<input type='hidden' name='action' value='tabix.show'/>";
@@ -514,21 +766,26 @@ class TabixServer
 	    cout << "<div style='text-align:center;font-size:200%; margin:50px;'>";
 	    cout << "<label for='query'>Position: </label>";
 	    cout << "<input type='text' name='q' value='' id='query' style='padding:10px;font-size:100%;' title='position' placeholder='chrom:start-end' required='true'/>";
-	    cout << "</div>";
 
+	    cout << " <select name='format' style='padding:10px;font-size:100%;'>"
+		    "<option>xml</option>"
+		    "<option>html</option>"
+		    "<option>txt</option>"
+		    "</select>";
+	    cout << "</div>";
 	    /* list instances in a <DL/> list */
 	    cout << "<dl>";
-	    for(map<string,Instance*> r=model.id2instance.begin();
+	    for(map<string,Instance*>::iterator r=model.id2instance.begin();
 		 r!=model.id2instance.end();
 		 ++r)
 		{
 		cout << "<dt>";
-		cout << "<input type='checkbox' name='t' value='" << r->id << "'/>";
-		cout << "<label >"<<  r->second->label << "</label>";
+		cout << "<input type='checkbox' name='t' value='" <<  xmlEscape(r->first) << "'/>";
+		cout << "<label >"<<  xmlEscape(r->second->label) << "</label>";
 		cout << "</dt>";
 
 		cout << "<dd>";
-		cout << r->second->description ;
+		cout <<  xmlEscape(r->second->description);
 		cout << "</dd>";
 		}
 	    cout << "</dl>";
@@ -548,34 +805,47 @@ class TabixServer
 
 	void run()
 	    {
+	    loadModel();
+	    std::set<std::string> queries= cgi.getParameters("q");
 	    auto_ptr<Renderer> renderer= createRenderer();
 	    renderer->startDocument();
-	    while(optind<argc)
+
+	    if(cgi.contains("format"))
+		{
+		string s(cgi.getParameter("format"));
+		s.append("XXXX");
+		renderer->comment(s);
+		}
+	    for(
+		set<std::string>::iterator r=queries.begin();
+		r!=queries.end();
+		++r
+		)
 		{
 		extern std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s);
 
-		char* arg=argv[optind++];
-		auto_ptr<vector<ChromStartEnd> > segs=parseSegments(arg);
+		if(r->empty()) continue;
+		auto_ptr<vector<ChromStartEnd> > segs=parseSegments(r->c_str());
 		if(segs.get()==0)
 		    {
-		    cerr << "Bad segment:"<< arg << endl;
-		    return (EXIT_FAILURE);
+		    renderer->comment("No segments");
+		    continue;
 		    }
 		for(size_t j=0;j< segs->size();++j)
 		    {
 		    const ChromStartEnd& segment=segs->at(j);
 		    renderer->startQuery(segment.chrom.c_str(),segment.start,segment.end);
 
+
+
 		    for(size_t i=0;
 			i< model.instances.size();
 			++i)
 			{
+
 			Instance* instance=model.instances.at(i);
-			if(!ignore_instance_id.empty() && ignore_instance_id.find(instance->id)!=ignore_instance_id.end())
-			    {
-			    continue;
-			    }
-			if(!only_instance_id.empty() && only_instance_id.find(instance->id)==only_instance_id.end())
+
+			if(!cgi.contains("t",instance->id))
 			    {
 			    continue;
 			    }

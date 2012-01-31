@@ -192,7 +192,7 @@ $(BINDIR)/xsltstream: xsltstream.cpp xstream.o application.o
 	$(CPP) -o $@ $^  $(CFLAGS) `xml2-config --cflags --libs` `xslt-config --cflags --libs` -lz
 $(BINDIR)/godbmgr: godatabasemgr.cpp xsqlite.cpp application.o xstream.o xxml.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ -g `xml2-config --cflags `  $(SQLITE_CFLAGS)   -lz $(SQLITE_LIB) `xml2-config  --libs` ; else $(CPP) -o $@ godatabasemgr.cpp  -DNOSQLITE $(CFLAGS)  ; fi
-$(CGI_BIN_DIR)/tabixserver: tabixserver.cpp $(PARSESEG) xtabix.o xxml.o cgi.o
+$(CGI_BIN_DIR)/tabixserver.cgi: tabixserver.cpp $(PARSESEG) xtabix.o xxml.o cgi.o
 	if [ -z "${CGI_BIN_DIR}" ] ; then echo -e "#\n#\n# CGI_BIN_DIR undefined\n#\n#" ; else \
 		$(CPP) -o $@ -DCGI_VERSION $^  $(CFLAGS)  `xml2-config --cflags `  -L $(TABIXDIR)   `xml2-config --libs `  -ltabix  -lz ; fi
 		
@@ -330,9 +330,11 @@ clean:
 clean-all:clean uninstall
 	
 
-test:$(BINDIR)/redonstructvar
-	$<  -f /GENOTYPAGE/data/pubdb/ucsc/hg19/chromosomes/hg19.fa\
-	    -b jeter.bam.txt jeter.kg.txt
-test2:
-	 g++ -DTEST_THIS_CODE -Wall xstream.cpp `xml2-config --cflags --libs`
-	 ./a.out jeter.xml
+test:$(CGI_BIN_DIR)/tabixserver.cgi
+
+#test:$(BINDIR)/redonstructvar
+#	$<  -f /GENOTYPAGE/data/pubdb/ucsc/hg19/chromosomes/hg19.fa\
+#	    -b jeter.bam.txt jeter.kg.txt
+#test2:
+#	 g++ -DTEST_THIS_CODE -Wall xstream.cpp `xml2-config --cflags --libs`
+#	 ./a.out jeter.xml
