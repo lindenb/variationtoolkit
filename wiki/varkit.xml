@@ -111,7 +111,7 @@ Create a XML file describing your project<pre>cat /var/www/cgi-bin/ngsproject.xm
     <reference ref="ref1"/>
   </project>
 </projects>]]></pre>
-Edit the apache2 config <code>/etc/apache2/apache2.conf</code>:
+Edit the apache2/httpd config <code>/etc/apache2/apache2.conf</code> or <code>/etc/httpd/conf/httpd.conf</code>:
 <pre>sudo nano /etc/apache2/apache2.conf</pre>
 and add the following lines, specify <b>NGS_PROJECT_PATH</b>, the path to the XML file
 <pre><![CDATA[<VirtualHost *:80>
@@ -2752,6 +2752,43 @@ $ echo -e "#MyACN\nGO:0003674\nGO:0001618\n" |\
 GO:0003674]]></pre>
 
 </page>
+
+<page title="TabixServer" labels="bioinformatics,server,cgi,tabix" desc="Tabix files server">
+A CGI-bases server for <a href="http://samtools.sourceforge.net/tabix.shtml">tabix</a> files.
+&download;
+</page>
+
+<h2>Example</h3>
+Download some genomics files from the UCSC:
+<pre><![CDATA[$ curl "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz" | gunzip -c > cytoBand.txt
+$ curl - "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/fishClones.txt.txt.gz" | gunzip -c > fishClones.txt.txt]]></pre>
+Compress and index it with bgzip :
+<pre><![CDATA[$ tabix-0.2.5/bgzip cytoBand.txt
+$ tabix-0.2.5/bgzip chromInfo.txt]]></pre>
+And index the files with <a href="http://samtools.sourceforge.net/tabix.shtml">tabix</a>:
+<pre><![CDATA[$ tabix-0.2.5/tabix -p bed cytoBand.txt.gz 
+$ tabix-0.2.5/tabix -p bed fishClones.txt.txt.gz ]]></pre>
+
+
+Edit the apache2/httpd config <code>/etc/apache2/apache2.conf</code>:
+<pre>sudo nano /etc/apache2/apache2.conf</pre>
+and add the following lines, specify <b>TABIX_SERVER_PATH</b>, the path to the XML file
+<pre><![CDATA[<VirtualHost *:80>
+ServerName localhost
+DocumentRoot /var/www/
+AddHandler cgi-script .cgi .pl 
+SetEnv TABIX_SERVER_PATH /var/www/cgi-bin/tabixserver.xml    
+<Directory /cgi-bin/>
+        AllowOverride None
+        Options ExecCGI -MultiViews +SymLinksIfOwnerMatch
+        Order allow,deny
+        Allow from all    
+</Directory>
+
+</VirtualHost>]]></pre>
+and restart apache:
+<pre>sudo /etc/init.d/apache2 restart</pre>
+
 
 
 </documentation>
