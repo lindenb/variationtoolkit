@@ -26,6 +26,9 @@
 using namespace std;
 class Instance;
 
+#define XSD_PREFIX BAD_CAST "xsd"
+#define XSD_NS BAD_CAST "http://www.w3.org/2001/XMLSchema"
+
 enum  RenderStatus
     {
     CURSOR_OK=0,
@@ -73,6 +76,15 @@ class Column:public Named
 	Column():ignore(false)
 	    {
 	    }
+
+	void schema(xmlTextWriterPtr w)
+	    {
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "element", XSD_NS);
+	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST name.c_str());
+	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "type", BAD_CAST "xsd:string");
+	    ::xmlTextWriterEndElement(w);
+	    }
+
     };
 
 class Table:public Named
@@ -128,6 +140,24 @@ class Instance:public Named
 	void scan(const ChromStartEnd* position,Renderer* renderer)
 	    {
 	    scan(position->chrom.c_str(),position->start,position->end,renderer);
+	    }
+	void schema(xmlTextWriterPtr w)
+	    {
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "element", XSD_NS);
+	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST id.c_str());
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "complexType", XSD_NS);
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "sequence", XSD_NS);
+	    size_t i=0;
+	    for(i=0;i< table->columns.size();++i)
+		{
+		Column* c=table->columns.at(i);
+		if(c->ignore) continue;
+		c->schema(w);
+		}
+
+	    ::xmlTextWriterEndElement(w);
+	    ::xmlTextWriterEndElement(w);
+	    ::xmlTextWriterEndElement(w);
 	    }
     };
 
@@ -286,6 +316,23 @@ class Model
 	    read(doc);
 	    ::xmlFreeDoc(doc);
 	    }
+	void schema(std::ostream& out)
+	    {
+	    xmlOutputBufferPtr buffer=::xmlOutputBufferCreateIOStream(&cout,0);
+	    xmlTextWriterPtr writer=::xmlNewTextWriter(buffer);
+	    ::xmlTextWriterStartDocument(writer,0,0,0);
+	    ::xmlTextWriterStartElementNS(writer,XSD_PREFIX, BAD_CAST "schema", XSD_NS);
+	    for(size_t i=0;i< instances.size();++i)
+		{
+		Instance* instance=instances.at(i);
+		instance->schema(writer);
+		}
+	    ::xmlTextWriterEndElement(writer);
+	    ::xmlTextWriterEndDocument(writer);
+	    ::xmlFreeTextWriter(writer);
+	    ::xmlOutputBufferClose(buffer);
+	    out.flush();
+	    }
     };
 
 
@@ -408,7 +455,9 @@ class XMlRenderer:public AbstractXMlRenderer
 	    }
 	virtual void endDocument()
 	    {
+
 	    ::xmlTextWriterEndElement(writer);
+	    ::xmlTextWriterEndDocument(writer);
 	    ::xmlTextWriterFlush(writer);
 	    out->flush();
 	    }
@@ -858,6 +907,13 @@ class TabixServer
 	    renderer->endDocument();
 	    }
 
+	void schema()
+	    {
+	    loadModel();
+	    cgibuff->setContentType("text/xml");
+	    model.schema(cout);
+	    }
+
 	int main(int argc,char** argv)
 	    {
 	    try
@@ -872,6 +928,10 @@ class TabixServer
 		else if(cgi.contains("action","tabix.show"))
 		    {
 		    run();
+		    }
+		else if(cgi.contains("action","schema"))
+		    {
+		    schema();
 		    }
 		else
 		    {
