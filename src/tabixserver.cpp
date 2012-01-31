@@ -120,6 +120,37 @@ class Table:public Named
 		if(renderer->handle(tokens,nLine)!=CURSOR_OK) break;
 		}
 	    }
+
+	string xsdType() const
+	    {
+	    string tt("TableDef");
+	    tt.append(this->id);
+	    return tt;
+	    }
+
+	void schema(xmlTextWriterPtr w)
+	    {
+	    string type(xsdType());
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "complexType", XSD_NS);
+	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST type.c_str());
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "complexContent", XSD_NS);
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "extension", XSD_NS);
+	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "base", BAD_CAST "AbstractChromStartEnd");
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "sequence", XSD_NS);
+	    size_t i=0;
+	    for(i=0;i< this->columns.size();++i)
+		{
+		Column* c=this->columns.at(i);
+		if(c->ignore) continue;
+		c->schema(w);
+		}
+
+	    ::xmlTextWriterEndElement(w);
+	    ::xmlTextWriterEndElement(w);
+	    ::xmlTextWriterEndElement(w);
+	    ::xmlTextWriterEndElement(w);
+	    }
+
     };
 
 class Instance:public Named
@@ -143,20 +174,10 @@ class Instance:public Named
 	    }
 	void schema(xmlTextWriterPtr w)
 	    {
+	    string t(table->xsdType());
 	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "element", XSD_NS);
 	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST id.c_str());
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "complexType", XSD_NS);
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "sequence", XSD_NS);
-	    size_t i=0;
-	    for(i=0;i< table->columns.size();++i)
-		{
-		Column* c=table->columns.at(i);
-		if(c->ignore) continue;
-		c->schema(w);
-		}
-
-	    ::xmlTextWriterEndElement(w);
-	    ::xmlTextWriterEndElement(w);
+	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "type", BAD_CAST t.c_str());
 	    ::xmlTextWriterEndElement(w);
 	    }
     };
@@ -316,20 +337,40 @@ class Model
 	    read(doc);
 	    ::xmlFreeDoc(doc);
 	    }
+
+#define DEFINE_ATT(name,type)   ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "attribute", XSD_NS);\
+	::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST name);\
+	::xmlTextWriterWriteAttribute(w,BAD_CAST "type", BAD_CAST type);\
+	::xmlTextWriterEndElement(w)
+
 	void schema(std::ostream& out)
 	    {
 	    xmlOutputBufferPtr buffer=::xmlOutputBufferCreateIOStream(&cout,0);
-	    xmlTextWriterPtr writer=::xmlNewTextWriter(buffer);
-	    ::xmlTextWriterStartDocument(writer,0,0,0);
-	    ::xmlTextWriterStartElementNS(writer,XSD_PREFIX, BAD_CAST "schema", XSD_NS);
+	    xmlTextWriterPtr w=::xmlNewTextWriter(buffer);
+	    ::xmlTextWriterStartDocument(w,0,0,0);
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "schema", XSD_NS);
+
+
+	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "complexType", XSD_NS);
+	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST "AbstractChromStartEnd");
+	    DEFINE_ATT("chrom","xsd:string");
+	    DEFINE_ATT("start","xsd:int");
+	    DEFINE_ATT("end","xsd:int");
+	    ::xmlTextWriterEndElement(w);
+
+	    for(size_t i=0;i< tables.size();++i)
+		{
+		Table* t=tables.at(i);
+		t->schema(w);
+		}
 	    for(size_t i=0;i< instances.size();++i)
 		{
 		Instance* instance=instances.at(i);
-		instance->schema(writer);
+		instance->schema(w);
 		}
-	    ::xmlTextWriterEndElement(writer);
-	    ::xmlTextWriterEndDocument(writer);
-	    ::xmlFreeTextWriter(writer);
+	    ::xmlTextWriterEndElement(w);
+	    ::xmlTextWriterEndDocument(w);
+	    ::xmlFreeTextWriter(w);
 	    ::xmlOutputBufferClose(buffer);
 	    out.flush();
 	    }
