@@ -19,15 +19,26 @@
 #include "throw.h"
 #include "tokenizer.h"
 #include "xmlescape.h"
-#ifdef CGI_VERSION
+#include "cescape.h"
 #include "cgi.h"
-#endif
+#include "numeric_cast.h"
+#define NOWHERE
+#include "where.h"
 
 using namespace std;
 class Instance;
 
 #define XSD_PREFIX BAD_CAST "xsd"
 #define XSD_NS BAD_CAST "http://www.w3.org/2001/XMLSchema"
+
+enum ColumnDataType
+    {
+    TYPE_STRING,
+    TYPE_BOOL,
+    TYPE_INT,
+    TYPE_LONG,
+    TYPE_DOUBLE
+    };
 
 enum  RenderStatus
     {
@@ -40,9 +51,13 @@ class Renderer
     public:
 	std::ostream* out;
 	Instance* instance;
-	Renderer():out(&cout),instance(0)
+	long limit_rows;
+    protected:
+	long count_rows;
+	Renderer():out(&cout),instance(0),limit_rows(-1L),count_rows(0L)
 	    {
 	    }
+    public:
 	virtual ~Renderer()
 	    {
 	    if(out!=0) out->flush();
@@ -59,6 +74,12 @@ class Renderer
 	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)=0;
 	virtual void endInstance()=0;
 
+	RenderStatus _hasNext()
+		    {
+		    ++count_rows;
+		    if(limit_rows!=-1L && count_rows>=limit_rows) return CURSOR_BREAK;
+		    return CURSOR_OK;
+		    }
     };
 
 class Named
@@ -73,15 +94,25 @@ class Column:public Named
     public:
 	std::string name;
 	bool ignore;
-	Column():ignore(false)
+	ColumnDataType dataType;
+	Column():ignore(false),dataType(TYPE_STRING)
 	    {
 	    }
 
 	void schema(xmlTextWriterPtr w)
 	    {
+	    std::string xsd_type;
+	    switch(dataType)
+		{
+		case TYPE_BOOL: xsd_type.assign("xsd:boolean"); break;
+		case TYPE_LONG: xsd_type.assign("xsd:long"); break;
+		case TYPE_INT: xsd_type.assign("xsd:int"); break;
+		case TYPE_DOUBLE: xsd_type.assign("xsd:double"); break;
+		default: xsd_type.assign("xsd:string"); break;
+		}
 	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "element", XSD_NS);
 	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST name.c_str());
-	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "type", BAD_CAST "xsd:string");
+	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "type", BAD_CAST xsd_type.c_str());
 	    ::xmlTextWriterEndElement(w);
 	    }
 
@@ -278,6 +309,34 @@ class Model
 			xmlFree(att);
 			}
 
+
+		    att=::xmlGetProp(c2,BAD_CAST "dataType");
+		    if(att!=0)
+			{
+			if(::xmlStrEqual(att,BAD_CAST "xsd:int") || ::xmlStrEqual(att,BAD_CAST "int"))
+			    {
+			    column->dataType=TYPE_INT;
+			    }
+			else if(::xmlStrEqual(att,BAD_CAST "xsd:long") || ::xmlStrEqual(att,BAD_CAST "long"))
+			    {
+			    column->dataType=TYPE_LONG;
+			    }
+			else if(::xmlStrEqual(att,BAD_CAST "xsd:float") || ::xmlStrEqual(att,BAD_CAST "float") ||
+				::xmlStrEqual(att,BAD_CAST "xsd:double") || ::xmlStrEqual(att,BAD_CAST "double"))
+			    {
+			    column->dataType=TYPE_DOUBLE;
+			    }
+			else if(::xmlStrEqual(att,BAD_CAST "xsd:bool"))
+			    {
+			    column->dataType=TYPE_BOOL;
+			    }
+			else if(::xmlStrEqual(att,BAD_CAST "xsd:string") || ::xmlStrEqual(att,BAD_CAST "string"))
+			    {
+			    column->dataType=TYPE_STRING;
+			    }
+			xmlFree(att);
+			}
+
 		    _label_and_desc(c2,column);
 		    }
 		if(table->chromColumn==0)   THROW("Cannot chrom column for table " << table->id);
@@ -408,7 +467,11 @@ class TextRenderer:public Renderer
 	    }
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
+	    this->instance=instance;
+	    this->count_rows=0L;
 	    if(n_printed>0) cout << "\\\\" << endl;
+	    ++n_printed;
+	    cout << "##instance.id="<< instance->id << endl;
 	    cout << "##instance.label="<< instance->label << endl;
 	    cout << "##instance.desc="<< instance->description << endl;
 	    cout << "##region="<<chrom << ":" << chromStart<<"-" << chromEnd << endl;
@@ -436,8 +499,12 @@ class TextRenderer:public Renderer
 		found=true;
 		cout << tokens[i];
 		}
-	    return CURSOR_OK;
+	    cout << endl;
+	    return _hasNext();
 	    }
+
+
+
 	virtual void endInstance()
 	    {
 	    n_printed++;
@@ -448,6 +515,308 @@ class TextRenderer:public Renderer
 	    }
     };
 
+
+class TextCountRenderer:public Renderer
+    {
+    private:
+	string query;
+    public:
+	TextCountRenderer()
+	    {
+
+	    }
+	virtual ~TextCountRenderer()
+	    {
+	    cout.flush();
+	    }
+	virtual void startDocument()
+	    {
+
+	    }
+	virtual void endDocument()
+	    {
+
+	    }
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    ostringstream os;
+	    os << chrom << ":" << chromStart << "-" << chromEnd;
+	    query.assign(os.str());
+	    }
+	virtual void endQuery()
+	    {
+
+	    }
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    this->instance=instance;
+	    this->count_rows=0L;
+	    cout << query << "\t" << instance->id << "\t";
+	    }
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
+	    {
+	    return _hasNext();
+	    }
+
+	virtual void endInstance()
+	    {
+	    cout << this->count_rows << endl;
+	    }
+    };
+
+
+class JSONRenderer:public Renderer
+    {
+    private:
+	int n_queries;
+	int n_instances;
+    public:
+	JSONRenderer():n_queries(0),n_instances(0)
+	    {
+
+	    }
+	virtual ~JSONRenderer()
+	    {
+	    cout.flush();
+	    }
+	virtual void startDocument()
+	    {
+	    cout << "{\"queries\":[";
+	    }
+	virtual void endDocument()
+	    {
+	    cout << "]}\n";
+	    }
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    if(n_queries>0) cout << ",";
+	    n_queries++;
+	    n_instances=0;
+	    this->count_rows=0L;
+	    cout << "{\"chrom\":\""<<  CEscape(chrom) << "\","
+		      "\"chromStart\":"<< chromStart << ","
+		      "\"chromEnd\":"<< chromEnd << ","
+		      "\"tables\":["
+		      ;
+	    }
+	virtual void endQuery()
+	    {
+	    cout << "]}";
+	    }
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    this->instance=instance;
+	    if(n_instances>0) cout << ",";
+	    n_instances++;
+	    this->count_rows=0L;
+	    cout << "{\"id\":\""<<  CEscape(instance->id) << "\","
+	      "\"label\":\""<< CEscape(instance->label) << "\","
+	      "\"desc\":\""<< CEscape(instance->description) << "\","
+	      "\"columns\":["
+	      ;
+	    bool found=false;
+	    for(size_t i=0;i< this->instance->table->columns.size();++i)
+		{
+		Column* col= instance->table->columns.at(i);
+		if(col->ignore) continue;
+		if(found) cout << ",";
+		found=true;
+		cout <<"{\"name\":\"" << CEscape(col->name) << "\",";
+		cout <<"\"label\":\"" << CEscape(col->label) << "\",";
+		cout <<"\"desc\":\"" << CEscape(col->description) << "\",";
+		cout <<"\"type\":\"";
+		switch(col->dataType)
+		    {
+		    case TYPE_BOOL: cout << "xsd:bool"; break;
+		    case TYPE_DOUBLE: cout << "xsd:double"; break;
+		    case TYPE_LONG: cout << "xsd:long"; break;
+		    case TYPE_INT: cout << "xsd:int"; break;
+		    default: cout << "xsd:string"; break;
+		    }
+		cout << "\"}";
+		}
+
+	    cout << "],\"rows\":["
+	      ;
+	    }
+
+
+	virtual void endInstance()
+	    {
+	    cout << "]}";
+	    }
+
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
+	    {
+	    if(this->count_rows>0) cout << ",";
+	    cout << "{";
+	    bool found=false;
+	    for(size_t i=0;i< this->instance->table->columns.size();++i)
+		{
+		Column* col= instance->table->columns.at(i);
+		if(col->ignore) continue;
+		if(i>=tokens.size()) continue;
+		if(found) cout << ",";
+		found=true;
+		cout << "\"";
+		cout << CEscape(col->name);
+		cout << "\":";
+		const char* s_= tokens[i].c_str();
+		if(strcasecmp(s_,"NULL")==0 || strcasecmp(s_,"NIL")==0 || strcasecmp(s_,"N/A")==0)
+		    {
+		    cout << "null";
+		    continue;
+		    }
+		switch(col->dataType)
+		    {
+		    case TYPE_BOOL:
+			{
+			if(strcasecmp(s_,"yes")==0 ||
+			   strcasecmp(s_,"true")==0 ||
+			   strcasecmp(s_,"1")==0 ||
+			   strcasecmp(s_,"T")==0 ||
+			   strcasecmp(s_,"Y")==0)
+			    {
+			    cout << "true";
+			    }
+			else if(strcasecmp(s_,"no")==0 ||
+			   strcasecmp(s_,"false")==0 ||
+			   strcasecmp(s_,"0")==0 ||
+			   strcasecmp(s_,"F")==0 ||
+			   strcasecmp(s_,"N")==0)
+			    {
+			    cout << "false";
+			    }
+			else
+			    {
+			    cout << "\""<< CEscape(tokens[i])<<"\"";
+			    }
+			break;
+			}
+		    case TYPE_DOUBLE:
+			{
+			double v;
+			if(numeric_cast(s_,&v))
+			    {
+			    cout << tokens[i];
+			    }
+			else
+			    {
+			    cout << "\""<< CEscape(tokens[i])<<"\"";
+			    }
+			break;
+			}
+		    case TYPE_INT:
+			{
+			int v;
+			if(numeric_cast(s_,&v))
+			    {
+			    cout << tokens[i];
+			    }
+			else
+			    {
+			    cout << "\""<< CEscape(tokens[i])<<"\"";
+			    }
+			break;
+			}
+		    case TYPE_LONG:
+			{
+			long v;
+			if(numeric_cast(s_,&v))
+			    {
+			    cout << tokens[i];
+			    }
+			else
+			    {
+			    cout << "\""<< CEscape(tokens[i])<<"\"";
+			    }
+			break;
+			}
+		    default:
+			{
+			cout << "\""<< CEscape(tokens[i])<<"\"";
+			break;
+			}
+		    }
+		}
+	    cout << "}";
+	    return _hasNext();
+	    }
+
+	virtual void comment(const std::string s)
+	    {
+
+	    }
+    };
+
+class JSONCountRenderer:public Renderer
+    {
+    private:
+	int n_queries;
+	int n_instances;
+    public:
+	JSONCountRenderer():n_queries(0),n_instances(0)
+	    {
+
+	    }
+	virtual ~JSONCountRenderer()
+	    {
+	    cout.flush();
+	    }
+	virtual void startDocument()
+	    {
+	    cout << "{\"queries\":[";
+	    }
+	virtual void endDocument()
+	    {
+	    cout << "]}\n";
+	    }
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    if(n_queries>0) cout << ",";
+	    n_queries++;
+	    n_instances=0;
+	    this->count_rows=0L;
+	    cout << "{\"chrom\":\""<<  CEscape(chrom) << "\","
+		      "\"chromStart\":"<< chromStart << ","
+		      "\"chromEnd\":"<< chromEnd << ","
+		      "\"tables\":["
+		      ;
+	    }
+	virtual void endQuery()
+	    {
+	    cout << "]}";
+	    }
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    this->instance=instance;
+	    if(n_instances>0) cout << ",";
+	    n_instances++;
+	    this->count_rows=0L;
+	    cout << "{\"id\":\""<<  CEscape(instance->id) << "\","
+	      "\"label\":\""<< CEscape(instance->label) << "\","
+	      "\"desc\":\""<< CEscape(instance->description) << "\","
+	      "\"count\":"
+	      ;
+	    }
+
+
+	virtual void endInstance()
+	    {
+	    cout << count_rows << "}";
+	    }
+
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
+	    {
+
+	    return _hasNext();
+	    }
+
+	virtual void comment(const std::string s)
+	    {
+
+	    }
+    };
 class AbstractXMlRenderer:public Renderer
     {
     protected:
@@ -476,6 +845,9 @@ class AbstractXMlRenderer:public Renderer
 	    ::xmlTextWriterWriteComment(writer,BAD_CAST s.c_str());
 	    }
     };
+
+
+
 
 class XMlRenderer:public AbstractXMlRenderer
     {
@@ -517,6 +889,7 @@ class XMlRenderer:public AbstractXMlRenderer
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
 	    this->instance=instance;
+	    this->count_rows=0L;
 	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
 	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "type",BAD_CAST instance->id.c_str());
 	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "label",BAD_CAST instance->label.c_str());
@@ -551,11 +924,72 @@ class XMlRenderer:public AbstractXMlRenderer
 		::xmlTextWriterEndElement(writer);
 		}
 	    ::xmlTextWriterEndElement(writer);//tr
-	    return CURSOR_OK;
+	    return _hasNext();
 	    }
 	virtual void endInstance()
 	    {
 	    ::xmlTextWriterEndElement(writer);//body
+	    ::xmlTextWriterEndElement(writer);
+	    }
+
+    };
+
+
+
+class XMlCountRenderer:public AbstractXMlRenderer
+    {
+    public:
+	XMlCountRenderer()
+	    {
+	    }
+
+	virtual ~XMlCountRenderer()
+	    {
+
+	    }
+
+	virtual void startDocument()
+	    {
+	    ::xmlTextWriterStartDocument(writer,0,0,0);
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "tabix");
+	    }
+	virtual void endDocument()
+	    {
+
+	    ::xmlTextWriterEndElement(writer);
+	    ::xmlTextWriterEndDocument(writer);
+	    ::xmlTextWriterFlush(writer);
+	    out->flush();
+	    }
+
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "query");
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "chrom",BAD_CAST chrom);
+	    ::xmlTextWriterWriteAttr<int32_t>(writer,BAD_CAST "chromStart",chromStart);
+	    ::xmlTextWriterWriteAttr<int32_t>(writer,BAD_CAST "chromEnd",chromEnd);
+	    }
+	virtual void endQuery()
+	    {
+	    ::xmlTextWriterEndElement(writer);
+	    }
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    this->instance=instance;
+	    this->count_rows=0L;
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "type",BAD_CAST instance->id.c_str());
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "label",BAD_CAST instance->label.c_str());
+	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "description",BAD_CAST instance->description.c_str());
+
+	    }
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
+	    {
+	    return _hasNext();
+	    }
+	virtual void endInstance()
+	    {
+	    xmlTextWriterWriteAttr<long>(writer,BAD_CAST "count",this->count_rows);
 	    ::xmlTextWriterEndElement(writer);
 	    }
 
@@ -608,6 +1042,7 @@ class HtmlRenderer:public AbstractXMlRenderer
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
 	    this->instance=instance;
+	    this->count_rows=0L;
 	    ::xmlTextWriterStartElement(writer,BAD_CAST "div");
 	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "class",BAD_CAST "instance");
 
@@ -654,7 +1089,7 @@ class HtmlRenderer:public AbstractXMlRenderer
 		::xmlTextWriterEndElement(writer);
 		}
 	    ::xmlTextWriterEndElement(writer);//tr
-	    return CURSOR_OK;
+	    return _hasNext();
 	    }
 	virtual void endInstance()
 	    {
@@ -665,12 +1100,123 @@ class HtmlRenderer:public AbstractXMlRenderer
 
     };
 
+
+
+class HtmlCountRenderer:public AbstractXMlRenderer
+    {
+    public:
+	HtmlCountRenderer()
+	    {
+	    }
+
+	virtual ~HtmlCountRenderer()
+	    {
+
+	    }
+
+	virtual void startDocument()
+	    {
+	    //::xmlTextWriterStartDocument(writer,0,0,0);
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "html");
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "body");
+	    }
+	virtual void endDocument()
+	    {
+	    ::xmlTextWriterEndElement(writer);//body
+	    ::xmlTextWriterEndElement(writer);//html
+	    ::xmlTextWriterFlush(writer);
+	    out->flush();
+	    }
+
+	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "div");
+
+
+	    ostringstream os;
+	    os << chrom << ":" <<chromStart << "-" << chromEnd;
+
+
+
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "caption");
+	    ::xmlTextWriterWriteText<string>(writer,os.str());
+	    ::xmlTextWriterEndElement(writer);
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "thead");
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "tr");
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "th");
+	    ::xmlTextWriterWriteString(writer,BAD_CAST"Table");
+	    ::xmlTextWriterEndElement(writer);
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "th");
+	    ::xmlTextWriterWriteString(writer,BAD_CAST"Label");
+	    ::xmlTextWriterEndElement(writer);
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "th");
+	    ::xmlTextWriterWriteString(writer,BAD_CAST"Description");
+	    ::xmlTextWriterEndElement(writer);
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "th");
+	    ::xmlTextWriterWriteString(writer,BAD_CAST"Count");
+	    ::xmlTextWriterEndElement(writer);
+
+
+	    ::xmlTextWriterEndElement(writer);//tr
+	    ::xmlTextWriterEndElement(writer);//thead
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "tbody");
+
+	    }
+	virtual void endQuery()
+	    {
+	    ::xmlTextWriterEndElement(writer);//tbody
+	    ::xmlTextWriterEndElement(writer);//table
+	    ::xmlTextWriterEndElement(writer);//div
+	    }
+	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
+	    {
+	    this->instance=instance;
+	    this->count_rows=0L;
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "tr");
+
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "td");
+	    ::xmlTextWriterWriteText<string>(writer,instance->id);
+	    ::xmlTextWriterEndElement(writer);//td
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "td");
+	    ::xmlTextWriterWriteText<string>(writer,instance->label);
+	    ::xmlTextWriterEndElement(writer);//td
+
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "td");
+	    ::xmlTextWriterWriteText<string>(writer,instance->description);
+	    ::xmlTextWriterEndElement(writer);//td
+
+	    }
+	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
+	    {
+	    return _hasNext();
+	    }
+	virtual void endInstance()
+	    {
+	    ::xmlTextWriterStartElement(writer,BAD_CAST "td");
+	    ::xmlTextWriterWriteText<long>(writer,this->count_rows);
+	    ::xmlTextWriterEndElement(writer);//td
+	    ::xmlTextWriterEndElement(writer);//tr
+	    }
+
+    };
+
+
+
 class TabixServer
     {
     public:
 	Model model;
-
-#ifdef CGI_VERSION
 	CGI cgi;
 	streambuf* stdbuf;;
 	cgistreambuf* cgibuff;
@@ -692,26 +1238,9 @@ class TabixServer
 
 
 
-#else
-	std::string xml_path;
-	std::string format;
-	TabixServer():format("xml")
-	    {
-
-	    }
-	~TabixServer()
-	    {
-
-	    }
-#endif
-
 	xmlDocPtr load_project_file()
 		{
-#ifndef CGI_VERSION
-	    const char* project_xml=xml_path.c_str();
-#else
-	    char* project_xml=getenv("TABIX_SERVER_PATH");
-#endif
+	       char* project_xml=getenv("TABIX_SERVER_PATH");
 
 		if(project_xml==NULL)
 		    {
@@ -733,29 +1262,11 @@ class TabixServer
 	    return name;
 	    }
 
-#ifndef CGI_VERSION
-	virtual void usage(ostream& out,int argc,char** argv)
-	    {
-	    out << argv[0] << " Pierre Lindenbaum PHD. 2012.\n";
-	    out << VARKIT_REVISION << endl;
-	    out << "Tabix files server.\n";
-	    out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-	    out << "Usage" << endl
-		    << "   "<< argv[0]<< " [options] (file|stdin)"<< endl;
-	    out << "Options:\n";
-	    out << "  -c (xml-filename) path to XML config file." << endl;
-	    out << "  -i (instance-id) ignore this instance-id (optional)." << endl;
-	    out << "  -u (instance-id) always use this instance-id (optional)." << endl;
-	    cerr << endl;
-	    }
-#endif
-
 
 
 
 	auto_ptr<Renderer> createRenderer()
 	    {
-#ifdef CGI_VERSION
 	    string format("html");
 
 	    const char* fmt=cgi.getParameter("format");
@@ -766,43 +1277,78 @@ class TabixServer
 		//s.append("_ICI_");
 		//cgi.setParameter("format",s.c_str());
 		}
+	    bool count=false;
+	    const char* count_str=cgi.getParameter("count");
+	    if(count_str!=0)
+		{
+		count=(strcmp(count_str,"yes")==0);
+		}
 
-#endif
 	    auto_ptr<Renderer> render(0);
 	    if(format.compare("xml")==0)
 		{
-		render.reset(new XMlRenderer);
-#ifndef CGI_VERSION
+		if(count)
+		    {
+		    render.reset(new XMlCountRenderer);
+		    }
+		else
+		    {
+		    render.reset(new XMlRenderer);
+		    }
 		cgibuff->setContentType("text/xml");
-#endif
-
 		}
 	    else if(format.compare("html")==0 || format.compare("xhtml")==0)
 		{
-		render.reset(new HtmlRenderer);
-#ifndef CGI_VERSION
+		if(count)
+		    {
+		    render.reset(new HtmlCountRenderer);
+		    }
+		else
+		    {
+		    render.reset(new HtmlRenderer);
+		    }
 		cgibuff->setContentType("text/html");
-#endif
 		}
 	    else if(format.compare("txt")==0 || format.compare("text")==0)
 		{
-		render.reset(new TextRenderer);
-#ifndef CGI_VERSION
+		if(count)
+		    {
+		    render.reset(new TextCountRenderer);
+		    }
+		else
+		    {
+		    render.reset(new TextRenderer);
+		    }
 		cgibuff->setContentType("text/plain");
-#endif
+		}
+	    else if(format.compare("json")==0 || format.compare("js")==0)
+		{
+		if(count)
+		    {
+		    render.reset(new JSONCountRenderer);
+		    }
+		else
+		    {
+		    render.reset(new JSONRenderer);
+		    }
+		cgibuff->setContentType("application/json");
 		}
 	    else
 		{
-		render.reset(new XMlRenderer);
-#ifndef CGI_VERSION
+		if(count)
+		    {
+		    render.reset(new XMlCountRenderer);
+		    }
+		else
+		    {
+		    render.reset(new XMlRenderer);
+		    }
 		cgibuff->setContentType("text/xml");
-#endif
-
 		}
 	    return render;
 	    }
 
-#ifdef CGI_VERSION
+
 
 	void header()
 	    {
@@ -861,8 +1407,19 @@ class TabixServer
 		    "<option>xml</option>"
 		    "<option>html</option>"
 		    "<option>txt</option>"
+		    "<option>json</option>"
 		    "</select>";
+	    cout << "<input type='submit' style='padding:10px;font-size:100%;'>";
 	    cout << "</div>";
+	    cout << "<div>Options: "
+		    "<label for='limitrows'>Limit:</label> "
+		    "<input type='number' id='limitrows' name='limit' value='' type='number' min='1' placeholder=\"stop after 'N' rows\"/>"
+		    " "
+		    "<input type='checkbox' id='justcount' value='yes'  name='count'/> <label for='justcount'>Count</label>"
+		    "</div>"
+		    ;
+
+
 	    /* list instances in a <DL/> list */
 	    cout << "<dl>";
 	    for(map<string,Instance*>::iterator r=model.id2instance.begin();
@@ -899,13 +1456,15 @@ class TabixServer
 	    std::set<std::string> queries= cgi.getParameters("q");
 	    auto_ptr<Renderer> renderer= createRenderer();
 	    renderer->startDocument();
-
-	    if(cgi.contains("format"))
+	    if(cgi.contains("limit"))
 		{
-		string s(cgi.getParameter("format"));
-		s.append("XXXX");
-		renderer->comment(s);
+		long limit;
+		if(numeric_cast(cgi.getParameter("limit"),&limit) && limit>0)
+		    {
+		    renderer->limit_rows=limit;
+		    }
 		}
+
 	    for(
 		set<std::string>::iterator r=queries.begin();
 		r!=queries.end();
@@ -985,144 +1544,6 @@ class TabixServer
 		}
 	    return EXIT_SUCCESS;
 	    }
-#else
-
-	void quit(const char* mime,int status,const char* message)
-		{
-		cout << (message==NULL?"error":message) << "\n";
-		cout.flush();
-		exit(EXIT_FAILURE);
-		}
-
-	int main(int argc,char** argv)
-	    {
-	    set<string> ignore_instance_id;
-	    set<string> only_instance_id;
-	    char* xmlConfig=0;
-	    int optind=1;
-	    while(optind < argc)
-		{
-		if(std::strcmp(argv[optind],"-h")==0)
-		    {
-		    usage(cout,argc,argv);
-		    return (EXIT_FAILURE);
-		    }
-		else if(std::strcmp(argv[optind],"-c")==0 && optind+1<argc)
-		    {
-		    xmlConfig=argv[++optind];
-		    }
-		else if(
-			(std::strcmp(argv[optind],"-i")==0 ||
-			 std::strcmp(argv[optind],"-u")==0
-			) && optind+1<argc)
-		    {
-		    Tokenizer comma(',');
-		    vector<string> tokens;
-		    char which=argv[optind][1];
-		    string line(argv[++optind]);
-		    comma.split(line,tokens);
-		    for(size_t i=0;i< tokens.size();++i)
-			{
-			if(tokens[i].empty()) continue;
-			if(which=='i')
-			    {
-			    ignore_instance_id.insert(tokens[i]);
-			    }
-			else
-			    {
-			    only_instance_id.insert(tokens[i]);
-			    }
-			}
-		    }
-		else if(std::strcmp(argv[optind],"--")==0)
-		    {
-		    ++optind;
-		    break;
-		    }
-		else if(argv[optind][0]=='-')
-		    {
-		    cerr << "unknown option '"<< argv[optind]<< "'"<< endl;
-		    usage(cerr,argc,argv);
-		    return (EXIT_FAILURE);
-		    }
-		else
-		    {
-		    break;
-		    }
-		++optind;
-		}
-	    if(!ignore_instance_id.empty() && !only_instance_id.empty())
-		{
-		cerr << "Both 'ignore' and 'always' use instance id have been defined._n";
-		usage(cerr,argc,argv);
-		return (EXIT_FAILURE);
-		}
-	    if(xmlConfig==0)
-		{
-		cerr << "XML config file has not been defined."<< endl;
-		usage(cerr,argc,argv);
-		return (EXIT_FAILURE);
-		}
-	    model.read(xmlConfig);
-	    if(optind==argc)
-		{
-		cout << "#id\tlabel\tdescription\n";
-		for(size_t i=0;
-		    i< model.instances.size();
-		    ++i)
-		    {
-		    Instance* instance=model.instances.at(i);
-		    cout << instance->id
-			    << "\t"
-			    << instance->label
-			    << "\t"
-			    << instance->description
-			    << endl;
-		    }
-		return EXIT_SUCCESS;
-		}
-
-	    auto_ptr<Renderer> renderer= createRenderer();
-	    renderer->startDocument();
-	    while(optind<argc)
-		{
-		extern std::auto_ptr<std::vector<ChromStartEnd> > parseSegments(const char* s);
-
-		char* arg=argv[optind++];
-		auto_ptr<vector<ChromStartEnd> > segs=parseSegments(arg);
-		if(segs.get()==0)
-		    {
-		    cerr << "Bad segment:"<< arg << endl;
-		    return (EXIT_FAILURE);
-		    }
-		for(size_t j=0;j< segs->size();++j)
-		    {
-		    const ChromStartEnd& segment=segs->at(j);
-		    renderer->startQuery(segment.chrom.c_str(),segment.start,segment.end);
-
-		    for(size_t i=0;
-			i< model.instances.size();
-			++i)
-			{
-			Instance* instance=model.instances.at(i);
-			if(!ignore_instance_id.empty() && ignore_instance_id.find(instance->id)!=ignore_instance_id.end())
-			    {
-			    continue;
-			    }
-			if(!only_instance_id.empty() && only_instance_id.find(instance->id)==only_instance_id.end())
-			    {
-			    continue;
-			    }
-
-			instance->scan(&segment,renderer.get());
-			}
-		    }
-		renderer->endQuery();
-		}
-	    renderer->endDocument();
-	    return EXIT_SUCCESS;
-	    }
-#endif
     };
 
 
