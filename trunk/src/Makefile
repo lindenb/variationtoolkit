@@ -331,7 +331,8 @@ clean-all:clean uninstall
 	
 
 test:$(CGI_BIN_DIR)/tabixserver.cgi
-
+test2: random.o tarball.o
+	g++ -Wall -g -o a.out vcfsim.cpp random.o tarball.o
 #test:$(BINDIR)/redonstructvar
 #	$<  -f /GENOTYPAGE/data/pubdb/ucsc/hg19/chromosomes/hg19.fa\
 #	    -b jeter.bam.txt jeter.kg.txt
