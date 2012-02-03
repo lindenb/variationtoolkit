@@ -107,7 +107,7 @@ class ExtractInfo
 			cerr << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
 			cerr << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 			cerr << "Options:\n";
-			cerr << "  -c <info-column-infex> ("<<  column << ")" << endl;
+			cerr << "  -c <info-column-infex> ("<<  (column+1) << ")" << endl;
 			cerr << "  --delim <column-delimiter> (default:tab)" << endl;
 			cerr << "  -t <tag> (required)" << endl;
 			cerr << "  -N <string> symbol for NOT-FOUND. default:"<< notFound << endl;
