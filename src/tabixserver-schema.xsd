@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<xsd:schema  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+
+    <xsd:complexType name="tabix">
+      <xsd:sequence>
+        <xsd:element name="query" type="query" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType  name="query">
+      <xsd:sequence>
+        <xsd:element name="table" type="table" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+      <xsd:attribute name="chrom" type="xsd:string"/>
+      <xsd:attribute name="chromStart" type="xsd:int"/>
+      <xsd:attribute name="chromEnd" type="xsd:int"/>
+    </xsd:complexType>
+
+     <xsd:complexType  name="table">
+      <xsd:sequence>
+        <xsd:element name="head" type="head" minOccurs="0" maxOccurs="1"/>
+        <xsd:element name="body" type="body" minOccurs="0" maxOccurs="1"/>
+      </xsd:sequence>
+      <xsd:attribute name="type" type="xsd:string"/>
+      <xsd:attribute name="label" type="xsd:string"/>
+      <xsd:attribute name="description" type="xsd:string"/>
+      <xsd:attribute name="count" type="xsd:int"/>
+    </xsd:complexType>
+
+
+    <xsd:complexType  name="head">
+      <xsd:sequence>
+        <xsd:element name="column" type="column" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="column">
+      <xsd:simpleContent>
+        <xsd:extension base="xsd:string">
+          <xsd:attribute name="id" type="xsd:string"/>
+          <xsd:attribute name="label" type="xsd:string"/>
+        </xsd:extension>
+      </xsd:simpleContent>
+    </xsd:complexType>
+
+
+
+
+  <xsd:complexType name="AbstractChromStartEndType">
+    <xsd:attribute name="chrom" type="xsd:string"/>
+    <xsd:attribute name="chromStart" type="xsd:int"/>
+    <xsd:attribute name="chromEnd" type="xsd:int"/>
+    <xsd:attribute name="index" type="xsd:int"/>
+  </xsd:complexType>
+
+  <xsd:element name="AbstractChromStartEnd" abstract="true" type="AbstractChromStartEndType"/>
+
+
+    <xsd:complexType  name="body">
+      <xsd:sequence>
+        <xsd:element ref="AbstractChromStartEnd" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+    </xsd:complexType>
+
+<xsd:element name="tabix" type="tabix"/>
+
+
+
+
+
+</xsd:schema>
