@@ -193,8 +193,9 @@ $(BINDIR)/xsltstream: xsltstream.cpp xstream.o application.o
 $(BINDIR)/godbmgr: godatabasemgr.cpp xsqlite.cpp application.o xstream.o xxml.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ -g `xml2-config --cflags `  $(SQLITE_CFLAGS)   -lz $(SQLITE_LIB) `xml2-config  --libs` ; else $(CPP) -o $@ godatabasemgr.cpp  -DNOSQLITE $(CFLAGS)  ; fi
 $(CGI_BIN_DIR)/tabixserver.cgi: tabixserver.cpp $(PARSESEG) xtabix.o xxml.o cgi.o
+	xsltproc --stringparam method _schema_fragment1 xml2libxmlwriter.xsl tabixserver-schema.xsd > _xsdschema.cpp
 	if [ -z "${CGI_BIN_DIR}" ] ; then echo -e "#\n#\n# CGI_BIN_DIR undefined\n#\n#" ; else \
-		$(CPP) -o $@ -DCGI_VERSION $^  $(CFLAGS)  `xml2-config --cflags `  -L $(TABIXDIR)   `xml2-config --libs `  -ltabix  -lz ; fi
+		$(CPP) -o $@ -DCGI_VERSION $^ _xsdschema.cpp $(CFLAGS)  `xml2-config --cflags `  -L $(TABIXDIR)   `xml2-config --libs `  -ltabix  -lz ; fi
 		
 
 
