@@ -28,14 +28,14 @@
 using namespace std;
 class Instance;
 
-#define XSD_PREFIX BAD_CAST "xsd"
-#define XSD_NS BAD_CAST "http://www.w3.org/2001/XMLSchema"
+#define XSD_PREFIX  "xsd"
+#define XSD_NS  "http://www.w3.org/2001/XMLSchema"
 
-#define XSI_PREFIX BAD_CAST "xsi"
-#define XSI_NS BAD_CAST "http://www.w3.org/2001/XMLSchema-instance"
+#define XSI_PREFIX  "xsi"
+#define XSI_NS  "http://www.w3.org/2001/XMLSchema-instance"
 
-#define SOAP_PREFIX BAD_CAST "soap"
-#define SOAP_NS BAD_CAST "http://schemas.xmlsoap.org/wsdl/soap/"
+#define SOAP_PREFIX  "soap"
+#define SOAP_NS  "http://schemas.xmlsoap.org/wsdl/soap/"
 
 #define WSDL_PREFIX  "wsdl"
 #define WSDL_NS  "http://schemas.xmlsoap.org/wsdl/"
@@ -125,13 +125,13 @@ class Named
 	std::string description;
 
 	/** print as xsd:annotation */
-	void xsdAnnotation(xmlTextWriterPtr w)
+	void xsdAnnotation(XmlStreamWriter* w)
 		{
-		::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "annotation", XSD_NS);
-		::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "documentation", XSD_NS);
-		::xmlTextWriterWriteText<std::string>(w,description);
-		::xmlTextWriterEndElement(w);
-		::xmlTextWriterEndElement(w);
+		w->writeStartElementNS(XSD_PREFIX, "annotation", XSD_NS);
+		w->writeStartElementNS(XSD_PREFIX, "documentation", XSD_NS);
+		w->writeString(description);
+		w->writeEndElement();
+		w->writeEndElement();
 		}
 
     };
@@ -159,7 +159,7 @@ class Column:public Named
 	    }
 
 	/** write XSD:schema for this column */
-	void schema(xmlTextWriterPtr w)
+	void schema(XmlStreamWriter* w)
 	    {
 	    std::string xsd_type;
 	    switch(dataType)
@@ -170,15 +170,15 @@ class Column:public Named
 		case TYPE_DOUBLE: xsd_type.assign("xsd:double"); break;
 		default: xsd_type.assign("xsd:string"); break;
 		}
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "element", XSD_NS);
-	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST name.c_str());
-	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "type", BAD_CAST xsd_type.c_str());
+	    w->writeStartElementNS(XSD_PREFIX,  "element", XSD_NS);
+	    w->writeAttribute( "name",  name.c_str());
+	    w->writeAttribute( "type",  xsd_type.c_str());
 
 	    if(!description.empty() && description.compare(name)!=0)
 		{
 		xsdAnnotation(w);
 		}
-	    ::xmlTextWriterEndElement(w);//xsd::element
+	    w->writeEndElement();//xsd::element
 	    }
 
     };
@@ -249,11 +249,11 @@ class Table:public Named
 	    }
 
 	/** print this table as a xsd::complexType */
-	void schema(xmlTextWriterPtr w)
+	void schema(XmlStreamWriter* w)
 	    {
 	    string type(xsdType());
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "complexType", XSD_NS);
-	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST type.c_str());
+	    w->writeStartElementNS(XSD_PREFIX,  "complexType", XSD_NS);
+	    w->writeAttribute( "name",  type.c_str());
 
 
 	    if(!description.empty() && description.compare(id)!=0)
@@ -261,10 +261,10 @@ class Table:public Named
 		xsdAnnotation(w);
 		}
 
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "complexContent", XSD_NS);
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "extension", XSD_NS);
-	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "base", BAD_CAST "AbstractChromStartEndType");
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "sequence", XSD_NS);
+	    w->writeStartElementNS(XSD_PREFIX,  "complexContent", XSD_NS);
+	    w->writeStartElementNS(XSD_PREFIX,  "extension", XSD_NS);
+	    w->writeAttribute( "base",  "AbstractChromStartEndType");
+	    w->writeStartElementNS(XSD_PREFIX,  "sequence", XSD_NS);
 	    int i=0;
 	    for(i=0;i< size();++i)
 		{
@@ -273,10 +273,10 @@ class Table:public Named
 		c->schema(w);
 		}
 
-	    ::xmlTextWriterEndElement(w);
-	    ::xmlTextWriterEndElement(w);
-	    ::xmlTextWriterEndElement(w);
-	    ::xmlTextWriterEndElement(w);
+	    w->writeEndElement();
+	    w->writeEndElement();
+	    w->writeEndElement();
+	    w->writeEndElement();
 	    }
 
     };
@@ -324,20 +324,20 @@ class Instance:public Named
 	    scan(position->chrom.c_str(),position->start,position->end,renderer);
 	    }
 	/** xsd schema for this instance */
-	void schema(xmlTextWriterPtr w)
+	void schema(XmlStreamWriter* w)
 	    {
 	    string t(table->xsdType());
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "element", XSD_NS);
-	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST id.c_str());
-	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "type", BAD_CAST t.c_str());
-	    ::xmlTextWriterWriteAttribute(w,BAD_CAST "substitutionGroup", BAD_CAST "AbstractChromStartEnd");
+	    w->writeStartElementNS(XSD_PREFIX,  "element", XSD_NS);
+	    w->writeAttribute( "name",  id.c_str());
+	    w->writeAttribute( "type",  t.c_str());
+	    w->writeAttribute( "substitutionGroup",  "AbstractChromStartEnd");
 
 	    if(!description.empty() && description.compare(id)!=0)
 		{
 		xsdAnnotation(w);
 	   	}
 
-	    ::xmlTextWriterEndElement(w);
+	    w->writeEndElement();
 	    }
 
 	void schemaArrayOf(XmlStreamWriter* w)
@@ -345,11 +345,11 @@ class Instance:public Named
 	    string t(table->xsdType());
 	    string element("ArrayOf");
 	    element.append(this->id);
-	    w->writeStartElementNS((const char*)XSD_PREFIX, (const char*) BAD_CAST "element", (const char*) XSD_NS);
+	    w->writeStartElementNS(XSD_PREFIX, "element", XSD_NS);
 	    w->writeAttr("name",element);
-	    w->writeStartElementNS((const char*)XSD_PREFIX,"complexType",(const char*)XSD_NS);
-	    w->writeStartElementNS((const char*)XSD_PREFIX,"sequence",(const char*)XSD_NS);
-	    w->writeStartElementNS((const char*)XSD_PREFIX,"element",(const char*)XSD_NS);
+	    w->writeStartElementNS(XSD_PREFIX,"complexType",XSD_NS);
+	    w->writeStartElementNS(XSD_PREFIX,"sequence",XSD_NS);
+	    w->writeStartElementNS(XSD_PREFIX,"element",XSD_NS);
 	    w->writeAttr("type",this->id);
 	    w->writeAttr("maxOccurs","unbounded");
 	    w->writeAttr("minOccurs",0);
@@ -579,23 +579,24 @@ class Model
 	    ::xmlFreeDoc(doc);
 	    }
 
-#define DEFINE_ATT(name,type)   ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "attribute", XSD_NS);\
-	::xmlTextWriterWriteAttribute(w,BAD_CAST "name", BAD_CAST name);\
-	::xmlTextWriterWriteAttribute(w,BAD_CAST "type", BAD_CAST type);\
-	::xmlTextWriterEndElement(w)
+#define DEFINE_ATT(name,type)   w->writeStartElementNS(XSD_PREFIX, BAD_CAST "attribute", XSD_NS);\
+	w->writeAttribute(BAD_CAST "name", BAD_CAST name);\
+	w->writeAttribute(BAD_CAST "type", BAD_CAST type);\
+	w->writeEndElement()
 
 	/** write XML schema for this model */
 	void schema(std::ostream& out)
 	    {
 	    xmlOutputBufferPtr buffer=::xmlOutputBufferCreateIOStream(&cout,0);
-	    xmlTextWriterPtr w=::xmlNewTextWriter(buffer);
-	    ::xmlTextWriterStartDocument(w,0,0,0);
-	    ::xmlTextWriterStartElementNS(w,XSD_PREFIX, BAD_CAST "schema", XSD_NS);
+	    xmlTextWriterPtr xtw=::xmlNewTextWriter(buffer);
+	    XmlStreamWriter* w=new XmlStreamWriter(xtw);
+	    w->writeStartDocument();
+	    w->writeStartElementNS(XSD_PREFIX, "schema", XSD_NS);
 
 
 	    extern void _schema_fragment1(xmlTextWriterPtr w);
 
-	    _schema_fragment1(w);
+	    _schema_fragment1(w->getDelegate());
 
 
 	    for(size_t i=0;i< tables.size();++i)
@@ -608,12 +609,13 @@ class Model
 		Instance* instance=instances.at(i);
 		instance->schema(w);
 		}
-	    ::xmlTextWriterEndElement(w);
-	    ::xmlTextWriterEndDocument(w);
+	    w->writeEndElement();
+	    w->writeEndDocument();
 
-	    ::xmlFreeTextWriter(w);
+	    ::xmlFreeTextWriter(xtw);
 
 	    out.flush();
+	    delete w;
 	    }
 
 
@@ -1077,7 +1079,7 @@ class AbstractXMlRenderer:public Renderer
 	virtual void endInstance()=0;
 	virtual void comment(const std::string s)
 	    {
-	    ::xmlTextWriterWriteComment(writer,BAD_CAST s.c_str());
+	    sw->writeComment( s.c_str());
 	    }
     };
 
@@ -1102,66 +1104,66 @@ class XMlRenderer:public AbstractXMlRenderer
 	virtual void startDocument()
 	    {
 	    ::xmlTextWriterStartDocument(writer,0,0,0);
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "tabix");
+	    sw->writeStartElement( "tabix");
 	    if(!xsd_url.empty())
 		{
-		::xmlTextWriterWriteAttribute(writer,BAD_CAST "xmlns:xsi",XSI_NS);
-		::xmlTextWriterWriteAttribute(writer,BAD_CAST "xsi:schemaLocation",BAD_CAST xsd_url.c_str());
+		sw->writeAttribute( "xmlns:xsi",XSI_NS);
+		sw->writeAttribute( "xsi:schemaLocation", xsd_url.c_str());
 		}
 	    }
 
 	virtual void endDocument()
 	    {
-	    ::xmlTextWriterEndElement(writer);
-	    ::xmlTextWriterEndDocument(writer);
+	    sw->writeEndElement();
+	    sw->writeEndDocument();
 	    ::xmlTextWriterFlush(writer);
 	    out->flush();
 	    }
 
 	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "query");
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "chrom",BAD_CAST chrom);
-	    ::xmlTextWriterWriteAttr<int32_t>(writer,BAD_CAST "chromStart",chromStart);
-	    ::xmlTextWriterWriteAttr<int32_t>(writer,BAD_CAST "chromEnd",chromEnd);
+	    sw->writeStartElement( "query");
+	    sw->writeAttr("chrom", chrom);
+	    sw->writeAttr("chromStart",chromStart);
+	    sw->writeAttr("chromEnd",chromEnd);
 	    }
 	virtual void endQuery()
 	    {
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeEndElement();
 	    }
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
 	    this->instance=instance;
 	    this->count_rows=0L;
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "type",BAD_CAST instance->id.c_str());
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "label",BAD_CAST instance->label.c_str());
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "description",BAD_CAST instance->description.c_str());
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "head");
+	    sw->writeStartElement( "table");
+	    sw->writeAttribute( "type", instance->id.c_str());
+	    sw->writeAttribute( "label", instance->label.c_str());
+	    sw->writeAttribute( "description", instance->description.c_str());
+	    sw->writeStartElement( "head");
 	    for(size_t i=0;i< instance->table->columns.size();++i)
 		{
 		Column* col= instance->table->columns.at(i);
 		if(col->ignore) continue;
-		::xmlTextWriterStartElement(writer,BAD_CAST "column");
-		 ::xmlTextWriterWriteAttr<string>(writer,BAD_CAST "id",col->name);
-		 ::xmlTextWriterWriteAttr<string>(writer,BAD_CAST "label",col->label);
+		sw->writeStartElement( "column");
+		 sw->writeAttr( "id",col->name);
+		 sw->writeAttr( "label",col->label);
 		 ::xmlTextWriterWriteText<string>(writer,col->description);
-		::xmlTextWriterEndElement(writer);//head
+		sw->writeEndElement();//head
 		}
-	    ::xmlTextWriterEndElement(writer);//head
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "body");
+	    sw->writeEndElement();//head
+	    sw->writeStartElement( "body");
 	    }
 	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
 	    {
-	    ::xmlTextWriterStartElement(writer,BAD_CAST instance->id.c_str());
-	    ::xmlTextWriterWriteAttr<uint64_t>(writer,BAD_CAST "index",nLine);
-	    ::xmlTextWriterWriteAttr<std::string>(writer,BAD_CAST "chrom",
+	    sw->writeStartElement( instance->id.c_str());
+	    sw->writeAttr( "index",nLine);
+	    sw->writeAttr( "chrom",
 		tokens[this->instance->table->chromColumn->columnIndex]
 		);
-	    ::xmlTextWriterWriteAttr<std::string>(writer,BAD_CAST "chromStart",
+	    sw->writeAttr( "chromStart",
 		tokens[this->instance->table->chromStartColumn->columnIndex]
 		);
-	    ::xmlTextWriterWriteAttr<std::string>(writer,BAD_CAST "chromEnd",
+	    sw->writeAttr( "chromEnd",
 		tokens[this->instance->table->chromEndColumn->columnIndex]
 		);
 
@@ -1170,20 +1172,20 @@ class XMlRenderer:public AbstractXMlRenderer
 		{
 		Column* col= instance->at(i);
 		if(col->ignore) continue;
-		::xmlTextWriterStartElement(writer,BAD_CAST col->name.c_str());
+		sw->writeStartElement( col->name.c_str());
 		if(i< (int32_t)tokens.size())
 		    {
 		    ::xmlTextWriterWriteText<string>(writer,tokens[i]);
 		    }
-		::xmlTextWriterEndElement(writer);
+		sw->writeEndElement();
 		}
-	    ::xmlTextWriterEndElement(writer);//tr
+	    sw->writeEndElement();//tr
 	    return _hasNext();
 	    }
 	virtual void endInstance()
 	    {
-	    ::xmlTextWriterEndElement(writer);//body
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeEndElement();//body
+	    sw->writeEndElement();
 	    }
 
     };
@@ -1209,41 +1211,41 @@ class XMlCountRenderer:public AbstractXMlRenderer
 	virtual void startDocument()
 	    {
 	    ::xmlTextWriterStartDocument(writer,0,0,0);
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "tabix");
+	    sw->writeStartElement( "tabix");
 	    if(!xsd_url.empty())
 		{
-		::xmlTextWriterWriteAttribute(writer,BAD_CAST "xmlns:xsi",XSI_NS);
-		::xmlTextWriterWriteAttribute(writer,BAD_CAST "xsi:schemaLocation",BAD_CAST xsd_url.c_str());
+		sw->writeAttribute( "xmlns:xsi",XSI_NS);
+		sw->writeAttribute( "xsi:schemaLocation", xsd_url.c_str());
 		}
 	    }
 	virtual void endDocument()
 	    {
 
-	    ::xmlTextWriterEndElement(writer);
-	    ::xmlTextWriterEndDocument(writer);
+	    sw->writeEndElement();
+	    sw->writeEndDocument();
 	    ::xmlTextWriterFlush(writer);
 	    out->flush();
 	    }
 
 	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "query");
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "chrom",BAD_CAST chrom);
-	    ::xmlTextWriterWriteAttr<int32_t>(writer,BAD_CAST "chromStart",chromStart);
-	    ::xmlTextWriterWriteAttr<int32_t>(writer,BAD_CAST "chromEnd",chromEnd);
+	    sw->writeStartElement( "query");
+	    sw->writeAttribute( "chrom", chrom);
+	    sw->writeAttr( "chromStart",chromStart);
+	    sw->writeAttr( "chromEnd",chromEnd);
 	    }
 	virtual void endQuery()
 	    {
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeEndElement();
 	    }
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
 	    this->instance=instance;
 	    this->count_rows=0L;
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "type",BAD_CAST instance->id.c_str());
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "label",BAD_CAST instance->label.c_str());
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "description",BAD_CAST instance->description.c_str());
+	    sw->writeStartElement( "table");
+	    sw->writeAttribute( "type", instance->id.c_str());
+	    sw->writeAttribute( "label", instance->label.c_str());
+	    sw->writeAttribute( "description", instance->description.c_str());
 
 	    }
 	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
@@ -1252,8 +1254,8 @@ class XMlCountRenderer:public AbstractXMlRenderer
 	    }
 	virtual void endInstance()
 	    {
-	    xmlTextWriterWriteAttr<long>(writer,BAD_CAST "count",this->count_rows);
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeAttr( "count",this->count_rows);
+	    sw->writeEndElement();
 	    }
 
     };
@@ -1277,54 +1279,54 @@ class HtmlRenderer:public AbstractXMlRenderer
 	virtual void startDocument()
 	    {
 	    //::xmlTextWriterStartDocument(writer,0,0,0);
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "html");
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "body");
+	    sw->writeStartElement( "html");
+	    sw->writeStartElement( "body");
 	    }
 	virtual void endDocument()
 	    {
-	    ::xmlTextWriterEndElement(writer);//body
-	    ::xmlTextWriterEndElement(writer);//html
+	    sw->writeEndElement();//body
+	    sw->writeEndElement();//html
 	    ::xmlTextWriterFlush(writer);
 	    out->flush();
 	    }
 
 	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "div");
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "class",BAD_CAST "query");
+	    sw->writeStartElement( "div");
+	    sw->writeAttribute( "class", "query");
 
 
 	    ostringstream os;
 	    os << chrom << ":" <<chromStart << "-" << chromEnd;
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "h2");
+	    sw->writeStartElement( "h2");
 	    ::xmlTextWriterWriteText<string>(writer,os.str());
-	    ::xmlTextWriterEndElement(writer);//h2
+	    sw->writeEndElement();//h2
 	    }
 	virtual void endQuery()
 	    {
-	    ::xmlTextWriterEndElement(writer);//div
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeEndElement();//div
+	    sw->writeEndElement();
 	    }
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
 	    this->instance=instance;
 	    this->count_rows=0L;
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "div");
-	    ::xmlTextWriterWriteAttribute(writer,BAD_CAST "class",BAD_CAST "instance");
+	    sw->writeStartElement( "div");
+	    sw->writeAttribute( "class", "instance");
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "h3");
+	    sw->writeStartElement( "h3");
 	    ::xmlTextWriterWriteText<string>(writer,instance->label);
-	    ::xmlTextWriterEndElement(writer);//h3
+	    sw->writeEndElement();//h3
 
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "p");
+	    sw->writeStartElement( "p");
 	    ::xmlTextWriterWriteText<string>(writer,instance->description);
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeEndElement();
 
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "thead");
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "tr");
+	    sw->writeStartElement( "table");
+	    sw->writeStartElement( "thead");
+	    sw->writeStartElement( "tr");
 
 
 
@@ -1332,36 +1334,36 @@ class HtmlRenderer:public AbstractXMlRenderer
 		{
 		Column* col= instance->table->columns.at(i);
 		if(col->ignore) continue;
-		::xmlTextWriterStartElement(writer,BAD_CAST "th");
+		sw->writeStartElement( "th");
 		 ::xmlTextWriterWriteText<string>(writer,col->label);
-		::xmlTextWriterEndElement(writer);//th
+		sw->writeEndElement();//th
 		}
-	    ::xmlTextWriterEndElement(writer);//tr
-	    ::xmlTextWriterEndElement(writer);//thead
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "tbody");
+	    sw->writeEndElement();//tr
+	    sw->writeEndElement();//thead
+	    sw->writeStartElement( "tbody");
 	    }
 	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
 	    {
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "tr");
+	    sw->writeStartElement( "tr");
 	    for(size_t i=0;i< this->instance->table->columns.size();++i)
 		{
 		Column* col= instance->table->columns.at(i);
 		if(col->ignore) continue;
-		::xmlTextWriterStartElement(writer,BAD_CAST "td");
+		sw->writeStartElement( "td");
 		if(i<tokens.size())
 		    {
 		    ::xmlTextWriterWriteText<string>(writer,tokens[i]);
 		    }
-		::xmlTextWriterEndElement(writer);
+		sw->writeEndElement();
 		}
-	    ::xmlTextWriterEndElement(writer);//tr
+	    sw->writeEndElement();//tr
 	    return _hasNext();
 	    }
 	virtual void endInstance()
 	    {
-	    ::xmlTextWriterEndElement(writer);//tbody
-	    ::xmlTextWriterEndElement(writer);//table
-	    ::xmlTextWriterEndElement(writer);//div
+	    sw->writeEndElement();//tbody
+	    sw->writeEndElement();//table
+	    sw->writeEndElement();//div
 	    }
 
     };
@@ -1386,20 +1388,20 @@ class HtmlCountRenderer:public AbstractXMlRenderer
 	virtual void startDocument()
 	    {
 	    //::xmlTextWriterStartDocument(writer,0,0,0);
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "html");
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "body");
+	    sw->writeStartElement( "html");
+	    sw->writeStartElement( "body");
 	    }
 	virtual void endDocument()
 	    {
-	    ::xmlTextWriterEndElement(writer);//body
-	    ::xmlTextWriterEndElement(writer);//html
+	    sw->writeEndElement();//body
+	    sw->writeEndElement();//html
 	    ::xmlTextWriterFlush(writer);
 	    out->flush();
 	    }
 
 	virtual void startQuery(const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "div");
+	    sw->writeStartElement("div");
 
 
 	    ostringstream os;
@@ -1408,62 +1410,62 @@ class HtmlCountRenderer:public AbstractXMlRenderer
 
 
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "table");
+	    sw->writeStartElement("table");
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "caption");
-	    ::xmlTextWriterWriteText<string>(writer,os.str());
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeStartElement( "caption");
+	    sw->writeString(os.str());
+	    sw->writeEndElement();
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "thead");
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "tr");
+	    sw->writeStartElement( "thead");
+	    sw->writeStartElement( "tr");
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "th");
-	    ::xmlTextWriterWriteString(writer,BAD_CAST"Table");
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeStartElement( "th");
+	    sw->writeString("Table");
+	    sw->writeEndElement();
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "th");
-	    ::xmlTextWriterWriteString(writer,BAD_CAST"Label");
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeStartElement( "th");
+	    sw->writeString("Label");
+	    sw->writeEndElement();
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "th");
-	    ::xmlTextWriterWriteString(writer,BAD_CAST"Description");
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeStartElement( "th");
+	    sw->writeString("Description");
+	    sw->writeEndElement();
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "th");
-	    ::xmlTextWriterWriteString(writer,BAD_CAST"Count");
-	    ::xmlTextWriterEndElement(writer);
+	    sw->writeStartElement( "th");
+	    sw->writeString("Count");
+	    sw->writeEndElement();
 
 
-	    ::xmlTextWriterEndElement(writer);//tr
-	    ::xmlTextWriterEndElement(writer);//thead
+	    sw->writeEndElement();//tr
+	    sw->writeEndElement();//thead
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "tbody");
+	    sw->writeStartElement( "tbody");
 
 	    }
 	virtual void endQuery()
 	    {
-	    ::xmlTextWriterEndElement(writer);//tbody
-	    ::xmlTextWriterEndElement(writer);//table
-	    ::xmlTextWriterEndElement(writer);//div
+	    sw->writeEndElement();//tbody
+	    sw->writeEndElement();//table
+	    sw->writeEndElement();//div
 	    }
 	virtual void startInstance(Instance* instance,const char* chrom,int32_t chromStart,int32_t chromEnd)
 	    {
 	    this->instance=instance;
 	    this->count_rows=0L;
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "tr");
+	    sw->writeStartElement("tr");
 
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "td");
-	    ::xmlTextWriterWriteText<string>(writer,instance->id);
-	    ::xmlTextWriterEndElement(writer);//td
+	    sw->writeStartElement( "td");
+	    sw->writeString(instance->id);
+	    sw->writeEndElement();//td
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "td");
-	    ::xmlTextWriterWriteText<string>(writer,instance->label);
-	    ::xmlTextWriterEndElement(writer);//td
+	    sw->writeStartElement( "td");
+	    sw->writeString(instance->label);
+	    sw->writeEndElement();//td
 
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "td");
-	    ::xmlTextWriterWriteText<string>(writer,instance->description);
-	    ::xmlTextWriterEndElement(writer);//td
+	    sw->writeStartElement( "td");
+	    sw->writeString(instance->description);
+	    sw->writeEndElement();//td
 
 	    }
 	virtual RenderStatus handle(const std::vector<std::string>& tokens,uint64_t nLine)
@@ -1472,10 +1474,10 @@ class HtmlCountRenderer:public AbstractXMlRenderer
 	    }
 	virtual void endInstance()
 	    {
-	    ::xmlTextWriterStartElement(writer,BAD_CAST "td");
-	    ::xmlTextWriterWriteText<long>(writer,this->count_rows);
-	    ::xmlTextWriterEndElement(writer);//td
-	    ::xmlTextWriterEndElement(writer);//tr
+	    sw->writeStartElement("td");
+	    sw->writeString(this->count_rows);
+	    sw->writeEndElement();//td
+	    sw->writeEndElement();//tr
 	    }
 
     };
