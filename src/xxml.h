@@ -35,6 +35,38 @@ int xmlTextWriterWriteText(xmlTextWriterPtr writer,const T value)
     std::string s(os.str());
     return ::xmlTextWriterWriteString(writer,BAD_CAST s.c_str());
     }
-
+/** simple wrapper around xmlTextWriterPtr */
+class XmlStreamWriter
+    {
+    private:
+	xmlTextWriterPtr delegate;
+    public:
+	XmlStreamWriter(xmlTextWriterPtr delegate);
+	virtual ~XmlStreamWriter();
+	xmlTextWriterPtr getDelegate();
+	void writeStartDocument();
+	void writeEndDocument();
+	void writeAttribute(const char* name,const char* value);
+	void writeStartElementNS(const char* prefix,const char* element,const char* ns);
+	void writeStartElement(const char* name);
+	void writeEndElement();
+	void writeText(const char* s);
+	void writeComment(const char* s);
+	template <typename T>  void writeString(const T value)
+	    {
+	    std::ostringstream os;
+	    os << value;
+	    std::string s(os.str());
+	    this->writeText(s.c_str());
+	    }
+	template <typename T>
+	void writeAttr(const char* name,const T value)
+	    {
+	    std::ostringstream os;
+	    os << value;
+	    std::string s(os.str());
+	    return this->writeAttribute(name,s.c_str());
+	    }
+    };
 
 #endif

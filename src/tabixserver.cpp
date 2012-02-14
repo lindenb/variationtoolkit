@@ -34,6 +34,13 @@ class Instance;
 #define XSI_PREFIX BAD_CAST "xsi"
 #define XSI_NS BAD_CAST "http://www.w3.org/2001/XMLSchema-instance"
 
+#define SOAP_PREFIX BAD_CAST "soap"
+#define SOAP_NS BAD_CAST "http://schemas.xmlsoap.org/wsdl/soap/"
+
+#define WSDL_PREFIX  "wsdl"
+#define WSDL_NS  "http://schemas.xmlsoap.org/wsdl/"
+
+
 /***************************************************************************************/
 /***************************************************************************************/
 /***************************************************************************************/
@@ -332,6 +339,25 @@ class Instance:public Named
 
 	    ::xmlTextWriterEndElement(w);
 	    }
+
+	void schemaArrayOf(XmlStreamWriter* w)
+	    {
+	    string t(table->xsdType());
+	    string element("ArrayOf");
+	    element.append(this->id);
+	    w->writeStartElementNS((const char*)XSD_PREFIX, (const char*) BAD_CAST "element", (const char*) XSD_NS);
+	    w->writeAttr("name",element);
+	    w->writeStartElementNS((const char*)XSD_PREFIX,"complexType",(const char*)XSD_NS);
+	    w->writeStartElementNS((const char*)XSD_PREFIX,"sequence",(const char*)XSD_NS);
+	    w->writeStartElementNS((const char*)XSD_PREFIX,"element",(const char*)XSD_NS);
+	    w->writeAttr("type",this->id);
+	    w->writeAttr("maxOccurs","unbounded");
+	    w->writeAttr("minOccurs",0);
+	    w->writeEndElement();
+	    w->writeEndElement();
+	    w->writeEndElement();
+	    w->writeEndElement();
+	    }
     };
 
 /***************************************************************************************/
@@ -589,7 +615,36 @@ class Model
 
 	    out.flush();
 	    }
+
+
+	/** write WDSL for the schame */
+	void wsdl(std::ostream& out)
+	    {
+	    xmlOutputBufferPtr buffer=::xmlOutputBufferCreateIOStream(&cout,0);
+	    xmlTextWriterPtr xtw=::xmlNewTextWriter(buffer);
+	    XmlStreamWriter w(xtw);
+	    w.writeStartDocument();
+
+	    w.writeStartElementNS(WSDL_PREFIX, "definitions", WSDL_NS);
+	   // w.writeAttr("xmlns:xsd",XSD_NS);
+	    w.writeAttr("xmlns:wsdl",WSDL_NS);
+
+	    //types
+	    w.writeStartElementNS(WSDL_PREFIX, "types", WSDL_NS);
+
+	    w.writeEndElement();//types
+
+	    w.writeEndElement();
+
+	    w.writeEndDocument();
+
+	    ::xmlFreeTextWriter(xtw);
+
+	    out.flush();
+	    }
+
     };
+
 
 
 /***************************************************************************************/
@@ -999,14 +1054,17 @@ class AbstractXMlRenderer:public Renderer
     protected:
 	xmlOutputBufferPtr buffer;
 	xmlTextWriterPtr writer;
+	XmlStreamWriter* sw;
     public:
 	AbstractXMlRenderer()
 	    {
 	    buffer= ::xmlOutputBufferCreateIOStream(&cout,0);
 	    writer = ::xmlNewTextWriter(buffer);
+	    sw=new XmlStreamWriter(writer);
 	    }
 	virtual ~AbstractXMlRenderer()
 	    {
+	    if(sw!=0) delete sw;
 	    if(writer!=0) ::xmlFreeTextWriter(writer);
 	    if(buffer!=0) ::xmlOutputBufferClose(buffer);
 	    }
@@ -1752,6 +1810,15 @@ class TabixServer
 	    model.schema(cout);
 	    }
 
+	/* print the wsdl */
+	void wsdl()
+	    {
+	    loadModel();
+	    cgibuff->setContentType("text/xml");
+	    model.wsdl(cout);
+	    }
+
+
 	/* main loop */
 	int main(int argc,char** argv)
 	    {
@@ -1771,6 +1838,10 @@ class TabixServer
 		else if(cgi.contains("action","schema"))
 		    {
 		    schema();
+		    }
+		else if(cgi.contains("action","wsdl"))
+		    {
+		    wsdl();
 		    }
 		else
 		    {
