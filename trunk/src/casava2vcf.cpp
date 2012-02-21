@@ -21,7 +21,7 @@
 #include "tokenizer.h"
 #include "numeric_cast.h"
 #include "zstreambuf.h"
-
+#include "xfaidx.h"
 
 using namespace std;
 
@@ -30,6 +30,7 @@ class CasavaToVCF
     private:
 	Tokenizer tokenizer;
 	std::auto_ptr<string> buffer;
+
 	bool next(std::istream& in,string& line)
 	    {
 	    if(buffer.get()!=0)
@@ -45,7 +46,15 @@ class CasavaToVCF
 	    }
 
     public:
+	CasavaToVCF()
+	    {
 
+	    }
+
+	virtual ~CasavaToVCF()
+	    {
+
+	    }
 
 	void run_snp(std::istream& in)
 	    {
@@ -57,6 +66,7 @@ class CasavaToVCF
 		tokenizer.split(line,tokens);
 		if(tokens[0].compare("seq_name")==0)
 		    {
+		    buffer.reset(new string(line));
 		    return;
 		    }
 		buffer.release();
@@ -119,7 +129,7 @@ class CasavaToVCF
 		cout << ":";
 		cout << tokens[7];
 		cout << ":";
-		cout << tokens[3];
+		cout << tokens[2];
 
 		cout << endl;
 		}
@@ -135,6 +145,7 @@ class CasavaToVCF
 		tokenizer.split(line,tokens);
 		if(tokens[0].compare("seq_name")==0)
 		    {
+		    buffer.reset(new string(line));
 		    return;
 		    }
 		buffer.release();
@@ -143,19 +154,54 @@ class CasavaToVCF
 
 		string::size_type slash= tokens[4].find('/');
 		if(slash==string::npos) THROW("no slash in "<< tokens[4]);
+		if(slash==0 || slash+1==tokens[4].size()) THROW("nothing before/after slash ?? in "<< tokens[4]);
+		string left( tokens[4].substr(0,slash));
+		string right( tokens[4].substr(slash+1));
+		if(left.size()!=right.size()) THROW("Bad indel "<<line);
+
 
 		cout << tokens[0] << "\t" ; //CHROM
-		cout << tokens[1] << "\t" ; //POS
-		cout << "." << "\t" ; //ID
-		cout << tokens[4].substr(0,slash) << "\t" ; //REF
+		int position1;
+		if(!numeric_cast<int>(tokens[1].c_str(),&position1) || position1<1)
+		    {
+		    THROW("Bad position in "<< line);
+		    }
+		const string& aval=tokens[3];
+		if(aval.empty()) THROW("upstream sequence ??"<< aval);
+		string indel;
+		size_t indel_size;
+		if(left[0]=='-') /* -----/CCTCT insertion */
+		    {
+		    if(left.find_first_not_of('-')!=string::npos) THROW("BAD indel "<< tokens[4]);
+		    if(right.find('-')!=string::npos) THROW("BAD indel "<< tokens[4]);
+		    if(right.find_first_not_of("ATGCNatgcn")!=string::npos) THROW("BAD indel "<< tokens[4]);
 
-		cout << tokens[4].substr(slash+1) << "\t" ; //REF
+		    indel.assign("INSERTION");
+		    indel_size=right.size();
+		    cout << position1-1 << "\t" ; //yes VCF use the base before
+		    cout << "." << "\t" ; //ID
+		    cout << aval.at(aval.size()-1) << "\t";
+		    cout << aval.at(aval.size()-1) << right << "\t";
+		    }
+		else /* CCTCT/-----  deletion */
+		    {
+
+		    if(left.find('-')!=string::npos) THROW("BAD indel "<< tokens[4]);
+		    if(left.find_first_not_of("ATGCNatgcn")!=string::npos) THROW("BAD indel "<< tokens[4]);
+		    if(right.find_first_not_of('-')!=string::npos) THROW("BAD indel "<< tokens[4]);
+
+		    indel.assign("DELETION");
+		    indel_size=left.size();
+
+		    cout << position1-1 << "\t" ; //before yes VCF use the base before
+		    cout << "." << "\t" ; //ID
+		    cout << aval.at(aval.size()-1) << left << "\t";
+		    cout << aval.at(aval.size()-1) << "\t";
+		    }
 
 		cout << tokens[6]  << "\t" ; //QUAL
 		cout << ".\t" ; //FILTER
-		cout << "INDEL;DP="<< tokens[9];
-		cout << ";ref_upstream="<< tokens[3];
-		cout << ";ref_downstream="<< tokens[5];
+		cout << indel<<"=" << indel_size << ";DP="<< tokens[10];
 		cout << ";alt_reads="<< tokens[10];
 		cout << ";indel_reads="<< tokens[11];
 		cout << ";other_reads="<< tokens[12];
@@ -239,14 +285,14 @@ class CasavaToVCF
 		    }
 		else
 		    {
-		    THROW("bad header in "<< line);
+		    THROW("bad header in \""<< line << "\"");
 		    }
 
 		}
 	    }
 	void usage(ostream& out,int argc,char **argv)
 		{
-		out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
+		out << argv[0] << " Pierre Lindenbaum PHD. 2012.\n";
 		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 		out << "Usage:\n\t"<< argv[0] << " [options] files.txt\n";
 		}
