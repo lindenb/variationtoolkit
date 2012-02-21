@@ -66,7 +66,9 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/fasta2term \
 	$(CGI_BIN_DIR)/ngsproject.cgi \
 	$(BINDIR)/xsltstream \
-	$(BINDIR)/godbmgr
+	$(BINDIR)/godbmgr \
+	$(BINDIR)/casava2vcf \
+	$(BINDIR)/vcfid
 
 all:$(TARGET_BINARIES)
 
@@ -196,7 +198,11 @@ $(CGI_BIN_DIR)/tabixserver.cgi: tabixserver.cpp $(PARSESEG) xtabix.o xxml.o cgi.
 	xsltproc --stringparam method _schema_fragment1 xml2libxmlwriter.xsl tabixserver-schema.xsd > _xsdschema.cpp
 	if [ -z "${CGI_BIN_DIR}" ] ; then echo -e "#\n#\n# CGI_BIN_DIR undefined\n#\n#" ; else \
 		$(CPP) -o $@ -DCGI_VERSION $^ _xsdschema.cpp $(CFLAGS)  `xml2-config --cflags `  -L $(TABIXDIR)   `xml2-config --libs `  -ltabix  -lz ; fi
-		
+$(BINDIR)/casava2vcf : casava2vcf.cpp
+	$(CPP) $(CFLAGS) -o $@ $^ -lz
+$(BINDIR)/vcfid : vcfid.cpp  bin.o application.o
+	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz
+
 
 
 
@@ -219,7 +225,9 @@ taxonomyxsl.o:taxonomy.xsl $(BINDIR)/embbedC
 	$(CPP) -c -o $@ taxonomyxsl.cpp $(CFLAGS) 
 ngsproject2htmlxsl.o:ngsproject2html.xsl $(BINDIR)/embbedC
 	$(BINDIR)/embbedC ngsproject2html < $< > ngsproject2htmlxsl.cpp
-	$(CPP) -c -o $@ ngsproject2htmlxsl.cpp $(CFLAGS) 
+	$(CPP) -c -o $@ ngsproject2htmlxsl.cpp $(CFLAGS)
+	
+	
 	
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)

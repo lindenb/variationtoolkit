@@ -123,7 +123,7 @@ class Bam2Wig
 	    {
 	    out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
 	    out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-	    out << "Usage:\n\t"<< argv[0] << " [otions] file.bam [chr:start-end]\n";
+	    out << "Usage:\n\t"<< argv[0] << " [options] file.bam [chr:start-end]\n";
 	    out << "Options:\n";
 	    out << " -z <int> number of depth=0 accepted before starting a new WIG file (default:"<< this-> pref_zero <<" ).:\n";
 	    out << " -o <filename-out> save as... (default:stdout).\n";
