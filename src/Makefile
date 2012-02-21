@@ -68,7 +68,9 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/xsltstream \
 	$(BINDIR)/godbmgr \
 	$(BINDIR)/casava2vcf \
-	$(BINDIR)/vcfid
+	$(BINDIR)/vcfid \
+	$(BINDIR)/showprogress \
+	
 
 all:$(TARGET_BINARIES)
 
@@ -202,6 +204,8 @@ $(BINDIR)/casava2vcf : casava2vcf.cpp
 	$(CPP) $(CFLAGS) -o $@ $^ -lz
 $(BINDIR)/vcfid : vcfid.cpp  bin.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz
+$(BINDIR)/showprogress : progress.cpp
+	$(CPP) $(CFLAGS) -o $@ $<
 
 
 
