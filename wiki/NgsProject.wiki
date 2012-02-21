@@ -79,7 +79,7 @@ cat /var/www/cgi-bin/ngsproject.xml
 </projects>
 }}}
 
-Edit the apache2 config `/etc/apache2/apache2.conf`:
+Edit the apache2/httpd config `/etc/apache2/apache2.conf` or `/etc/httpd/conf/httpd.conf`:
 
 {{{
 sudo nano /etc/apache2/apache2.conf

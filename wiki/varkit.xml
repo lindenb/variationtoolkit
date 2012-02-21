@@ -2753,10 +2753,100 @@ GO:0003674]]></pre>
 
 </page>
 
+<page title="ShowProgress" labels="unix" desc="Displays a progress bar on the console">
+Displays a progress bar on the console.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/showprogress]]></pre>
+<h2>Option</h2>
+<ul>
+<li><b>-e</b> (x:int) print every 'x' lines (optional)</li>
+<li><b>-p</b> (string) optional prefix.</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ tr "\0" "\n" < /dev/zero |\
+head -n 100000 |\awk '{for(i=0;i< 10;++i) {print $0,i;}}' |\
+showprogress | grep 8 > /dev/null
+1000000 lines.
+]]></pre>
+</page>
+
+<page title="Casava2Vcf" labels="ngs,casava,vcf" desc="Transforms Casava SNPs and INDEL to VCF">
+Transforms Casava SNPs and INDEL to VCF
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/casava2vcf]]></pre>
+<h2>Usage</h2>
+<pre>casava2vcf *.txt &gt; result.vcf </pre>
+<h2>Example</h2>
+<pre><![CDATA[$ casava2vcf *_indels.txt *_snps.txt
+
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Basecalls mapped to the site but filtered out before genotype calling">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	__SAMPLE__
+hr22.fa	16052167	.	A	AAAAC	365	.	INSERTION=4;DP=5;alt_reads=5;indel_reads=7;other_reads=14;repeat_unit=AAAC;ref_repeat_count=8;indel_repeat_count=9	GT:GQ:DP	0/1:203:5
+(...)
+chr22.fa	51243297	.	A	T	10	.	DP=1;bcalls_used=1;Q_snp=10;max_gt=AT;Q_max_gt=3;max_gt_poly_site=AT;Q_max_gt_poly_site=AT;A_used=0;C_used=0;G_used=0;T_used=1	GT:GQ:DP	0/1:3:0
+]]></pre>
+</page>
+
+<page title="VcfId" labels="ngs,snp,variation,vcf,genomics,snp" desc="fills the ID columns of a VCF using UCSC/snpX">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-t (string) table name default:snp135</li>
+<li>-f limit to first snp.</li>
+<li>--host (mysql host) default:genome-mysql.cse.ucsc.edu</li>
+<li>--user (mysql user) default:genome</li>
+<li>--password (mysql password) default:</li>
+<li>--database (mysql database) default:hg19</li>
+<li>--port (mysql password) default:0</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ cat casava_chr1_snps.txt |\
+casava2vcf |\
+vcfid  --host localhost --user anonymous --port 3316  |\
+grep -v "##" |\
+verticalize
+
+(...)
+>	172
+$1	#CHROM    	chr1
+$2	POS       	601635
+$3	ID        	rs2531322
+$4	REF       	C
+$5	ALT       	A
+$6	QUAL      	16
+$7	FILTER    	.
+$8	INFO      	DP=6;bcalls_used=6;Q_snp=16;max_gt=AC;Q_max_gt=16;max_gt_poly_site=AC;Q_max_gt_poly_site=AC;A_used=2;C_used=4;G_used=0;T_used=0
+$9	FORMAT    	GT:GQ:DP
+$10	__SAMPLE__	0/1:16:6
+<<<	172
+
+>>>	173
+$1	#CHROM    	chr1
+$2	POS       	601841
+$3	ID        	rs148361140,rs406120
+$4	REF       	G
+$5	ALT       	C
+$6	QUAL      	18
+$7	FILTER    	.
+$8	INFO      	DP=4;bcalls_used=4;Q_snp=18;max_gt=CG;Q_max_gt=18;max_gt_poly_site=CG;Q_max_gt_poly_site=CG;A_used=0;C_used=2;G_used=2;T_used=0
+$9	FORMAT    	GT:GQ:DP
+$10	__SAMPLE__	0/1:18:4
+<<<	173
+
+(...)
+]]></pre>
+</page>
+
+<!--
 <page title="TabixServer" labels="bioinformatics,server,cgi,tabix" desc="Tabix files server">
 A CGI-bases server for <a href="http://samtools.sourceforge.net/tabix.shtml">tabix</a> files.
 &download;
-</page>
+
+
 
 <h2>Example</h3>
 Download some genomics files from the UCSC:
@@ -2788,7 +2878,8 @@ SetEnv TABIX_SERVER_PATH /var/www/cgi-bin/tabixserver.xml
 </VirtualHost>]]></pre>
 and restart apache:
 <pre>sudo /etc/init.d/apache2 restart</pre>
-
+</page>
+-->
 
 
 </documentation>
