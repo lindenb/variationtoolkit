@@ -70,7 +70,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/casava2vcf \
 	$(BINDIR)/vcfid \
 	$(BINDIR)/showprogress \
-	
+	$(BINDIR)/md5cols \
+	$(BINDIR)/vcf2snpeff 
 
 all:$(TARGET_BINARIES)
 
@@ -206,7 +207,10 @@ $(BINDIR)/vcfid : vcfid.cpp  bin.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS) `mysql_config --cflags  --libs` -lz
 $(BINDIR)/showprogress : progress.cpp
 	$(CPP) $(CFLAGS) -o $@ $<
-
+$(BINDIR)/md5cols : md5cols.cpp  application.o
+	$(CPP) $(CFLAGS) -o $@ $^  -lz -lssl
+$(BINDIR)/vcf2snpeff : vcf2snpeff.cpp
+	$(CPP) $(CFLAGS) -o $@ $^  -lz
 
 
 
