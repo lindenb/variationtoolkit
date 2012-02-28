@@ -71,7 +71,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfid \
 	$(BINDIR)/showprogress \
 	$(BINDIR)/md5cols \
-	$(BINDIR)/vcf2snpeff 
+	$(BINDIR)/vcf2snpeff \
+	$(BINDIR)/beddepth
 
 all:$(TARGET_BINARIES)
 
@@ -211,7 +212,8 @@ $(BINDIR)/md5cols : md5cols.cpp  application.o
 	$(CPP) $(CFLAGS) -o $@ $^  -lz -lssl
 $(BINDIR)/vcf2snpeff : vcf2snpeff.cpp
 	$(CPP) $(CFLAGS) -o $@ $^  -lz
-
+$(BINDIR)/beddepth: beddepth.cpp xbam2.o $(PARSESEG)
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 
 
 $(BINDIR)/embbedC:embbedC.c

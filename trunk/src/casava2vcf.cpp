@@ -152,6 +152,13 @@ class CasavaToVCF
 		if(tokens.size()<16) THROW("Expected at least 16 columns in "<< line << "  but got "<< tokens.size());
 		if(tokens[7].compare("ref")==0) continue;
 
+		int depth=atoi(tokens[9].c_str());
+		if(depth<1)
+		    {
+		    continue;
+		    }
+
+
 		string::size_type slash= tokens[4].find('/');
 		if(slash==string::npos) THROW("no slash in "<< tokens[4]);
 		if(slash==0 || slash+1==tokens[4].size()) THROW("nothing before/after slash ?? in "<< tokens[4]);
@@ -201,7 +208,7 @@ class CasavaToVCF
 
 		cout << tokens[6]  << "\t" ; //QUAL
 		cout << ".\t" ; //FILTER
-		cout << indel<<"=" << indel_size << ";DP="<< tokens[10];
+		cout << indel<<"=" << indel_size << ";DP="<<depth;
 		cout << ";alt_reads="<< tokens[10];
 		cout << ";indel_reads="<< tokens[11];
 		cout << ";other_reads="<< tokens[12];
@@ -225,7 +232,7 @@ class CasavaToVCF
 		cout << ":";
 		cout << tokens[8];
 		cout << ":";
-		cout << tokens[10];
+		cout << depth;
 
 		cout << endl;
 		}

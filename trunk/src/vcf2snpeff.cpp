@@ -58,33 +58,46 @@ class Vcf2SnpEff
 		 if(chrom.compare(0,3,"chr")==0) chrom=chrom.substr(3);
 		 int pos;
 		 numeric_cast<int>(tokens[1].c_str(),&pos);
-		 string ref=tokens[3];
-		 string alt=tokens[4];
-		 if(ref.size()<alt.size()) /* AC/A = DELETION */
-		     {
-		     assert(ref[0]==alt[0]);
-		     ref.assign("*");
-		     alt[0]='+';
-		     ++pos;
-		     }
-		 else if(ref.size()>alt.size())
-		     {
-		     assert(ref[0]==alt[0]);
-		     alt.assign(ref);
-		     alt[0]='-';
-		     ref.assign("*");
-		     ++pos;
-		     }
-		 else
-		     {
-		     //single SNP
-		     }
-		 cout 	<< chrom
-			<< "\t"<< pos
-			<< "\t" << ref
-			<< "\t" << alt
-			<< "\t" << line
-			<< endl;
+
+		 vector<string> alts;
+		 Tokenizer comma(',');
+		 comma.split(tokens[4],alts);
+		for(size_t i=0;i< alts.size();++i)
+		    {
+		    string ref=tokens[3];
+		    string alt(alts[i]);
+		    if(ref.size()<alt.size()) /* AC/A = DELETION */
+			 {
+			 if(ref[0]!=alt[0])
+			     {
+			     THROW("Assertion failed:"<< line);
+			     }
+			 ref.assign("*");
+			 alt[0]='+';
+			 ++pos;
+			 }
+		     else if(ref.size()>alt.size())
+			 {
+			 if(ref[0]!=alt[0])
+			     {
+			     THROW("Assertion failed:"<< line);
+			     }
+			 alt.assign(ref);
+			 alt[0]='-';
+			 ref.assign("*");
+			 ++pos;
+			 }
+		     else
+			 {
+			 //single SNP
+			 }
+		     cout 	<< chrom
+			    << "\t"<< pos
+			    << "\t" << ref
+			    << "\t" << alt
+			    << "\t" << line
+			    << endl;
+		    }
 		 }
 	     }
 
