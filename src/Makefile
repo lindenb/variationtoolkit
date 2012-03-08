@@ -72,7 +72,10 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/showprogress \
 	$(BINDIR)/md5cols \
 	$(BINDIR)/vcf2snpeff \
-	$(BINDIR)/beddepth
+	$(BINDIR)/bedsplit \
+	$(BINDIR)/beddepth \
+	$(BINDIR)/extractsnpeff \
+	$(BINDIR)/mpileup2pileup 
 
 all:$(TARGET_BINARIES)
 
@@ -87,6 +90,10 @@ $(BINDIR)/normalizechrom: normalizechrom.cpp tokenizer.h throw.h zstreambuf.h
 $(BINDIR)/numericsplit: numericsplit.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/extractinfo: extractinfo.cpp tokenizer.h throw.h zstreambuf.h
+	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/extractsnpeff: extractsnpeff.cpp tokenizer.h throw.h zstreambuf.h
+	$(CPP) -o $@ $< $(CFLAGS) -lz
+$(BINDIR)/mpileup2pileup: mpileup2pileup.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
 $(BINDIR)/extractformat: extractformat.cpp tokenizer.h throw.h zstreambuf.h
 	$(CPP) -o $@ $< $(CFLAGS) -lz
@@ -214,6 +221,8 @@ $(BINDIR)/vcf2snpeff : vcf2snpeff.cpp
 	$(CPP) $(CFLAGS) -o $@ $^  -lz
 $(BINDIR)/beddepth: beddepth.cpp xbam2.o $(PARSESEG)
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
+$(BINDIR)/bedsplit: bedsplit.cpp 
+	$(CPP) -o $@ $^ $(CFLAGS)
 
 
 $(BINDIR)/embbedC:embbedC.c
