@@ -1,8 +1,10 @@
 /*
- * md5cols.cpp
+ * vcf2snp
  *
  *  Created on: Feb 22, 2012
  *      Author: lindenb
+ *  Motivation:
+ *  	join the output of snpEff with VCF
  */
 #include <vector>
 #include <cstdio>
@@ -13,6 +15,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <algorithm>
 
 
 #define NOWHERE
@@ -25,6 +28,11 @@
 #include "numeric_cast.h"
 
 using namespace std;
+
+static char myupper(char c)
+    {
+    return (char)::toupper(c);
+    }
 
 class Vcf2SnpEff
     {
@@ -50,14 +58,14 @@ class Vcf2SnpEff
 		 if(line.empty()) continue;
 		 if(line[0]=='#')
 		     {
-		     cout << "#Chromo\tPosition\tReference\tChange\t" << line << endl;
+		     if(line.size()>1 && line[1]=='#') continue;
+		     cout << "# Chromo\tPosition\tReference\tChange\t" << line << endl;
 		     continue;
 		     }
 		 tokenizer.split(line,tokens);
 		 string chrom=tokens[0];
-		 if(chrom.compare(0,3,"chr")==0) chrom=chrom.substr(3);
-		 int pos;
-		 numeric_cast<int>(tokens[1].c_str(),&pos);
+		 int pos0;
+		 numeric_cast<int>(tokens[1].c_str(),&pos0);
 
 		 vector<string> alts;
 		 Tokenizer comma(',');
@@ -66,29 +74,53 @@ class Vcf2SnpEff
 		    {
 		    string ref=tokens[3];
 		    string alt(alts[i]);
-		    if(ref.size()<alt.size()) /* AC/A = DELETION */
+		    int pos=pos0;
+
+		    transform(ref.begin(),ref.end(),ref.begin(),myupper);
+		    transform(alt.begin(),alt.end(),alt.begin(),myupper);
+
+		    while(!alt.empty() &&
+			  !ref.empty() &&
+			  alt[alt.size()-1]==ref[ref.size()-1]
+			 )
+			{
+			alt.erase(alt.size()-1,1);
+			ref.erase(ref.size()-1,1);
+			}
+
+
+		    while(!alt.empty() &&
+			  !ref.empty() &&
+			  alt[0]==ref[0]
+			 )
+			{
+			alt.erase(0,1);
+			ref.erase(0,1);
+			++pos;
+			}
+
+
+
+		    if(ref.size()<alt.size()) /* A/AC = INSERTION */
 			 {
-			 if(ref[0]!=alt[0])
-			     {
-			     THROW("Assertion failed:"<< line);
-			     }
+			 size_t diff=ref.size();
+			 alt.erase(0,ref.size());
 			 ref.assign("*");
-			 alt[0]='+';
-			 ++pos;
+			 alt.insert(0,1,'+');
+			 pos+=diff;
 			 }
-		     else if(ref.size()>alt.size())
+		     else if(ref.size()>alt.size()) //deletion
 			 {
-			 if(ref[0]!=alt[0])
-			     {
-			     THROW("Assertion failed:"<< line);
-			     }
+			 size_t diff=alt.size();
 			 alt.assign(ref);
-			 alt[0]='-';
+			 alt.erase(0,diff);
+			 alt.insert(0,1,'-');
 			 ref.assign("*");
-			 ++pos;
+			 pos+=diff;
 			 }
 		     else
 			 {
+
 			 //single SNP
 			 }
 		     cout 	<< chrom

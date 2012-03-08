@@ -193,13 +193,12 @@ int main(int argc, char *argv[])
         if(optind==argc)
 		{
 		run(cin);
-		return EXIT_FAILURE;
 		}
         else
 		{
 		while(optind<argc)
 		    {
-		    fstream in(argv[optind++],ios::in);
+		    fstream in(argv[optind],ios::in);
 		    if(!in.is_open())
 			{
 			cerr << "Cannot open \"" << argv[optind]<< "\"\n";
@@ -207,6 +206,7 @@ int main(int argc, char *argv[])
 			}
 		    run(in);
 		    in.close();
+		    optind++;
 		    }
 		}
 	return EXIT_SUCCESS;
