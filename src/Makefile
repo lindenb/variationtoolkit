@@ -162,6 +162,8 @@ $(BINDIR)/loessapp:loessapp.cpp loess.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/redonstructvar: redonstructvar.cpp  xfaidx.o knowngene.o loess.o application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
+$(BINDIR)/redondepth: redondepth.cpp  xfaidx.o loess.o application.o xbam2.o segments.o
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz 
 $(BINDIR)/bam2wig: bam2wig.cpp application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/ttmap: ttmap.cpp application.o 
@@ -362,12 +364,15 @@ clean:
 clean-all:clean uninstall
 	
 
-test:$(CGI_BIN_DIR)/tabixserver.cgi
-test2: random.o tarball.o
-	g++ -Wall -g -o a.out vcfsim.cpp random.o tarball.o
-#test:$(BINDIR)/redonstructvar
-#	$<  -f /GENOTYPAGE/data/pubdb/ucsc/hg19/chromosomes/hg19.fa\
-#	    -b jeter.bam.txt jeter.kg.txt
+#test:$(CGI_BIN_DIR)/tabixserver.cgi
+#test2: random.o tarball.o
+#	g++ -Wall -g -o a.out vcfsim.cpp random.o tarball.o
+test:$(BINDIR)/redondepth
+	$<  -f /commun/data/pubdb/ucsc/hg19/chromosomes/hg19.fa \
+	    -g jeter.kg.txt \
+		/commun/data/projects/NGS/brugada2011/data/Brs[1-9]/rmdup.bam \
+		/commun/data/projects/NGS/brugada2011/data/Brs10/rmdup.bam 
+
 #test2:
 #	 g++ -DTEST_THIS_CODE -Wall xstream.cpp `xml2-config --cflags --libs`
 #	 ./a.out jeter.xml
