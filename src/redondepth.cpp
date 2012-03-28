@@ -23,6 +23,8 @@
 #include "loess.h"
 #include "numeric_cast.h"
 #include "where.h"
+#include "tarball.h"
+
 using namespace std;
 
 
@@ -36,9 +38,9 @@ class RedonDepth:public AbstractApplication
 	    public:
 		ChromStartEnd segment;
 		double gc_percent;
-		double median_ratio;
 		std::vector<double> coverage;
-		std::vector<double> ratio;
+		std::vector<double> normalized_coverage;
+
 		Exon(const char* c,int32_t s,int32_t e):segment(c,s,e)
 		    {
 
@@ -48,16 +50,16 @@ class RedonDepth:public AbstractApplication
 		    {
 		    return segment.end-segment.start;
 		    }
-		double mediane_depth() const
+		double median_depth() const
 		    {
 		    std::vector<double> cp(coverage.begin(),coverage.end());
 		    sort(cp.begin(),cp.end());
 		    return cp[cp.size()/2];
 		    }
 
-		double mediane_ratio() const
+		double median_normalized_coverage() const
 		    {
-		    std::vector<double> cp(ratio.begin(),ratio.end());
+		    std::vector<double> cp(normalized_coverage.begin(),normalized_coverage.end());
 		    sort(cp.begin(),cp.end());
 		    return cp[cp.size()/2];
 		    }
@@ -100,18 +102,26 @@ class RedonDepth:public AbstractApplication
 	    }
 
 	Loess loessAlgo;
+	/** the BAM file input */
 	auto_vector<BamFile2> bamFiles;
+	/** reference genome */
 	std::auto_ptr<IndexedFasta> faidx;
+	/** list of exons */
 	auto_vector<Exon> exons;
+	/** minimum quality */
 	double min_qual;
+	/* minimum exon size */
+	int32_t minimum_exon_size;
 
 
-	RedonDepth():min_qual(0.0)
+
+	RedonDepth():min_qual(0.0),
+		minimum_exon_size(25)
 	    {
 	    }
 
 
-
+	/** returns the GC% for a given genomic segment */
 	float gcPercentAt(const char* chrom,int32_t exon_start,int32_t exon_end)
 	    {
 	    int32_t g_gc=0;
@@ -131,22 +141,35 @@ class RedonDepth:public AbstractApplication
 	    return g_gc/g_total;
 	    }
 
+	/** comparator for exons on GC% */
 	static bool cmp_on_gc(const Exon* g1,const Exon* g2)
 	    {
 	    return g1->gc_percent< g2->gc_percent;
 	    }
+	static FILE* safe_tmpfile()
+	    {
+	    FILE* o=::tmpfile();
+	    if(o==NULL) THROW("Cannot open file");
+	    return o;
+	    }
 
+	/** main loop */
 	void run()
 	    {
+	    set<string> all_chromosomes;
+	    /** data shuttle, will be used by the pileup function */
 	    PileupShuttle shuttle;
 	    shuttle.owner=this;
+
+	    /* loop over the exon */
 	    size_t exon_index=0;
 	    while( exon_index< this->exons.size())
 		{
-		WHERE(exon_index << "/"<< this->exons.size());
+		WHERE(exon_index << "/"<<this->exons.size() );
 		shuttle.exon = this->exons.at(exon_index);
+
 		/* delete exon size<=25 */
-		if(shuttle.exon->size()<=25)
+		if(shuttle.exon->size()<= this->minimum_exon_size)
 		    {
 		    this->exons.erase(exon_index);
 		    continue;
@@ -189,7 +212,6 @@ class RedonDepth:public AbstractApplication
 
 		    //normalize to exon length
 		    shuttle.exon->coverage[shuttle.bam_index]/=(double)( shuttle.exon->size()  );
-		    //WHERE("coverage["<< shuttle.bam_index << "]="<<  shuttle.exon->coverage[shuttle.bam_index]);
 		    }
 
 		/* min-depth */
@@ -198,15 +220,17 @@ class RedonDepth:public AbstractApplication
 		    this->exons.erase(exon_index);
 		    continue;
 		    }
+
 		/* mediane_depthh */
-		if(shuttle.exon->mediane_depth()<10)
+		if(shuttle.exon->median_depth()<10)
 		    {
 		    this->exons.erase(exon_index);
 		    continue;
 		    }
 
+		all_chromosomes.insert(shuttle.exon->segment.chrom);
 		++exon_index;
-		}
+		}/* end of loop over exons */
 
 	   vector<Exon*> sort_on_gc;
 	   for(size_t i=0;i< this->exons.size();++i)
@@ -216,21 +240,46 @@ class RedonDepth:public AbstractApplication
 	   /* sort on GC% */
 	   std::sort(sort_on_gc.begin(),sort_on_gc.end(),cmp_on_gc);
 
+
+	   fstream os("jeter.tar",ios::out);
+	   Tar tarball(os);
+	   std::string prefix("redondepth");
+	   std::string filename;
+	   FILE* gnuplotout= safe_tmpfile();
+
+
+	       /* reset gnuplot */
+	       fprintf(gnuplotout,
+		       "set term postscript\n"
+		       "set output \"redondepth.ps\"\n"
+		       );
+
+
 	   /* loop over each individual */
 	   for(size_t sampleidx1=0;sampleidx1< this->bamFiles.size();++sampleidx1)
 	       {
+	       char folder_name[50];
+	       sprintf(folder_name,"SAMPLE%d",(int)(1+sampleidx1));
+	       string prefix2(prefix);
+	       prefix2.append("/").append(folder_name);
+
+
+
+	       /* initialize */
 	       for(size_t i=0;i< sort_on_gc.size();++i)
 		   {
 		   Exon* exon=sort_on_gc.at(i);
-		   exon->ratio.clear();
+		   exon->normalized_coverage.clear();
 		   }
 
 	       /* loop over the other individuals */
 	       for(size_t sampleidx2=0;sampleidx2< this->bamFiles.size();++sampleidx2)
 	       	       {
+		       /* skip if same individual */
 		       if(sampleidx1==sampleidx2) continue;
 		       vector<double> x;
 		       vector<double> y;
+		       /** loop over each exon and build lowess X/Y */
 		       for(size_t i=0;i< sort_on_gc.size();++i)
 			   {
 			   Exon* exon=sort_on_gc.at(i);
@@ -238,29 +287,53 @@ class RedonDepth:public AbstractApplication
 			   y.push_back(log2(exon->coverage[sampleidx1]/exon->coverage[sampleidx2]));
 			   }
 		       auto_ptr<vector<double> > y_prime=loessAlgo.lowess(&(x.front()),&(y.front()),x.size());
+
+		       /* loop over all exons and push normalized ratio*/
 		       for(size_t i=0;i< sort_on_gc.size();++i)
 			   {
 			   Exon* exon=sort_on_gc.at(i);
 			   double l=log2(exon->coverage[sampleidx1]/exon->coverage[sampleidx2]);
-			   exon->ratio.push_back(l-y_prime->at(i));
+			   exon->normalized_coverage.push_back(l-y_prime->at(i));
 			   }
 	       	       }
 
-	       for(size_t i=0;i< sort_on_gc.size();++i)
+
+	       for(std::set<string>::iterator r=all_chromosomes.begin();
+		       r!=all_chromosomes.end();
+		       ++r)
 		   {
-		   Exon* exon=sort_on_gc.at(i);
-		   exon->median_ratio=exon->mediane_ratio();
+		   FILE* outdat = safe_tmpfile();
+
+		   for(size_t i=0;i< this->exons.size();++i)
+		       {
+		       Exon* exon=this->exons.at(i);
+		       if(exon->segment.chrom.compare(*r)!=0) continue;
+
+		       fprintf(
+			       outdat,
+			       "%d\t%f\n",
+			       exon->segment.start,
+			       exon->median_normalized_coverage()
+			   );
+		       }
+
+		   string filename_dat(prefix2);
+		   filename_dat.append("/").append(*r).append(".dat");
+		   tarball.putFile(outdat,filename_dat.c_str());
+		   fclose(outdat);
+		   fprintf(gnuplotout,"set title \"SAMPLE-%d %s\"\n",(1+sampleidx1),r->c_str());
+		   fprintf(gnuplotout,"set xlabel \"Position\"\n");
+		   fprintf(gnuplotout,"set ylabel \"Median depth\"\n");
+		   fprintf(gnuplotout,"set yrange [-2:2]\n");
+		   fprintf(gnuplotout,"plot \"%s/%s.dat\" using 1:2 notitle\n",folder_name,r->c_str());
 		   }
-	       //plot "jeter.dat" using 1:2
-	       fstream os("jeter.dat",ios::out);
-	       for(size_t i=0;i< this->exons.size();++i)
-		   {
-		   Exon* exon=this->exons.at(i);
-		   os << exon->segment.start<<"\t"<< exon->median_ratio<< endl;
-		   }
-		os.flush();
-		os.close();
 	       }
+	    filename.assign(prefix).append("/gnuplot.txt");
+	    tarball.putFile(gnuplotout,filename.c_str());
+	    tarball.finish();
+	    fclose(gnuplotout);
+	    os.flush();
+	    os.close();
 	    }
 
 	void readExons(std::istream& in)
