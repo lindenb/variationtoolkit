@@ -124,8 +124,9 @@ class NcbiEsearch
 			os << prev;
 			if(!ok) continue;
 			string url(baseurl);
+			bool phraseNotFound=false;
 			url.append(httpEscape(os.str()).str());
-
+			vector<xmlChar*> identifiers;
 			xmlTextReaderPtr reader=parse(url.c_str());
 			for(;;)
 				{
@@ -143,9 +144,15 @@ class NcbiEsearch
 							)
 							{
 							xmlChar *content=xmlTextReaderReadString(reader);
-							cout << line << tokenizer.delim << content << endl;//xmlTextReaderConstValue(reader)<< endl;
-							xmlFree(content);
+							identifiers.push_back(content);
 							found=true;
+							}
+						else  if(tag!=NULL &&
+							::xmlStrEqual(tag,BAD_CAST"PhraseNotFound")
+							)
+							{
+							phraseNotFound=true;
+							found=false;
 							}
 						break;
 						}
@@ -155,8 +162,18 @@ class NcbiEsearch
 						}
 					}
 				}
+			for(size_t i=0;i< identifiers.size();++i)
+				{
+				xmlChar *content=identifiers[i];
+				if(!phraseNotFound)
+					{
+					cout << line << tokenizer.delim << content << endl;//xmlTextReaderConstValue(reader)<< endl;
+					}
+				xmlFree(content);
+				}
+			
 			::xmlFreeTextReader(reader);
-			if(!found)
+			if(!found || phraseNotFound)
 				{
 				cout << line << tokenizer.delim << "!N/A" << endl;
 				}
