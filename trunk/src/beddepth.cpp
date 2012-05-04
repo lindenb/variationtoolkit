@@ -34,10 +34,19 @@ using namespace std;
 class BedDepth
     {
     public:
-
+	class Shuttle
+	    {
+	    public:
+		BedDepth* owner;
+		int32_t chromStart;
+		int32_t chromEnd;
+		vector<int> depth;
+	    };
 	auto_vector<BamFile2> bamFiles;
+	auto_ptr<uint32_t> max_qual;
+	auto_ptr<uint32_t> min_qual;
 
-	BedDepth()
+	BedDepth():max_qual(0),min_qual(0)
 	    {
 
 	    }
@@ -47,44 +56,60 @@ class BedDepth
 
 	    }
 
-    // callback for bam_fetch()
-    static int fetch_func(const bam1_t *b, void *data)
-	{
-	bam_plbuf_t *buf = (bam_plbuf_t*)data;
-	bam_plbuf_push(b, buf);
-	return 0;
-	}
+
 
     // callback for bam_plbuf_init()
     static int  scan_bed_func(uint32_t tid, uint32_t pos, int depth, const bam_pileup1_t *pl, void *data)
 	{
-	vector<int>* param = (vector<int>*)data;
-	param->push_back(depth);
+	Shuttle* shuttle=(Shuttle*)data;
+	if((int32_t)pos< shuttle->chromStart || (int32_t)pos>=shuttle->chromEnd) return 0;
+	int coverage=0;
+	for(int d=0;d < depth;++d)
+	    {
+	   const bam_pileup1_t* curr=&pl[d];
+	   const bam1_t* b =curr->b;
+	   uint32_t qual=b->core.qual;
+
+	   if(shuttle->owner->min_qual.get()!=0 && qual< *(shuttle->owner->min_qual) )
+		{
+		continue;
+		}
+	   if(shuttle->owner->max_qual.get()!=0 && qual> *(shuttle->owner->max_qual) )
+		{
+		continue;
+		}
+
+	    coverage++;
+	    }
+	shuttle->depth.push_back(coverage);
 	return 0;
 	}
 
 
 void cacl_depth(std::ostream& out,BamFile2* bf,int tid,int chromStart,int chromEnd)
     {
-    vector<int> param;
-    param.reserve(1+chromEnd-chromStart);
-    bam_plbuf_t *buf; buf = bam_plbuf_init( scan_bed_func,(void*)&param); // initialize pileup
-    bam_fetch(bf->bamPtr(), bf->bamIndex(), tid,chromStart,chromEnd, buf, fetch_func);
+    Shuttle shuttle;
+    shuttle.owner=this;
+    shuttle.chromStart=chromStart;
+    shuttle.chromEnd=chromEnd;
+    shuttle.depth.reserve(1+chromEnd-chromStart);
+    bam_plbuf_t *buf; buf = bam_plbuf_init( scan_bed_func,(void*)&shuttle); // initialize pileup
+    bam_fetch(bf->bamPtr(), bf->bamIndex(), tid,chromStart,chromEnd, buf, BamFile2::fetch_func);
     bam_plbuf_push(0, buf); // finalize pileup
-    std::sort(param.begin(),param.end());
-    if(param.empty())
+    std::sort(shuttle.depth.begin(),shuttle.depth.end());
+    if(shuttle.depth.empty())
 	{
 	out << "0\t0\t0\t0\t0";
 	return;
 	}
     double total=0;
-    for(size_t i=0;i< param.size();++i) total+=param[i];
+    for(size_t i=0;i< shuttle.depth.size();++i) total+=shuttle.depth[i];
 
-    out << param.size() << "\t"
-	<< param.front() << "\t"
-	<< param.back() << "\t"
-	<< param[param.size()/2] << "\t"
-	<< total/param.size()
+    out << shuttle.depth.size() << "\t"
+	<< shuttle.depth.front() << "\t"
+	<< shuttle.depth.back() << "\t"
+	<< shuttle.depth[shuttle.depth.size()/2] << "\t"
+	<< total/shuttle.depth.size()
 	;
 
 
@@ -139,6 +164,8 @@ void run(std::istream& in)
 	out << "Usage:\n\t"<< argv[0] << " [options]  (bed.file|stdin)\n";
 	out << "Options:\n";
 	out << " -f <bam-file> add this bam file. Can be called multiple times\n";
+	out << " -m <min-qual uint32> (optional) min SAM record Quality.\n";
+	out << " -M <max-qual uint32> (optional) max SAM record Quality.\n";
 	}
 	
 int main(int argc, char *argv[])
@@ -158,6 +185,28 @@ int main(int argc, char *argv[])
 			BamFile2* bf=new BamFile2(argv[++optind]);
 			this->bamFiles.push_back(bf);
 			}
+		else if(strcmp(argv[optind],"-m")==0 && optind+1<argc)
+			{
+			uint32_t q;
+			if(!numeric_cast<uint32_t>(argv[++optind],&q))
+			    {
+			    cerr << "Bad value for -m "<< argv[optind] << endl;
+			    usage(cerr,argc,argv);
+			    return EXIT_FAILURE;
+			    }
+			this->min_qual.reset(new uint32_t(q));
+			}
+		else if(strcmp(argv[optind],"-M")==0 && optind+1<argc)
+		    {
+		    uint32_t q;
+		    if(!numeric_cast<uint32_t>(argv[++optind],&q))
+			{
+			cerr << "Bad value for -M "<< argv[optind] << endl;
+			usage(cerr,argc,argv);
+			return EXIT_FAILURE;
+			}
+		    this->max_qual.reset(new uint32_t(q));
+		    }
 		else if(strcmp(argv[optind],"--")==0)
 		        {
 		        ++optind;

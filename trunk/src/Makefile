@@ -77,7 +77,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/extractsnpeff \
 	$(BINDIR)/mpileup2pileup \
 	$(BINDIR)/depthofcoverage \
-
+	$(BINDIR)/fixindels 
 
 all:$(TARGET_BINARIES)
 
@@ -131,6 +131,9 @@ $(BINDIR)/uniprot: uniprot.cpp  application.o netstreambuf.o
 	$(CPP) -o $@ $^ $(CFLAGS) `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
 $(BINDIR)/pfamscan: pfam.cpp  application.o netstreambuf.o
 	$(CPP) -o $@ $^ $(CFLAGS) `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
+$(BINDIR)/fixindels: fixindels.cpp
+	$(CPP) -o $@ $< $(CFLAGS)
+
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz

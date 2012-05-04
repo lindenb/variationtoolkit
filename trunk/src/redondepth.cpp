@@ -321,7 +321,7 @@ class RedonDepth:public AbstractApplication
 		   filename_dat.append("/").append(*r).append(".dat");
 		   tarball.putFile(outdat,filename_dat.c_str());
 		   fclose(outdat);
-		   fprintf(gnuplotout,"set title \"SAMPLE-%d %s\"\n",(1+sampleidx1),r->c_str());
+		   fprintf(gnuplotout,"set title \"SAMPLE-%d %s\"\n",(int)(1+sampleidx1),r->c_str());
 		   fprintf(gnuplotout,"set xlabel \"Position\"\n");
 		   fprintf(gnuplotout,"set ylabel \"Median depth\"\n");
 		   fprintf(gnuplotout,"set yrange [-2:2]\n");
