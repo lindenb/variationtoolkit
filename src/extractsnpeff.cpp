@@ -58,7 +58,7 @@ class ExtractSnpEff
 					{
 					if(line.size()>1 && line[1]=='#')
 					    {
-					    cout << line;
+					    cout << line << endl;
 					    continue;
 					    }
 					cout << line << tokenizer.delim <<
