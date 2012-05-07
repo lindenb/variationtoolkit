@@ -31,6 +31,15 @@ The following java program dump all the data as XML from the EVS server:
 GIST : [https://gist.github.com/2604781]
 
 
+Compile and run:
+
+
+{{{
+javac DumpExomeVariantServerData
+java DumpExomeVariantServerData > input.evs.tsv
+}}}
+
+
 Create the  [http://www.sqlite.org/ sqlite3] database and insert the data:
 
 
