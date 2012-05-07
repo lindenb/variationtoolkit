@@ -66,6 +66,13 @@
 </a>
 </xsl:template>
 
+
+<xsl:template match="git">
+<script>
+<xsl:attribute name="src"><xsl:value-of select="concat('https://gist.github.com/',@id,'.js')"/></xsl:attribute>
+</script>
+</xsl:template>
+
 <xsl:template match="img">
 <a>
 <xsl:attribute name="href">

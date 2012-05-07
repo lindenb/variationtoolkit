@@ -85,6 +85,14 @@
 </xsl:template>
 
 
+<xsl:template match="gist">
+<xsl:text>GIST : [https://gist.github.com/</xsl:text>
+<xsl:value-of select="@id"/>
+<xsl:text>]
+</xsl:text>
+</xsl:template>
+
+
 <xsl:template match="a[@href]">
 <xsl:text>[</xsl:text>
 <xsl:value-of select="@href"/>
