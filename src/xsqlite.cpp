@@ -4,6 +4,7 @@
 #include <sqlite3.h>
 #include "xsqlite.h"
 #include "throw.h"
+#include "where.h"
 #define VERIFY_INDEX(i) if(i<1)  THROW("error need a 1-based index but got "<< i)
 
 static std::string error_code(int err)
@@ -99,12 +100,14 @@ std::auto_ptr<Connection> ConnectionFactory::create()
 	}
     if(filename.get()==NULL) THROW("Filename hasn't been defined");
     sqlite3* db=0;
+
     int err= ::sqlite3_open_v2(
-	  filename->c_str(),   /* Database filename (UTF-8) */
-	  &db,         /* OUT: SQLite db handle */
-	  flag,              /* Flags */
-	  0       /* Name of VFS module to use */
-	);
+    	  filename->c_str(),   /* Database filename (UTF-8) */
+    	  &db,         /* OUT: SQLite db handle */
+    	  flag,              /* Flags */
+    	  0       /* Name of VFS module to use */
+    	);
+
     if(err!=SQLITE_OK)
 	{
 	THROW("Cannot open db \""<< *(filename.get()) << "\":" << error_code(err));
