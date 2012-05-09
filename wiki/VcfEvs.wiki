@@ -120,6 +120,7 @@ $ sqlite3 evs.sqlite 'select xml from evsData where chrom="1" and pos=69552' | x
 
   * *-f*(file) sqlite filename. (REQUIRED).
   * *-c* (column-name) limit header to this column name (can be used multiple times)
+  * *-a* (column-index) column for alternal allele (optional)
   * *-x* (column-name) print xml
 
 
