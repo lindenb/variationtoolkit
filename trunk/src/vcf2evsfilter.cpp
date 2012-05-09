@@ -27,6 +27,23 @@
 using namespace std;
 
 #define TABLE "evsData"
+
+
+#define ECHO_EMPTY_LINE	cout << line ;\
+for(size_t i=0;i< cols.size();i++)\
+    {\
+    if(!limitCols.empty() && limitCols.find(cols[i])==limitCols.end())\
+	{\
+	continue;\
+	}\
+    cout << "\t.";\
+    }\
+if(print_xml)\
+	{\
+	cout << "\t.";\
+	}\
+cout << endl;
+
 class VcfEvsFilter:public AbstractApplication
     {
     public:
@@ -36,8 +53,9 @@ class VcfEvsFilter:public AbstractApplication
 	vector<string> cols;
 	set<string> limitCols;
 	bool print_xml;
+	int32_t altColumn;
 
-	VcfEvsFilter():databasename(NULL),print_xml(false)
+	VcfEvsFilter():databasename(NULL),print_xml(false),altColumn(-1)
 	    {
 	    cols.push_back("positionString");
 	    cols.push_back("chrPosition");
@@ -92,6 +110,7 @@ class VcfEvsFilter:public AbstractApplication
 	void run(std::istream& in)
 	    {
 	    Tokenizer tab('\t');
+	    Tokenizer comma(',');
 	    vector<string> tokens;
 	    string line;
 	    while(getline(in,line,'\n'))
@@ -125,6 +144,12 @@ class VcfEvsFilter:public AbstractApplication
 		    {
 		    THROW("Expected 2 columns in "<< line);
 		    }
+
+		if(altColumn!=-1 && (int)tokens.size()<=altColumn)
+		    {
+		    THROW("cannot get the ALT column in "<< line);
+		    }
+
 		int32_t position;
 		if(!numeric_cast<int32_t>(tokens[1].c_str(),&position))
 		    {
@@ -154,9 +179,45 @@ class VcfEvsFilter:public AbstractApplication
 			{
 			THROW("Cannot parse "<<xml);
 			}
+		    xmlNodePtr root=xmlDocGetRootElement(dom);
+		    if(root==0)
+			{
+			THROW("Cannot get root: "<<xml);
+			}
+		    if(altColumn!=-1)
+			{
+			bool ok=false;
+			for(xmlNodePtr c2 = (root==0?0:root->children);
+				c2!=0;
+				c2 = c2->next)
+			     {
+			     if(c2->type != XML_ELEMENT_NODE) continue;
+			     if(!xmlStrEqual(c2->name,BAD_CAST "altAlleles")) continue;
+			     xmlChar* xAlt=xmlNodeGetContent(c2);
+
+			     vector<string> tokens2;
+			     comma.split((const char*)xAlt,tokens2);
+			     xmlFree(xAlt);
+			     for(size_t k=0;k< tokens2.size();++k)
+				 {
+				 if(strcasecmp(tokens2[k].c_str(),tokens[altColumn].c_str())==0)
+				    {
+				    ok=true;
+				    break;
+				    }
+				 }
+			      if(ok) break;
+			      }
+			if(!ok)
+			    {
+			    ECHO_EMPTY_LINE
+			    continue;
+			    }
+			}
+
 		    cout << line ;
 
-		    xmlNodePtr root=xmlDocGetRootElement(dom);
+
 
 		    for(size_t i=0;i< cols.size();i++)
 			{
@@ -170,6 +231,7 @@ class VcfEvsFilter:public AbstractApplication
 				c2!=0;
 				c2 = c2->next)
 			     {
+			     if(c2->type != XML_ELEMENT_NODE) continue;
 			     if(!xmlStrEqual(c2->name,BAD_CAST cols[i].c_str()))
 				{
 				continue;
@@ -197,22 +259,10 @@ class VcfEvsFilter:public AbstractApplication
 		    xmlFree(dom);
 		    }
 
+
 		if(!found)
 		    {
-		    cout << line ;
-		    for(size_t i=0;i< cols.size();i++)
-			{
-			if(!limitCols.empty() && limitCols.find(cols[i])==limitCols.end())
-			    {
-			    continue;
-			    }
-			cout << "\t.";
-			}
-		    if(print_xml)
-			    {
-			    cout << "\t.";
-			    }
-		    cout << endl;
+		    ECHO_EMPTY_LINE
 		    }
 
 		}
@@ -231,6 +281,7 @@ class VcfEvsFilter:public AbstractApplication
 	    out << "Options:\n";
 	    out << "  -f (file) sqlite filename. (REQUIRED).\n";
 	    out << "  -x print xml .\n";
+	    out << "  -a (column index) ALTernate allele column (optional) .\n";
 	    out << "  -c (column-name) limit header to this column name (can be used multiple times).\n";
 	    out << "(stdin|vcf|vcf.gz)\n\n";
 	    out << endl;
@@ -261,6 +312,15 @@ class VcfEvsFilter:public AbstractApplication
 		    else if(strcmp(argv[optind],"-f")==0 && optind+1<argc)
 			{
 			databasename=argv[++optind];
+			}
+		    else if(strcmp(argv[optind],"-a")==0 && optind+1<argc)
+			{
+			if(!numeric_cast(argv[++optind],&altColumn) || altColumn<1)
+			    {
+			    cerr << "Bad ALT column " << argv[optind] << endl;
+			    return EXIT_FAILURE;
+			    }
+			altColumn--;
 			}
 		    else if(strcmp(argv[optind],"-c")==0 && optind+1<argc)
 			{
