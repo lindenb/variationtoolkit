@@ -1,0 +1,27 @@
+#summary Tee for counting the rows
+#labels linux
+<wiki:toc max_depth="1" />
+
+Equivalent of the linux 'tee' program, but it only counts the number of lines.
+
+==Compilation==
+
+
+{{{
+$ cd varkit/src
+make ../bin/teec
+}}}
+
+
+==Usage==
+
+
+{{{
+teec file-count.txt > input > result
+}}}
+
+
+
+
+<g:plusone size="medium"></g:plusone>
+

@@ -3001,4 +3001,52 @@ vcfevs -f evs.sqlite  -x -c _ | cut -c 1-200
 ]]></pre>
 </page>
 
+<page title="VcfNumericFilter" labels="vcf,filter" desc="Filters a VCF-like file on a numeric value">
+Filters a VCF-like file on a numeric value.
+Prints all the data for a given CHROM/POS/REF/ALT if <b>ANY</b> of the observed numeric data falls in the given range.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/vcfnumericfilter]]></pre>
+<h2>Option</h2>
+<ul>
+<li><b>--delim</b> (char) or -d  (char) (delimiter) default:tab</li>
+<li><b>--norefalt</b> : don't look at REF and ALT</li>
+<li><b>--sample</b> SAMPLE column index</li>
+<li><b>--chrom</b> CHROM column index: default 1</li>
+<li><b>--pos</b> POS position column index: default 2</li>
+<li><b>--ref</b> REF reference allele column index: default 4</li>
+<li><b>--alt</b> ALT alternate allele column index: default 5</li>
+<li><b>-c</b> observed column index. REQUIRED.</li>
+<li><b>-m</b> (min-inclusive value) OPTIONAL.</li>
+<li><b>-M</b> (max-inclusive value) OPTIONAL.</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[
+echo -e "1\t100\t.\tA\tT\t1\tSAMPLE1\n1\t100\t.\tA\tT\t50\tSAMPLE2\n1\t100\t.\tA\tT\t50\tSAMPLE3\n1\t200\t.\tG\tT\t1\tSAMPLE1\n1\t200\t.\tG\tT\t5\tSAMPLE2\n1\t200\t.\tG\tT\t5\tSAMPLE3" |\
+vcfnumericfilter  -c 6 
+
+1	100	.	A	T	1	SAMPLE1
+1	100	.	A	T	50	SAMPLE2
+1	100	.	A	T	50	SAMPLE3
+1	200	.	G	T	1	SAMPLE1
+1	200	.	G	T	5	SAMPLE2
+1	200	.	G	T	5	SAMPLE3
+
+$ echo -e "1\t100\t.\tA\tT\t1\tSAMPLE1\n1\t100\t.\tA\tT\t50\tSAMPLE2\n1\t100\t.\tA\tT\t50\tSAMPLE3\n1\t200\t.\tG\tT\t1\tSAMPLE1\n1\t200\t.\tG\tT\t5\tSAMPLE2\n1\t200\t.\tG\tT\t5\tSAMPLE3" |\
+vcfnumericfilter  -c 6 -m 20
+1	100	.	A	T	1	SAMPLE1
+1	100	.	A	T	50	SAMPLE2
+1	100	.	A	T	50	SAMPLE3]]></pre>
+</page>
+
+<page title="TeeC" labels="linux" desc="Tee for counting the rows">
+Equivalent of the linux 'tee' program, but it only counts the number of lines.
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/teec]]></pre>
+<h2>Usage</h2>
+<pre>teec file-count.txt &gt; input &gt; result</pre>
+</page>
+
 </documentation>
