@@ -17,7 +17,7 @@ make ../bin/teec
 
 
 {{{
-teec file-count.txt > input > result
+teec file-count.txt < input > result
 }}}
 
 

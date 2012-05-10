@@ -3046,7 +3046,7 @@ Equivalent of the linux 'tee' program, but it only counts the number of lines.
 <pre><![CDATA[$ cd varkit/src
 make ../bin/teec]]></pre>
 <h2>Usage</h2>
-<pre>teec file-count.txt &gt; input &gt; result</pre>
+<pre>teec file-count.txt &lt; input &gt; result</pre>
 </page>
 
 </documentation>
