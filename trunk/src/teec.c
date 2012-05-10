@@ -6,6 +6,8 @@
 #include <errno.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
+
 
 int main(int argc,char** argv)
 	{
@@ -38,7 +40,7 @@ int main(int argc,char** argv)
 	
 	if(out!=NULL)
 		{
-		fprintf(out,"%Ld\n",count);
+		fprintf(out,"%" PRIu64 "\n" ,count);
 		fflush(out);
 		fclose(out);
 		}

@@ -2,6 +2,7 @@ include ../config.mk
 BINDIR=../bin
 INSTALLDIR=/usr/local/bin
 CPP=g++
+CC=gcc
 CFLAGS=-O3 -Wall
 COLOR_O=parsecolor.tab.o lex.parsecolor.o color.o
 CHARSEQ=abstractcharsequence.o \
@@ -78,7 +79,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/mpileup2pileup \
 	$(BINDIR)/depthofcoverage \
 	$(BINDIR)/fixindels \
-	$(BINDIR)/vcfevs 
+	$(BINDIR)/vcfevs \
+	$(BINDIR)/teec 
 
 all:$(TARGET_BINARIES)
 
@@ -236,7 +238,8 @@ $(BINDIR)/depthofcoverage: depthofcoverage.cpp xbam2.o $(PARSESEG)
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 $(BINDIR)/bedsplit: bedsplit.cpp 
 	$(CPP) -o $@ $^ $(CFLAGS)
-
+$(BINDIR)/teec: teec.c 
+	$(CC) -o $@ $^ $(CFLAGS)
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
