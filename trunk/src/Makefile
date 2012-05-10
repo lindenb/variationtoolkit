@@ -80,7 +80,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/depthofcoverage \
 	$(BINDIR)/fixindels \
 	$(BINDIR)/vcfevs \
-	$(BINDIR)/teec 
+	$(BINDIR)/teec \
+	$(BINDIR)/vcfnumericfilter
 
 all:$(TARGET_BINARIES)
 
@@ -240,6 +241,8 @@ $(BINDIR)/bedsplit: bedsplit.cpp
 	$(CPP) -o $@ $^ $(CFLAGS)
 $(BINDIR)/teec: teec.c 
 	$(CC) -o $@ $^ $(CFLAGS)
+$(BINDIR)/vcfnumericfilter: vcfnumericfilter.cpp application.o
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
