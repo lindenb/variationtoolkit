@@ -80,6 +80,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/depthofcoverage \
 	$(BINDIR)/fixindels \
 	$(BINDIR)/vcfevs \
+	$(BINDIR)/vcfvep \
 	$(BINDIR)/teec \
 	$(BINDIR)/vcfnumericfilter
 
@@ -179,6 +180,8 @@ $(BINDIR)/vcf2sqlite: vcf2sqlite.cpp xsqlite.cpp application.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz $(SQLITE_CFLAGS) $(SQLITE_LIB) ; else $(CPP) -o $@ vcf2sqlite.cpp  -DNOSQLITE $(CFLAGS)  ; fi
 $(BINDIR)/vcfevs: vcf2evsfilter.cpp xsqlite.cpp application.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz $(SQLITE_CFLAGS) `xml2-config --cflags `   $(SQLITE_LIB)  `xml2-config --libs ` ; else $(CPP) -o $@ $<  -DNOSQLITE $(CFLAGS)  ; fi
+$(BINDIR)/vcfvep: vcf2ensemblvep.cpp xsqlite.cpp application.o
+	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ $(CFLAGS) -lz $(SQLITE_CFLAGS) $(SQLITE_LIB)  `xml2-config --libs ` ; else $(CPP) -o $@ $<  -DNOSQLITE $(CFLAGS)  ; fi
 
 $(BINDIR)/fastatail: fastatail.cpp abstractcharsequence.o fastareader.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
