@@ -148,7 +148,12 @@ class NcbiEsearch
 							found=true;
 							}
 						else  if(tag!=NULL &&
-							::xmlStrEqual(tag,BAD_CAST"PhraseNotFound")
+							(
+							::xmlStrEqual(tag,BAD_CAST"PhraseNotFound") ||
+							::xmlStrEqual(tag,BAD_CAST"FieldNotFound") ||
+							::xmlStrEqual(tag,BAD_CAST"PhraseIgnored") ||
+							::xmlStrEqual(tag,BAD_CAST"QuotedPhraseNotFound") 
+							)
 							)
 							{
 							phraseNotFound=true;
