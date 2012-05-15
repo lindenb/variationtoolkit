@@ -62,6 +62,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/fastarevcomp \
 	$(BINDIR)/ncbielink \
 	$(BINDIR)/ncbicited \
+	$(BINDIR)/ncbiesummary \
 	$(BINDIR)/protein2genome \
 	$(BINDIR)/cmpdepth \
 	$(BINDIR)/fasta2term \
@@ -144,6 +145,8 @@ $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
 $(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o dbsnpxsl.o genexsl.o taxonomyxsl.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o dbsnpxsl.o  genexsl.o taxonomyxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
+$(BINDIR)/ncbiesummary : ncbiesummary.cpp netstreambuf.o esummaryxsl.o
+	$(CPP) -o $@ $(CFLAGS) $^ `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
 $(BINDIR)/vcf2bed: vcf2bed.cpp application.o 
 	$(CPP) -o $@ $< application.o  $(CFLAGS) -lz
 $(BINDIR)/emblstringresolve : emblstring.cpp application.o netstreambuf.o
@@ -267,8 +270,9 @@ taxonomyxsl.o:taxonomy.xsl $(BINDIR)/embbedC
 ngsproject2htmlxsl.o:ngsproject2html.xsl $(BINDIR)/embbedC
 	$(BINDIR)/embbedC ngsproject2html < $< > ngsproject2htmlxsl.cpp
 	$(CPP) -c -o $@ ngsproject2htmlxsl.cpp $(CFLAGS)
-	
-	
+esummaryxsl.o: esummary2json.xsl $(BINDIR)/embbedC
+	$(BINDIR)/embbedC summary2json < $< > esummaryxsl.cpp
+	$(CPP) -c -o $@ esummaryxsl.cpp $(CFLAGS)
 	
 bin.o:bin.cpp bin.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
