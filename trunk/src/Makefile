@@ -83,7 +83,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfevs \
 	$(BINDIR)/vcfvep \
 	$(BINDIR)/teec \
-	$(BINDIR)/vcfnumericfilter
+	$(BINDIR)/vcfnumericfilter \
+	$(BINDIR)/mean
 
 all:$(TARGET_BINARIES)
 
@@ -143,8 +144,8 @@ $(BINDIR)/fixindels: fixindels.cpp
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
-$(BINDIR)/ncbiefetch : ncbiefetch.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o dbsnpxsl.o genexsl.o taxonomyxsl.o
-	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o dbsnpxsl.o  genexsl.o taxonomyxsl.o `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
+$(BINDIR)/ncbiefetch : ncbiefetch.cpp xsqlite.cpp netstreambuf.o pubmedxsl.o nuccorexsl.o dbsnpxsl.o genexsl.o taxonomyxsl.o
+	$(CPP) -o $@ $< xsqlite.cpp $(CFLAGS) $(SQLITE_CFLAGS) netstreambuf.o  pubmedxsl.o nuccorexsl.o dbsnpxsl.o  genexsl.o taxonomyxsl.o $(SQLITE_LIB) `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs`  -lz  
 $(BINDIR)/ncbiesummary : ncbiesummary.cpp netstreambuf.o esummaryxsl.o
 	$(CPP) -o $@ $(CFLAGS) $^ `xml2-config --cflags --libs` `curl-config --cflags --libs` `xslt-config --cflags --libs` -lz
 $(BINDIR)/vcf2bed: vcf2bed.cpp application.o 
@@ -249,6 +250,9 @@ $(BINDIR)/teec: teec.c
 	$(CC) -o $@ $^ $(CFLAGS)
 $(BINDIR)/vcfnumericfilter: vcfnumericfilter.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
+$(BINDIR)/mean: stddev.cpp
+	$(CPP) -o $@ $< $(CFLAGS) -lm
+
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^

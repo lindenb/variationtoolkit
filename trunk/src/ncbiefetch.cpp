@@ -15,6 +15,7 @@
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
 #include <curl/curl.h>
+#include "xsqlite.h"
 #include "netstreambuf.h"
 #include "tokenizer.h"
 #include "throw.h"
@@ -29,6 +30,8 @@ using namespace std;
 	string s=string(XSLT);\
 	return s;\
 	}
+
+#define TABLE "Entrez"
 
 class NcbiEFetch
     {
@@ -195,9 +198,13 @@ class NcbiEFetch
 	int column;
 	vector<DatabaseHandler*> handlers;
 	DatabaseHandler* handler;
+	//sqlite
+	char* databasename;
+	auto_ptr<Connection> connection;
+	auto_ptr<Statement> insert_record;
+	auto_ptr<Statement> select_record;
 
-
-	NcbiEFetch():column(-1)
+	NcbiEFetch():column(-1),databasename(0),connection(0)
 	    {
 	    LIBXML_TEST_VERSION
 	    handlers.push_back(new PubmedHandler);
@@ -208,27 +215,68 @@ class NcbiEFetch
 	    handlers.push_back(new GeneHandler);
 	    handlers.push_back(new TaxonomyHandler);
 	    }
+
 	~NcbiEFetch()
 	    {
-		while(!handlers.empty())
-			{
-			delete handlers.back();
-			handlers.pop_back();
-			}
+	    if(this->connection.get()!=0)
+		{
+		this->connection->commit();
+		}
+	    while(!handlers.empty())
+		{
+		delete handlers.back();
+		handlers.pop_back();
+		}
 	    ::xmlCleanupParser();
 	    ::xmlMemoryDump();
 	    }
 
+	void openSqlite()
+	    {
+	    if(databasename==0) return;
+	    if(this->connection.get()!=0) return;
+	    ConnectionFactory cf;
+	    cf.set_allow_create(true);
+	    cf.set_read_only(false);
+	    cf.set_filename(databasename);
+	    this->connection=cf.create();
+	    this->connection->execute(
+		   "create table if not exists "TABLE"("
+		   "id int unsigned NOT NULL,"
+		   "db varchar(15) NOT NULL, "
+		   "xml TEXT NOT NULL "
+		   ")");
 
+	    this->connection->execute(
+	       "create UNIQUE INDEX IF NOT EXISTS entrezkey ON "
+	       TABLE"(id,db)"
+		);
+
+
+	    this->insert_record = this->connection->prepare(
+	       "insert into "TABLE"(id,db,xml) values (?,?,?)"
+		);
+	    this->select_record = this->connection->prepare(
+	       "select xml from "TABLE" where id=? and db=?"
+		);
+
+
+	    this->connection->begin();
+	    }
 
 	xmlDocPtr fetch(const char* url)
 	    {
+	    for(int i=0;i< 20;++i)
+		{
 		netstreambuf readurl;
 		readurl.open(url);
 		string xml=readurl.content();
 		xmlDocPtr res=xmlParseMemory(xml.c_str(),xml.size());
-	    if(res==NULL) THROW("Cannot parse URL:"<<url);
-	    return res;
+		if(res!=0) return res;
+		cerr << "Efetch "<< url << " failed. Retrying..."<< endl;
+		}
+	    THROW("Cannot parse URL:"<<url);
+	    return 0;
 	    }
 	void run(std::istream& in)
 	    {
@@ -286,7 +334,43 @@ class NcbiEFetch
 			os << urlbase << gi;
 			string url(os.str());
 
-			xmlDocPtr doc=fetch(url.c_str());
+			xmlDocPtr doc=0;
+			if(this->connection.get()!=0)
+			    {
+			    /* do we already have this record in the XML database ? */
+			    select_record->reset();
+			    select_record->bind_int(1,gi);
+			    select_record->bind_string(2,handler->database().c_str());
+			    while(select_record->step()!=Statement::DONE)
+				{
+				const char* xmlrec=select_record->get_string(1);
+				if(xmlrec==0) continue;
+				doc=xmlParseMemory(xmlrec,strlen(xmlrec));
+				if(doc!=0) break;
+				}
+			    }
+			if(doc==0)
+			    {
+			    doc=fetch(url.c_str());
+			    if(this->connection.get()!=0 && doc!=0)
+				{
+				xmlChar* content=0;
+				int doclen=0;
+				xmlDocDumpMemory(doc,&content,&doclen);
+				if(content!=0)
+				    {
+
+				    insert_record->reset();
+				    insert_record->bind_int(1,gi);
+				    insert_record->bind_string(2,handler->database().c_str());
+				    insert_record->bind_string(3,(const char*)content);
+				    insert_record->execute();
+				    xmlFree(content);
+				    }
+				}
+			    }
+
+
 			xmlDocPtr res = xsltApplyStylesheet(handler->sheet(), doc, params);
 			if(res==NULL) THROW("Cannot apply stylesheet");
 			xmlChar* doc_txt_ptr=NULL;
@@ -320,6 +404,8 @@ class NcbiEFetch
 	    cerr << "  -D <database> (default "<<  handler->database() << ")" << endl;
 	    cerr << "  -d <delimiter> (default:tab)" << endl;
 	    cerr << "  -c <column=int> " << endl;
+	    cerr << "Options for buffering results in SQLITE " << endl;
+	    cerr << "	-f (sqlite database) optional " << endl;
 	    cerr << endl;
 	    }
     };
@@ -336,6 +422,10 @@ int main(int argc,char** argv)
 			app.usage(argc,argv);
 			return (EXIT_FAILURE);
 			}
+		else if(std::strcmp(argv[optind],"-f")==0 && optind+1<argc)
+		    {
+		    app.databasename=argv[++optind];
+		    }
 		else if(std::strcmp(argv[optind],"-D")==0 && optind+1<argc)
 			{
 			char* db=argv[++optind];
@@ -402,7 +492,10 @@ int main(int argc,char** argv)
 		app.usage(argc,argv);
 		return (EXIT_FAILURE);
     	}
-
+    if(app.databasename!=0)
+	{
+	app.openSqlite();
+	}
     if(optind==argc)
     	    {
     	    igzstreambuf buf;
