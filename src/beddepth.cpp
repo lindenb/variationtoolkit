@@ -96,6 +96,11 @@ void cacl_depth(std::ostream& out,BamFile2* bf,int tid,int chromStart,int chromE
     bam_plbuf_t *buf; buf = bam_plbuf_init( scan_bed_func,(void*)&shuttle); // initialize pileup
     bam_fetch(bf->bamPtr(), bf->bamIndex(), tid,chromStart,chromEnd, buf, BamFile2::fetch_func);
     bam_plbuf_push(0, buf); // finalize pileup
+    while((int)shuttle.depth.size()<  (chromEnd-chromStart))
+    	{
+    	//cerr << "err" << shuttle.depth.size() << " "<< (chromEnd-chromStart) << endl;
+    	shuttle.depth.push_back(0);
+    	}
     std::sort(shuttle.depth.begin(),shuttle.depth.end());
     if(shuttle.depth.empty())
 	{
