@@ -479,7 +479,7 @@ $ (echo "#Gene-Id"; seq 105 2 110)  | ncbiefetch -c 1 -D gene
 Using &sqlite; :
 <pre><![CDATA[$echo -e "25\n26" | ncbiefetch -D snp -c 1 -f entrez.sqlite
 (...)
-$ echo "select * from entrez;" | sqlite3 -header -line jeter.sqlite  | cut -c 1-300
+$ echo "select * from entrez;" | sqlite3 -header -line entrez.sqlite  | cut -c 1-300
 id = 25
 db = snp
 xml = <?xml version="1.0"?>
