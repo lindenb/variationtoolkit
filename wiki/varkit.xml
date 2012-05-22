@@ -410,6 +410,7 @@ Currently supported databases: pubmed , nucleotide, protein, snp , gene and taxo
 <li>-D (database) (default pubmed)</li>
 <li>-d (delimiter) (default:tab)</li>
 <li>-c (column=int) </li>
+<li>-f (sqlite-database-file) (OPTIONAL) store the XML records in a &sqlite; database. Make things faster next time this record will be asked.</li>
 </ul>
 <h2>Example</h2>
 The following example generates a sequences of 6 pubmed ID and we call ncbiefetch to download the records.
@@ -474,6 +475,23 @@ $ (echo "#Gene-Id"; seq 105 2 110)  | ncbiefetch -c 1 -D gene
 107	ADCY1	adenylate cyclase 1 (brain)		HGNC=232|Ensembl=ENSG00000164742|HPRD=000
 109	ADCY3	adenylate cyclase 3		HGNC=234|Ensembl=ENSG00000138031|HPRD=02620|MIM=6
 ]]></pre>
+
+Using &sqlite; :
+<pre><![CDATA[$echo -e "25\n26" | ncbiefetch -D snp -c 1 -f entrez.sqlite
+(...)
+$ echo "select * from entrez;" | sqlite3 -header -line jeter.sqlite  | cut -c 1-300
+id = 25
+db = snp
+xml = <?xml version="1.0"?>
+<ExchangeSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ncbi.nlm.nih.gov/SNP/docsum" xsi:schemaLocation="http://www.ncbi.nlm.nih.gov/SNP/docsum ftp://ftp.ncbi.nlm.nih.gov/snp/specs/docsum_3.3.xsd"><Rs rsId="25" snpClass="snp" snpType="notwithdrawn" molType="genomic" geno
+</ExchangeSet>
+
+
+id = 26
+db = snp
+xml = <?xml version="1.0"?>
+<ExchangeSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ncbi.nlm.nih.gov/SNP/docsum" xsi:schemaLocation="http://www.ncbi.nlm.nih.gov/SNP/docsum ftp://ftp.ncbi.nlm.nih.gov/snp/specs/docsum_3.3.xsd"><Rs rsId="26" snpClass="mixed" snpType="notwithdrawn" molType="genomic" bi
+</ExchangeSet>]]></pre>
 
 </page>
 
