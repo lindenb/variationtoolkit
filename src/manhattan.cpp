@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <cassert>
 #include <stdint.h>
+#include "numeric_cast.h"
 #include "application.h"
 #include "tokenizer.h"
 #include "smartcmp.h"
@@ -43,7 +44,9 @@ typedef double value_t;
 struct Data
     {
     /** genomic position */
-    pos_t pos;
+    pos_t chromStart;
+    pos_t chromEnd;
+    
     /** y value */
     value_t value;
     /** rgb color */
@@ -52,7 +55,11 @@ struct Data
 
     bool operator < (const Data& cp) const
 	{
-	return pos < cp.pos;
+	if(chromStart!=cp.chromStart)
+		{
+		return chromStart < cp.chromStart;
+		}
+	return chromEnd < cp.chromEnd;
 	}
     };
 
@@ -79,13 +86,21 @@ class Manhattan:public AbstractApplication
 		    {
 		    return chromEnd-chromStart;
 		    }
-		/* vector<Data> data;*/
-		
-		pixel_t convertToX(const Data* d)
+	    private:
+		 pixel_t convertPOSToX(pos_t p)
 			{
-			return x+ ((d->pos-chromStart)/(double)length())*width;
+			return x+ (( p -chromStart)/(double)length())*width;
+			}   
+	     public:
+		/* vector<Data> data;*/
+		pixel_t convertChromStartToX(const Data* d)
+			{
+			return convertPOSToX(d->chromStart);
 			}
-		
+		pixel_t convertChromEndToX(const Data* d)
+			{
+			return convertPOSToX(d->chromEnd);
+			}
 	    };
 
 	class Frame
@@ -118,7 +133,8 @@ class Manhattan:public AbstractApplication
 	pixel_t margin_bottom;
 	pixel_t point_size;
 	int chromCol;
-	int posCol;
+	int posStartCol;
+	int posEndCol;
 	int valueCol;
 	int colorCol;
 	int sampleCol;
@@ -130,7 +146,8 @@ class Manhattan:public AbstractApplication
 		chrom2info(),
 		output(&cout),
 		chromCol(0),
-		posCol(1),
+		posStartCol(1),
+		posEndCol(1),
 		valueCol(-1),
 		colorCol(-1),
 		sampleCol(-1),
@@ -182,11 +199,19 @@ class Manhattan:public AbstractApplication
 		    cerr << "CHROM column out of range in "<< line << endl;
 		    continue;
 		    }
-		if(posCol>=(int)tokens.size())
+		if(posStartCol>=(int)tokens.size())
 		    {
 		    cerr << "POS column out of range in "<< line << endl;
 		    continue;
 		    }
+
+		if(posEndCol>=(int)tokens.size())
+		    {
+		    cerr << "POS column out of range in "<< line << endl;
+		    continue;
+		    }
+
+
 
 		if(valueCol>=(int)tokens.size())
 		    {
@@ -265,13 +290,25 @@ class Manhattan:public AbstractApplication
 		    Color color(tokens[colorCol].c_str());
 		    newdata.rgb=color.asInt();
 		    }
-		newdata.pos= strtol(tokens[posCol].c_str(),&p2,10);
-		if(!(*p2==0) || newdata.pos<0)
-		    {
-		    THROW("Bad position in "<< line);
-		    }
-		chromInfo->chromStart=min(chromInfo->chromStart,newdata.pos);
-		chromInfo->chromEnd=max(chromInfo->chromEnd,newdata.pos);
+		   
+		if(!numeric_cast<pos_t>(tokens[posStartCol].c_str(),&(newdata.chromStart)) || newdata.chromStart<0)
+			{
+			 THROW("Bad chromStart in "<< line);
+			}   
+		  if(posStartCol==posEndCol)
+		  	{
+		  	newdata.chromEnd=newdata.chromStart+1;
+		  	}
+		  else
+		  	{
+			if(!numeric_cast<pos_t>(tokens[posEndCol].c_str(),&(newdata.chromEnd))|| newdata.chromEnd<0)
+				{
+				THROW("Bad chromEnd in "<< line);
+				}
+			}
+
+		chromInfo->chromStart=min(chromInfo->chromStart,newdata.chromStart);
+		chromInfo->chromEnd=max(chromInfo->chromEnd,newdata.chromEnd);
 
 
 
@@ -394,9 +431,10 @@ class Manhattan:public AbstractApplication
 		    //"/getChromDataCount { 6 get } bind def\n"
 		    //"/toString { 20 string cvs} bind def\n"
 		    "/Courier findfont 14 scalefont setfont\n"
-
-
-		    "/dd { 2 dict begin\n"
+		    ;
+	if(posStartCol==posEndCol)
+		   {
+		    out << "/dd { 2 dict begin\n"
 			"  /y exch def\n"
 			"  /x exch def\n"
 			" newpath "
@@ -405,8 +443,24 @@ class Manhattan:public AbstractApplication
 			"   x y "<< point_size <<" sub lineto\n"
 			"   x "<< point_size <<" sub y lineto\n"
 			" closepath" << (colorCol==-1?" 0.1 0.1 0.5 setrgbcolor ":"") << " fill\n"
-			"   end } bind def\n"
-		    "/box { 4 dict begin\n"
+			"   end } bind def\n";
+			}
+	else
+		{
+		out << "/dd { 3 dict begin\n"
+			"  /y exch def\n"
+			"  /x2 exch def\n"
+			"  /x1 exch def\n"
+			" newpath "
+			"   x1 y "<< point_size <<" add moveto\n"
+			"   x2 y "<< point_size <<" add lineto\n"
+			"   x2 y "<< point_size <<" sub lineto\n"
+			"   x1 y "<< point_size <<" sub lineto\n"
+			" closepath" << (colorCol==-1?" 0.1 0.1 0.5 setrgbcolor ":"") << " fill\n"
+			"   end } bind def\n";
+			
+		}	
+	out <<   "/box { 4 dict begin\n"
 		    "  /height exch def\n"
 		    "  /width exch def\n"
 		    "  /y exch def\n"
@@ -474,8 +528,17 @@ class Manhattan:public AbstractApplication
 				    out << color.r/255.0 << " "<< color.g/255.0 << " " << color.b/255.0 << " setrgbcolor\n";
 				    }
 				}
-			    out << chromInfo->convertToX(&*(r2))  << " " << frame->convertToY(&(*r2)) << " dd\n";
-
+			    if(posStartCol==posEndCol)
+			    	{
+			    	out << chromInfo->convertChromStartToX(&*(r2)); 
+				}
+			   else
+				{
+				out	<< chromInfo->convertChromStartToX(&*(r2)) 
+					<< " " << chromInfo->convertChromEndToX(&*(r2)) 
+					;
+				}
+			    out << " " << frame->convertToY(&(*r2)) << " dd\n";
 			    }
 		    /* draw box for this chrom/frame */
 		    out << "0 setgray\n"<< chromInfo->x<<" "<< frame->y<< " "
@@ -548,12 +611,13 @@ class Manhattan:public AbstractApplication
 		out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 		out << VARKIT_REVISION << endl;
 		out << " -c <int> CHROM column default:"<< (chromCol+1) << endl;
-		out << " -p <int> POS column default:"<< (posCol+1) << endl;
+		out << " -p <int> POS column (or use option -b) default:"<< (posStartCol+1) << endl;
 		out << " -v <int> value column default:"<< (valueCol+1) << endl;
 		out << " -r <int> COLOR column (optional)" << endl;
 		out << " -s <int> SAMPLE column (optional)" << endl;
 		out << " -m <double> optional user's min value" << endl;
 		out << " -M <double> optional user's max value" << endl;
+		out << " -b <int> <int> chromStart and chromEnd columns (or use option -p). default:"<< (posStartCol+1) << " " << (posEndCol+1) << endl;
 		out<< "Page options:\n";
 		out << " --x-width (int) x-axis size: "<< this->x_axis_width << endl;
 		out << " --y-height (int) y-axis size: "<< this->y_axis_height << endl;
@@ -639,20 +703,44 @@ class Manhattan:public AbstractApplication
 			this->user_max_value=&my_max_value;
 			}
 		    ARGVCOL("-c",chromCol)
-		    ARGVCOL("-p",posCol)
 		    ARGVCOL("-v",valueCol)
 		    ARGVCOL("-r",colorCol)
 		    ARGVCOL("-s",sampleCol)
+		    else if(std::strcmp(argv[optind],"-p")==0 && optind+1<argc)
+		     	{
+		     	if(!numeric_cast<int>(argv[++optind],&(this->posStartCol)) || this->posStartCol<1)
+				{
+				cerr << "Bad  POS value "<< argv[optind] << endl;
+				return (EXIT_FAILURE);
+				}
+			this->posStartCol--;
+			this->posEndCol=this->posStartCol;
+		     	}
+		    else if(std::strcmp(argv[optind],"-b")==0 && optind+2<argc)
+		    	{
+		    	if(!numeric_cast<int>(argv[++optind],&(this->posStartCol)) || this->posStartCol<1)
+		    		{
+		    		 cerr << "Bad start col value "<< argv[optind] << endl;
+			    	return (EXIT_FAILURE);
+		    		}
+		    	if(!numeric_cast<int>(argv[++optind],&(this->posEndCol)) || this->posEndCol<1)
+		    		{
+		    		 cerr << "Bad end col value "<< argv[optind] << endl;
+			    	return (EXIT_FAILURE);
+		    		}
+		    	this->posStartCol--;
+		    	this->posEndCol--;
+		    	}
 		    else if(argv[optind][0]=='-')
-			    {
-			    cerr << "unknown option '"<< argv[optind] << "'\n";
-			    usage(cerr,argc,argv);
-			    return (EXIT_FAILURE);
-			    }
+			{
+			cerr << "unknown option '"<< argv[optind] << "'\n";
+			usage(cerr,argc,argv);
+			return (EXIT_FAILURE);
+			}
 		    else
-			    {
-			    break;
-			    }
+			{
+			break;
+			}
 		    ++optind;
 		    }
 	if(valueCol==-1)

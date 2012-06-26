@@ -88,7 +88,7 @@ class Consequence
 	};
 
 /**
- * StringSequence
+ * Prediction
  */
 class Prediction:public MysqlApplication
     {
@@ -99,6 +99,7 @@ class Prediction:public MysqlApplication
 	int posColumn;
 	int refColumn;
 	int altColumn;
+	bool print_sequences;
 
 	Prediction():MysqlApplication(),
 		indexedFasta(NULL),
@@ -106,14 +107,15 @@ class Prediction:public MysqlApplication
 		chromColumn(0),
 		posColumn(1),
 		refColumn(3),
-		altColumn(4)
+		altColumn(4),
+		print_sequences(true)
 	    {
 	    }
 	virtual ~Prediction()
 	    {
 	    if(indexedFasta!=NULL) delete indexedFasta;
 	    }
-
+	
 	std::vector<KnownGene*> getGenes(
 	    std::string& chrom,
 	    int32_t pos0
@@ -220,11 +222,16 @@ class Prediction:public MysqlApplication
 			    "prediction.wild.codon" << tokenizer.delim <<
 			    "prediction.mut.codon" << tokenizer.delim <<
 			    "prediction.wild.aa" << tokenizer.delim <<
-			    "prediction.mut.aa" << tokenizer.delim <<
+			    "prediction.mut.aa";
+		if(print_sequences)
+			{	    
+			     cout   << tokenizer.delim <<
 			    "prediction.wild.prot" << tokenizer.delim <<
 			    "prediction.mut.prot" << tokenizer.delim <<
 			    "prediction.wild.rna" << tokenizer.delim <<
-			    "prediction.mut.rna" << tokenizer.delim <<
+			    "prediction.mut.rna";
+			    }
+		    cout << tokenizer.delim <<
 			    "prediction.splicing"
 			    ;
 		    cout << endl;
@@ -819,42 +826,45 @@ class Prediction:public MysqlApplication
 			{
 			cout << ".";
 			}
-		    cout << tokenizer.delim;
-		    if(consequence->wildProt!=NULL)
+		if(print_sequences)
 			{
-			consequence->wildProt->print(cout);
-			}
-		    else
-			{
-			cout << ".";
-			}
-		    cout << tokenizer.delim;
-		    if(consequence->mutProt!=NULL)
-			{
-			consequence->mutProt->print(cout);
-			}
-		    else
-			{
-			cout << ".";
-			}
-		    cout << tokenizer.delim;
-		    if(consequence->wildRNA!=NULL)
-			{
-			consequence->wildRNA->print(cout);
-			}
-		    else
-			{
-			cout << ".";
-			}
-		    cout << tokenizer.delim;
-		    if(consequence->mutRNA!=NULL)
-			{
-			consequence->mutRNA->print(cout);
-			}
-		    else
-			{
-			cout << ".";
-			}
+			cout << tokenizer.delim;
+			if(consequence->wildProt!=NULL)
+				{
+				consequence->wildProt->print(cout);
+				}
+			else
+				{
+				cout << ".";
+				}
+			cout << tokenizer.delim;
+			if(consequence->mutProt!=NULL)
+				{
+				consequence->mutProt->print(cout);
+				}
+			else
+				{
+				cout << ".";
+				}
+			cout << tokenizer.delim;
+			if(consequence->wildRNA!=NULL)
+				{
+				consequence->wildRNA->print(cout);
+				}
+			else
+				{
+				cout << ".";
+				}
+			cout << tokenizer.delim;
+			if(consequence->mutRNA!=NULL)
+				{
+				consequence->mutRNA->print(cout);
+				}
+			else
+				{
+				cout << ".";
+				}
+			}//end print_sequences
 		    cout << tokenizer.delim;
 		    if(consequence->splicing.empty())
 			{
@@ -904,6 +914,7 @@ class Prediction:public MysqlApplication
 		out << "  -p <POS col> (default:"<< posColumn <<")" << endl;
 		out << "  -r <REF col> (default:"<< refColumn <<")" << endl;
 		out << "  -a <ALT col> (default:"<< altColumn <<")" << endl;
+		out << "  --noseq do not print sequences (RNA and prot)." << endl;
 		MysqlApplication::printConnectOptions(out);
 		}
     };
@@ -933,6 +944,10 @@ int main(int argc,char** argv)
 		ARGVCOL("-p",posColumn)
 		ARGVCOL("-r",refColumn)
 		ARGVCOL("-a",altColumn)
+		else if(std::strcmp(argv[optind],"--noseq")==0)
+			{
+			app.print_sequences=false;
+			}
 		else if(std::strcmp(argv[optind],"--host")==0 && optind+1<argc)
 			{
 			app.host.assign(argv[++optind]);

@@ -18,28 +18,32 @@ class LZWComplexity
 		~LZWComplexity()
 			{
 			}
-		std::size_t complexity(const char* s,std::size_t len)
+		void set_case_sensible(bool b)
+			{
+			this->case_sensible=b;
+			}
+		
+		
+		std::size_t complexity(const char* s,std::size_t len) const
 			{
 			std::set<std::string> dict;
-			for (int c = 'a'; c <= 'z';c++)
-				{
-				if(case_sensible)
-					{
-					dict.insert(std::string(1,c));
-					}
-				dict.insert(std::string(1,toupper(c)));
-				}
 
 			std::string w;
+			std::string wc;
+			w.reserve(len);
+			wc.reserve(len);
 			for(std::size_t i=0;i< len;++i)
 				{
 				char c=(case_sensible?s[i]:std::toupper(s[i]));
 				
 				if(!std::isalpha(c)) continue;
-				std::string wc(w);
 				
+				wc.assign(w);
 				wc.append(&c,1);
-				if( dict.find(wc)!= dict.end())
+				
+				if(wc.size()==1 || /* dict already contains all 1-char word */
+					dict.find(wc)!= dict.end() /* wc is in dict */
+					)
 					{
 					w.assign(wc);
 					}
