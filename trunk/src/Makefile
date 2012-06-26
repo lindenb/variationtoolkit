@@ -84,7 +84,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcfvep \
 	$(BINDIR)/teec \
 	$(BINDIR)/vcfnumericfilter \
-	$(BINDIR)/mean
+	$(BINDIR)/mean \
+	$(BINDIR)/complexityvsmapping
 
 all:$(TARGET_BINARIES)
 
@@ -174,8 +175,8 @@ $(BINDIR)/loessapp:loessapp.cpp loess.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/redonstructvar: redonstructvar.cpp  xfaidx.o knowngene.o loess.o application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
-$(BINDIR)/redondepth: redondepth.cpp  xfaidx.o loess.o application.o xbam2.o segments.o tarball.o
-	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz 
+$(BINDIR)/redondepth: redondepth.20120618.cpp  xfaidx.o loess.o application.o xbam2.o segments.o tarball.o kentBigWig.o
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  ${KENTDIR}/src/lib/*/jkweb.a -Wl,--start-group -lz -lm -lssl3 -lssl -Wl,--end-group -lbam 
 $(BINDIR)/bam2wig: bam2wig.cpp application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/ttmap: ttmap.cpp application.o 
@@ -252,6 +253,8 @@ $(BINDIR)/vcfnumericfilter: vcfnumericfilter.cpp application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/mean: stddev.cpp
 	$(CPP) -o $@ $< $(CFLAGS) -lm
+$(BINDIR)/complexityvsmapping: bamlzw1.cpp
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 
 
 $(BINDIR)/embbedC:embbedC.c
@@ -393,9 +396,11 @@ clean-all:clean uninstall
 #	g++ -Wall -g -o a.out vcfsim.cpp random.o tarball.o
 test:$(BINDIR)/redondepth
 	$<  -f /commun/data/pubdb/ucsc/hg19/chromosomes/hg19.fa \
-	    -g jeter.kg.txt \
-		/commun/data/projects/NGS/brugada2011/data/Brs[1-9]/rmdup.bam \
-		/commun/data/projects/NGS/brugada2011/data/Brs10/rmdup.bam 
+		/commun/data/projects/NGS/201202macrogen/DataHD20120302/CD8262/CD8262_sorted.bam \
+		/commun/data/projects/NGS/201202macrogen/DataHD20120302/CD5121/CD5121_sorted.bam \
+		/commun/data/projects/NGS/201202macrogen/DataHD20120302/CD8260/CD8260_sorted.bam \
+		/commun/data/projects/NGS/201202macrogen/DataHD20120302/CD8289/CD8289_sorted.bam \
+		/commun/data/projects/NGS/201202macrogen/DataHD20120302/S0529/S0529_sorted.bam > /data/users/lindenb/jeter.redondepth.tsv
 
 #test2:
 #	 g++ -DTEST_THIS_CODE -Wall xstream.cpp `xml2-config --cflags --libs`
