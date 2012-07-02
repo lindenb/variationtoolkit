@@ -64,10 +64,7 @@ class VirusAssembler
 
         char charAt(const Base b,int32_t extend) const
             {
-            if(b.chrom<0 || (int)b.chrom>=this->genome.size())
-            	{
-            	THROW("size:"<< this->genome.size() << " b.com=" <<  (int)b.chrom);
-            	}
+            assert((int)b.chrom<this->genome.size());
             const FastaSequence* chrom = this->genome.at(b.chrom);
             if(b.strand==PLUS)//forward
                 {
@@ -86,13 +83,14 @@ class VirusAssembler
 
         void print(std::ostream& out,const Base& b,int len) const
             {
-            out << b.position << " strand:"<< (int)b.strand << " chrom:"<< (int)b.chrom << " ";
+            out << b.position << " strand:"<< (int)b.strand << " chrom:"<< (int)b.chrom << endl;
             for(int i=0;i< len;++i)
                 {
                 char c=charAt(b,i);
                 if(c=='\0') break;
                 out << c;
                 }
+            out << endl;
             }
 
         int compare(const Base& b1,const Base& b2) const
@@ -134,14 +132,14 @@ class VirusAssembler
                         }
                     }
                 }
-
-
+	
+	   WHERE("sort");
             std::sort(
             	bases.begin(),
             	bases.end(),
             	BaseCmp(this)
             	);
-
+	WHERE("end sort");
 
             }
 
@@ -252,12 +250,14 @@ class VirusAssembler
             return mismatches(pos,seq,0,maxLen)==0;
             }
 
-        void align(const bam1_t *b)
+
+        void align(const bam1_t *bam)
             {
             int32_t max_extend=10;
-            Bam1Sequence sequence(b);
+            Bam1Sequence sequence(bam);
             Bam1Record* bam1record=0;
-            if(sequence.is_mapped() || sequence.is_mate_mapped()) return;
+            if(sequence.is_mapped()) return;
+           
             size_t i=lower_bound(&sequence,max_extend);
             while(i< bases.size())
                 {
@@ -266,13 +266,25 @@ class VirusAssembler
                     {
                     break;
                     }
+                int32_t n_mismatches=0;
+                if(n_mismatches = mismatches(
+			&b,
+			&sequence,
+			max_extend,
+			sequence.size()
+			)> (int)(0.1*sequence.size()))
+			{
+			continue;
+			}     
+                    
                 if(bam1record==0)
                     {
-                    bam1record=new Bam1Record(b);
+                    bam1record=new Bam1Record(bam);
                     bam1records.push_back(bam1record);
                     }
-		print(cerr,b,max_extend);cerr << endl;
-		for(int32_t j=0;j< max_extend && j< sequence.size();++j) cerr << sequence[j]; cerr << endl;
+                cerr << "n:" << n_mismatches << endl;
+		print(cerr,b,sequence.size());
+		for(int32_t j=0;j< sequence.size();++j) cerr << sequence[j]; cerr << endl;
 		Hit hit;
 		hit.record=bam1record;
 		hit.base=b;
@@ -280,7 +292,7 @@ class VirusAssembler
                 ++i;
                 }
             }
-
+	
         void scanPairedEnd(const char* filename)
             {
             WHERE(filename);

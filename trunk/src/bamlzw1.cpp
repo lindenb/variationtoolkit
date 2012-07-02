@@ -107,7 +107,6 @@ class BamLZW1
 			size_t complexity= lzw.complexity(seq.data(),seq.size());
 			if(complexity>=complexity2count.size())
 				{
-				clog << "[LOG] complexity:" << complexity <<"="<< seq  << endl;
 				complexity2count.resize(complexity+1,zero);
 				}
 			Count& count=complexity2count.at(complexity);
@@ -115,6 +114,7 @@ class BamLZW1
 			
 			if(count.example.empty())
 				{
+				clog << "[LOG] complexity:" << complexity <<"="<< seq  << endl;
 				count.example.assign(seq);
 				}
 			if(IS_FLAG_SET(b,BAM_FUNMAP))
