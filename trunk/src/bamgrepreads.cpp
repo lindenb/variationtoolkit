@@ -90,13 +90,12 @@ public:
 
 			}
 	        in.close();
-
+		return 0;
 		}
 		
 int main(int argc, char ** argv)
   {
   int optind=1;
-  int status=EXIT_SUCCESS;
   /* loop over the arguments */
   while(optind<argc)
 	    {
