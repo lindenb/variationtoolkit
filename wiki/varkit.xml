@@ -3067,4 +3067,30 @@ make ../bin/teec]]></pre>
 <pre>teec file-count.txt &lt; input &gt; result</pre>
 </page>
 
+
+<page title="BamGrepReads" labels="bam,read,grep,ngs" desc="Search for short-read names in a BAM">
+Search for short-read names in a BAM file. Answer to <a>http://www.biostars.org/post/show/48211</a>.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/bamgrepreads]]></pre>
+<h2>Usage</h2>
+<pre>bamgrepreads -R file.txt [options] (stdin|bam1 bam2 ...)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-R</b>(file) list of reads names (REQUIRED).</li>
+<li><b>-f</b> (int) required flag (OPTIONAL)</li>
+<li><b>-F</b> (int) filtering flag (OPTIONAL)</li>
+<li><b>-e</b> one match per read (goes faster)</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$echo "HTKZQN1_353:6:1103:6755:52161" > list.txt
+$ bamgrepreads -R list.txt -F 4 -e input.bam
+
+HTKZQN1_353:6:1103:6755:52161   163     chr2    10012   254     100M    =      10184    272     AAGACAACCACCCTCACCCTCACCCTCACCCTCACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCAAA    CCBFFFFFHGHHHJJJJJJJJIJJJIJIJJJGIJJIIGGIJJIJIIJGIIIJJJJJHHHHFFFFFEDDCDDDDDDCDDDDDDDDDDDCDBDDDDDDDDDB    AM:i:0  BC:Z:0 XD:Z:CTA2CCTA5A5A5A5A66C SM:i:0  AS:i:425
+]]></pre>
+</page>
+
+
+
 </documentation>
