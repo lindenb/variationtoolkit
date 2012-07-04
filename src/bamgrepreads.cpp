@@ -1,3 +1,15 @@
+/**
+ * Author:
+ *	Pierre Lindenbaum PhD
+ * Contact:
+ *	plindenbaum@yahoo.fr
+ * Date:
+ *	July 2012
+ * WWW:
+ *	http://plindenbaum.blogspot.com
+ * Motivation:
+ *	http://www.biostars.org/post/show/48211
+ */
 #include <set>
 #include <string>
 #include <cerrno>
@@ -14,12 +26,12 @@ using namespace std;
 
 class BamGrepReads
 {
-public:
+private:
         bool erase_if_find;
-	int flag_on;
-	int flag_off;
+	uint32_t flag_on;
+	uint32_t flag_off;
 	set<string> reads;
-	
+public:	
 	BamGrepReads():erase_if_find(false),flag_on(0),flag_off(0)
 		{
 		}
@@ -87,12 +99,23 @@ public:
 			{
 			if(line.empty() || line[0]=='#') continue;
 			this->reads.insert(line);
-
 			}
 	        in.close();
 		return 0;
 		}
-		
+
+void usage(int argc, char ** argv)
+	{
+	cerr << "Author: Pierre Lindenbaum PHD. 2012.\n";
+	cerr << "Last compilation:"<<__DATE__<<" " <<__TIME__ << endl;
+	cerr << "Usage:\n";
+	cerr << "  " << argv[0] << " -R file.txt [options] (stdin|bam1 bam2 ...)" << endl;
+	cerr << "Options:\n";
+	cerr << " -R <read-name-file>\n";
+	cerr << " -f INT flag on\n";
+	cerr << " -F INT flag off\n";
+	}
+
 int main(int argc, char ** argv)
   {
   int optind=1;
@@ -101,9 +124,7 @@ int main(int argc, char ** argv)
 	    {
 	    if(strcmp(argv[optind],"-h")==0)
 		    {
-		    cerr << "Author: Pierre Lindenbaum PHD. 2012.\n";
-		    cerr << "Last compilation:"<<__DATE__<<" " <<__TIME__ << endl;
-		    cerr << argv[0] << " -R reads.txt [-e] [-f flag_on] [-F flag_off](stdin| bam1 bam2....)" << endl;
+		    usage(argc,argv);
 		    return EXIT_SUCCESS;
 		    }
 	     else if(strcmp(argv[optind],"-e")==0)
@@ -112,11 +133,11 @@ int main(int argc, char ** argv)
 	    	}
 	    else if(strcmp(argv[optind],"-f")==0 && optind+1<argc)
 	    	{
-	    	this->flag_on = strtol(argv[++optind], 0, 0);
+	    	this->flag_on = strtoul(argv[++optind], 0, 0);
 	    	}
 	    else if(strcmp(argv[optind],"-F")==0 && optind+1<argc)
 	    	{
-	    	this->flag_off = strtol(argv[++optind], 0, 0);
+	    	this->flag_off = strtoul(argv[++optind], 0, 0);
 	    	}
 	    else if(strcmp(argv[optind],"-R")==0 && optind+1<argc)
 		    {
@@ -133,6 +154,7 @@ int main(int argc, char ** argv)
 	    else if(argv[optind][0]=='-')
 		    {
 		     cerr << "Unnown option:"<<argv[optind] << endl;
+		     usage(argc,argv);
 		    return EXIT_FAILURE;
 		    }
 	    else

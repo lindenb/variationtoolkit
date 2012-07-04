@@ -85,6 +85,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/teec \
 	$(BINDIR)/vcfnumericfilter \
 	$(BINDIR)/mean \
+	$(BINDIR)/bamgrepreads \
 	$(BINDIR)/complexityvsmapping
 
 all:$(TARGET_BINARIES)
@@ -255,7 +256,8 @@ $(BINDIR)/mean: stddev.cpp
 	$(CPP) -o $@ $< $(CFLAGS) -lm
 $(BINDIR)/complexityvsmapping: bamlzw1.cpp
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
-
+$(BINDIR)/bamgrepreads: bamgrepreads.cpp
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
