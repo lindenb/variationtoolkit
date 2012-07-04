@@ -10,8 +10,27 @@
  * Motivation:
  *	http://www.biostars.org/post/show/48211
  */
-#include <set>
 #include <string>
+#ifdef __GNUC__
+#include <ext/hash_set>
+namespace __gnu_cxx
+{
+     /* hack from http://www.moosechips.com/2008/10/using-gcc-c-hash-classes-with-strings/ */
+template<> struct hash< std::string >
+        {
+                size_t operator()( const std::string& x ) const
+                {
+                        return hash< const char* >()( x.c_str() );
+                }
+        };
+}
+
+typedef __gnu_cxx::hash_set<std::string, __gnu_cxx::hash<std::string> > set_of_string;
+#else
+#include <set>
+typedef std::set<std::string> set_of_string;
+#endif
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -30,7 +49,7 @@ private:
         bool erase_if_find;
 	uint32_t flag_on;
 	uint32_t flag_off;
-	set<string> reads;
+	set_of_string reads;
 public:	
 	BamGrepReads():erase_if_find(false),flag_on(0),flag_off(0)
 		{
@@ -52,8 +71,8 @@ public:
 		  return EXIT_FAILURE;
 		  }
          string name;
-         set<string>::iterator r_end=this->reads.end();
-         set<string>::iterator r;
+         set_of_string::iterator r_end=this->reads.end();
+         set_of_string::iterator r;
 	 b = bam_init1();
 	 while(samread(fp_in, b) > 0)
 	      {
