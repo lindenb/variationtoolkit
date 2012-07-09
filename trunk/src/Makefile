@@ -87,7 +87,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/mean \
 	$(BINDIR)/bamgrepreads \
 	$(BINDIR)/complexityvsmapping \
-	$(BINDIR)/bamnocoverage
+	$(BINDIR)/bamnocoverage \
+	$(BINDIR)/addheader \
 
 all:$(TARGET_BINARIES)
 
@@ -261,6 +262,9 @@ $(BINDIR)/bamgrepreads: bamgrepreads.cpp
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 $(BINDIR)/bamnocoverage: bamnocoverage.cpp
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
+$(BINDIR)/addheader: addheader.cpp
+	$(CPP) -o $@ $^ $(CFLAGS)
+
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
