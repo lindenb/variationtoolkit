@@ -87,11 +87,11 @@ int main(int argc,char** argv)
 			while(!tokens.empty() && tokens.back().size()==0) tokens.pop_back();
 			for(size_t i=0;i<tokens.size();++i)
 				{
-				cout << (i==0?left:delim) << "$";
+				cout << (i==0?left:delim);
 				map<size_t,string>::iterator r=usercol.find(i);
 				if(r==usercol.end())
 					{
-					cout << (i+1);
+					cout << "$" << (i+1);
 					}
 				else
 					{
