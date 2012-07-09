@@ -18,8 +18,8 @@ static void usage(std::ostream& out,int argc,char** argv)
 int main(int argc,char** argv)
 	{
 	map<size_t,string> usercol;
-	int delim='\t';
-	int left='#';
+	char delim='\t';
+	char left='#';
 	while(optind < argc)
 		{
 		if(strcmp(argv[optind],"-h")==0)
@@ -84,6 +84,7 @@ int main(int argc,char** argv)
 			Tokenizer tokenizer(delim);
 			std::vector<std::string> tokens;
 			tokenizer.split(line,tokens);
+			while(!tokens.empty() && tokens.back().size()==0) tokens.pop_back();
 			for(size_t i=0;i<tokens.size();++i)
 				{
 				cout << (i==0?left:delim) << "$";
