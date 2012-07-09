@@ -133,6 +133,7 @@ void usage(int argc, char ** argv)
 	cerr << " -R <read-name-file>\n";
 	cerr << " -f INT flag on\n";
 	cerr << " -F INT flag off\n";
+	cerr << " -e one match per read (faster).\n";
 	}
 
 int main(int argc, char ** argv)
