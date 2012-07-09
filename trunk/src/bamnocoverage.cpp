@@ -32,9 +32,7 @@
 #include "zstreambuf.h"
 #include "tokenizer.h"
 
-extern "C" {
-void bam_init_header_hash(bam_header_t *header);
-}
+
 using namespace std;
 
 class BamNoCoverage
