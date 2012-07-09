@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <map>
+#include <cstdio>
 #include "numeric_cast.h"
 #include "tokenizer.h"
 using namespace std;
@@ -10,9 +11,10 @@ static void usage(std::ostream& out,int argc,char** argv)
 	    out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 	    out << "Usage:\n\t"<< argv[0] << " [options] file.bam [chr:start-end]\n";
 	    out << "Options:\n";
-	    out << " -d <CHAR> delimiter (default:tab ).:\n";
-	    out << " -L <CHAR> begin head line with... (default:# ).:\n";
-	    out << " -c <INTEGER> <STRING> custom column def.\n";
+	    out << " -d <CHAR> delimiter (default:tab ).  (optional)\n";
+	    out << " -L <CHAR> begin head line with... (default:# )  (optional) .\n";
+	    out << " -c <INTEGER> <STRING> custom column def  (optional) .\n";
+	    out << " -f <FILENAME> (optional) insert this file before header.\n";
 
 		}
 int main(int argc,char** argv)
@@ -20,6 +22,7 @@ int main(int argc,char** argv)
 	map<size_t,string> usercol;
 	char delim='\t';
 	char left='#';
+	char* insert_file=0;
 	while(optind < argc)
 		{
 		if(strcmp(argv[optind],"-h")==0)
@@ -27,6 +30,10 @@ int main(int argc,char** argv)
 		        usage(cout,argc,argv);
 		        return EXIT_FAILURE;
 		        }
+		else if(strcmp(argv[optind],"-f")==0 && optind+1<argc)
+			{
+			insert_file=argv[++optind];
+			}
 		else if(strcmp(argv[optind],"-c")==0 && optind+2<argc)
 			{
 			size_t i=0;
@@ -81,6 +88,15 @@ int main(int argc,char** argv)
 		{
 		if(first)
 			{
+			if(insert_file!=0)
+				{
+				FILE* in=fopen(insert_file,"r");
+				if(in==NULL) { cerr << "Cannot open and insert " << insert_file << endl; return EXIT_FAILURE;}
+				int c,prev=0;
+				while((c=fgetc(in))!=EOF) { cout << (char)c;prev=c;}
+				fclose(in);
+				if(prev!='\n') cout << endl;
+				}
 			Tokenizer tokenizer(delim);
 			std::vector<std::string> tokens;
 			tokenizer.split(line,tokens);
