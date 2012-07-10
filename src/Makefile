@@ -89,6 +89,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/complexityvsmapping \
 	$(BINDIR)/bamnocoverage \
 	$(BINDIR)/addheader \
+	$(BINDIR)/kg2exons \
 
 all:$(TARGET_BINARIES)
 
@@ -264,7 +265,8 @@ $(BINDIR)/bamnocoverage: bamnocoverage.cpp
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 $(BINDIR)/addheader: addheader.cpp
 	$(CPP) -o $@ $^ $(CFLAGS)
-
+$(BINDIR)/kg2exons: kg2exons.cpp knowngene.o
+	$(CPP) -o $@ $^ $(CFLAGS)
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
