@@ -81,6 +81,7 @@ int main(int argc,char** argv)
         if(optind!=argc)
 		{
 		cerr << "Can only read from stdin" << endl;
+		return EXIT_FAILURE;
 		}
 
 	string  line;
