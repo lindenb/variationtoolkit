@@ -152,7 +152,6 @@ class BamNoCoverage
 
 	int main(int argc,char** argv)
 	    {
-	    char* befFile=0;
 	    int optind=1;
 	    while(optind < argc)
 		{
@@ -160,10 +159,6 @@ class BamNoCoverage
 		    {
 		    this->usage(cerr,argc,argv);
 		    return(EXIT_SUCCESS);
-		    }
-		else if( (strcmp(argv[optind],"-B")==0 || strcmp(argv[optind],"--bed")==0) && optind+1<argc)
-		    {
-		    befFile=argv[++optind];
 		    }
 		else if( (strcmp(argv[optind],"-m")==0) && optind+1<argc)
 		    {
