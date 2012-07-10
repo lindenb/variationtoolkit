@@ -45,7 +45,7 @@ class BamNoCoverage
 	int prev_tid;
 	bool in_low_coverage;
 
-	BamNoCoverage():fp_in(0),min_depth(0),zero_start(0),prev_pos(-1),prev_tid(-1),in_low_coverage(true)
+	BamNoCoverage():fp_in(0),min_depth(0),zero_start(0),prev_pos(-1),prev_tid(-1),in_low_coverage(false)
 	    {
 	    }
 
@@ -55,6 +55,7 @@ class BamNoCoverage
 
 	void echo(int tid,int chromStart,int chromEnd)
 		{
+		if(chromStart>=chromEnd) return;
 		cout	<< fp_in->header->target_name[tid]
 			<< "\t"		
 			<< chromStart
@@ -69,7 +70,7 @@ class BamNoCoverage
 		{
 		if(this->prev_tid==-1 ) return;
 		int32_t max_len=1+this->fp_in->header->target_len[this->prev_tid];
-		if(this->zero_start<max_len)
+		if(this->zero_start<max_len && !(in_low_coverage==false && this->zero_start==0))
 		    {
 		    echo(this->prev_tid,this->zero_start,max_len);
 		    }
@@ -79,6 +80,7 @@ class BamNoCoverage
 
 	 void  callback(int32_t tid, int32_t pos,  int32_t depth)
 	    {
+	//cerr << pos << " d=" << depth << " " << zero_start << "," << prev_pos<< "," << in_low_coverage << endl;
 	    if(this->prev_tid!=tid)
 		{
 		if(this->prev_tid!=-1)
@@ -88,6 +90,7 @@ class BamNoCoverage
 		this->prev_tid=tid;
 		this->zero_start=0;
 		this->prev_pos=-1;
+		this->in_low_coverage=false;
 		}
 
 	    if((this->prev_pos+1!=pos ||  depth <= this->min_depth ) && !this->in_low_coverage)
