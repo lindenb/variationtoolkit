@@ -1,0 +1,50 @@
+#summary inserts a header before a stream
+#labels unix,utility
+<wiki:toc max_depth="1" />
+
+Small linux utility inserting a header before a stream
+
+==Compilation==
+
+
+{{{
+$ cd varkit/src
+make ../bin/addheader
+}}}
+
+
+==Usage==
+
+
+{{{
+addheader [options] (stdin)
+}}}
+
+
+==Options==
+
+  * *-d*(CHAR) delimiter default:tab(OPTIONAL).
+  * *-L* (CHAR) begin head line with... (default:# )  (optional) .
+  * *-c* (INTEGER) (STRING) custom column def  (optional) .
+  * *-f* (FILENAME) (optional) insert this file before header.
+
+
+==Example==
+
+
+{{{
+$ echo -e "A\tG\tC\nA\tazd\tx" |\
+addheader -c 2 HELLO
+
+#$1	HELLO	$3
+A	G	C
+A	azd	x
+
+
+}}}
+
+
+
+
+<g:plusone size="medium"></g:plusone>
+

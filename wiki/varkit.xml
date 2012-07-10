@@ -3091,6 +3091,60 @@ HTKZQN1_353:6:1103:6755:52161   163     chr2    10012   254     100M    =      1
 ]]></pre>
 </page>
 
+<page title="BamNoCoverage" labels="bam,read,grep,ngs,bed" desc="prints the uncovered region in a BAM file">
+Prints the regions uncovered, with a low coverage, in a BAM file.
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/bamnocoverage]]></pre>
+<h2>Usage</h2>
+<pre>bamnocoverage [options] (stdin|bam1 bam2....)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-m</b>(int) min depth (OPTIONAL).</li>
+
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ bamnocoverage -m 10 testchr222.bam | head
+
+chr22	0	14438296	14438296
+chr22	14438297	14512511	74214
+chr22	14512518	14521021	8503
+chr22	14521025	14558541	37516
+chr22	14558544	14558549	5
+chr22	14558566	14558989	423
+chr22	14558995	14558998	3
+chr22	14559007	14747713	188706
+chr22	14747717	15032707	284990
+chr22	15032711	15392372	359661
+
+]]></pre>
+</page>
+
+<page title="AddHeader" labels="unix,utility" desc="inserts a header before a stream">
+Small linux utility inserting a header before a stream
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/addheader]]></pre>
+<h2>Usage</h2>
+<pre>addheader [options] (stdin)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-d</b>(CHAR) delimiter default:tab(OPTIONAL).</li>
+<li><b>-L</b> (CHAR) begin head line with... (default:# )  (optional) .</li>
+<li><b>-c</b> (INTEGER) (STRING) custom column def  (optional) .</li>
+<li><b>-f</b> (FILENAME) (optional) insert this file before header.</li>
+
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ echo -e "A\tG\tC\nA\tazd\tx" |\
+addheader -c 2 HELLO
+
+#$1	HELLO	$3
+A	G	C
+A	azd	x
+
+]]></pre>
+</page>
 
 
 </documentation>
