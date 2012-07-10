@@ -9,7 +9,7 @@ static void usage(std::ostream& out,int argc,char** argv)
 	{
 		    out << argv[0] << " Pierre Lindenbaum PHD. 2011.\n";
 	    out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
-	    out << "Usage:\n\t"<< argv[0] << " [options] file.bam [chr:start-end]\n";
+	    out << "Usage:\n\t"<< argv[0] << " [options] stdin\n";
 	    out << "Options:\n";
 	    out << " -d <CHAR> delimiter (default:tab ).  (optional)\n";
 	    out << " -L <CHAR> begin head line with... (default:# )  (optional) .\n";
