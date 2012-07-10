@@ -19,6 +19,7 @@ static void usage(std::ostream& out,int argc,char** argv)
 		}
 int main(int argc,char** argv)
 	{
+	int optind=1;
 	map<size_t,string> usercol;
 	char delim='\t';
 	char left='#';
