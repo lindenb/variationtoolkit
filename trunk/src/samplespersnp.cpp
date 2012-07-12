@@ -64,6 +64,7 @@ class SamplePerSnp:public AbstractApplication
 	bool use_ref_alt;
 	vector<string> buffer;
 	void* selectSetOpaque;
+	string matching_flag;///output all results but add extra column with this flag
 
 	SamplePerSnp()
 	    {
@@ -142,7 +143,23 @@ class SamplePerSnp:public AbstractApplication
 			print=selectSetEval(selectSetOpaque,samples);
 			}
 
-		if(print)
+		if(selectSetOpaque!=NULL && !matching_flag.empty())
+			{
+			for(size_t i=0;i< buffer.size();++i)
+				{
+				cout << buffer[i] << tokenizer.delim <<samples.size() <<  tokenizer.delim;
+				if(print)
+					{
+					cout << matching_flag;
+					}
+				else
+					{
+					cout << ".";
+					}
+				cout << endl;
+				}
+			}
+		else if(print)
 			{
 			for(size_t i=0;i< buffer.size();++i)
 				{
@@ -162,7 +179,12 @@ class SamplePerSnp:public AbstractApplication
 			if(line.empty()) continue;
 			if(line[0]=='#')
 				{
-				cout << line << tokenizer.delim << "Sample/SNP" << endl;
+				cout << line << tokenizer.delim << "Sample/SNP";
+				if(selectSetOpaque!=NULL && !matching_flag.empty())
+					{
+					cout << tokenizer.delim << "FLAG(Sample/SNP)";
+					}
+				cout << endl;
 				continue;
 				}
 
@@ -192,6 +214,7 @@ class SamplePerSnp:public AbstractApplication
 		out << "  --ref REF reference allele column index: default "<< (refcol+1) << "\n";
 		out << "  --alt ALT alternate allele column index: default "<< (altcol+1) << "\n";
 		out << "  -e <query> (optional) filters by samples using boolean request eg. '((S1 && S2) || (!(S3) || \"S4\"))'."<< "\n";
+		out << "  -m <STRING> (optional) with option \'-e\', prints ALL the line but append this flags at the end for the matching rows."<< "\n";
 		out << "(stdin|vcf|vcf.gz)\n";
 		}
     };
@@ -220,6 +243,10 @@ int main(int argc,char** argv)
 			{
    			extern void* selectSetParse(const char* s);
 			app.selectSetOpaque=selectSetParse(argv[++optind]);
+			}
+		else if(std::strcmp(argv[optind],"-m")==0 && optind+1 < argc)
+			{
+			app.matching_flag.assign(argv[++optind]);
 			}
    		SETINDEX("--sample",samplecol)
    		SETINDEX("--chrom",chromcol)
