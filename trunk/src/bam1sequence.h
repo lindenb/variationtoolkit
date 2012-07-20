@@ -11,6 +11,7 @@
 #ifndef BAM1SEQUENCE_H_
 #define BAM1SEQUENCE_H_
 
+#include <string>
 #include "bam.h"
 #include "sam.h"
 #include "abstractcharsequence.h"
@@ -31,6 +32,11 @@ class AbstractBam1Sequence:public AbstractCharSequence
 	virtual ~AbstractBam1Sequence()
 		{
 		}
+	virtual const bam1_core_t* core() const
+		{
+		return &(ptr()->core);
+		}
+
 	virtual char at(int32_t index) const
 		{
 		return bam_nt16_rev_table[bam1_seqi(bam1_seq(ptr()),index)];
@@ -39,7 +45,14 @@ class AbstractBam1Sequence:public AbstractCharSequence
 		{
 		return ptr()->core.l_qseq;
 		}
-
+	virtual int32_t tid() const
+		{
+		return core()->tid;
+		}
+	virtual int32_t pos() const
+		{
+		return core()->pos;
+		}
 	virtual const char* name() const
 	    {
 	    return bam1_qname(ptr());
@@ -86,7 +99,7 @@ class AbstractBam1Sequence:public AbstractCharSequence
 
 	bool is_proper_pair() const
 	    {
-	    return is_flag_set(BAM_FPAIRED);
+	    return is_flag_set(BAM_FPROPER_PAIR);
 	    }
 	bool is_qc_fail() const
 	    {
@@ -105,7 +118,20 @@ class AbstractBam1Sequence:public AbstractCharSequence
 	    {
 	    return is_flag_set(BAM_FREAD2);
 	    }
-
+	int quality() const
+		{
+		return ptr()->core.qual;
+		}
+	std::string format(const bam_header_t *header) const
+		{
+		extern char *bam_format1(const bam_header_t *header, const bam1_t *b);
+		std::string sam;
+		char* p=bam_format1(header,ptr());
+		if(p!=0)
+		sam.assign(p);
+		free(p);
+		return sam;
+		}
     };
 /**
  * Bam1Sequence
