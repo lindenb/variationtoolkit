@@ -6,10 +6,12 @@
 #include <fstream>
 #include <sstream>
 #include <memory>
+#include <set>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <leveldb/db.h>
+#include <algorithm>
 
 //#define NOWHERE
 #include "where.h"
@@ -22,6 +24,70 @@ using namespace std;
 typedef int64_t bgzf_filepos_t;    
 
 #define DEFAULT_FOLDER_EXTENSION ".names.idx"
+
+class ComparableBam1Record:public Bam1Record
+	{
+	private:
+		bam_header_t* bam_header;
+	public:
+		ComparableBam1Record(bam_header_t* bam_header,const bam1_t* ptr):Bam1Record(ptr),bam_header(bam_header)
+			{
+			}
+		
+		ComparableBam1Record(const ComparableBam1Record& cp):Bam1Record(cp),bam_header(cp.bam_header)
+			{
+			}
+		
+		virtual ~ComparableBam1Record()
+			{
+			}
+		const char* chromosome() const
+			{
+			if(tid()<0) return 0;
+			return bam_header->target_name[tid()];
+			}
+		int compareTo(const ComparableBam1Record& cp) const
+			{
+			int i=strcmp(name(),cp.name());
+			if(i!=0) return i<0;
+			int side1=0+(is_read1()?2:0)+(is_read2()?4:0);
+			int side2=0+(cp.is_read1()?2:0)+(cp.is_read2()?4:0);
+			i=side1-side2;
+			if(i!=0) return i<0;
+			
+			if(chromosome()==0)
+				{
+				if(cp.chromosome()==0) return 0;
+				return -1;
+				}
+        		if(cp.chromosome()==0) return 1;
+        		i=strcmp(chromosome(),cp.chromosome());
+        		if(i!=0) return i<0;
+        		i=pos()-cp.pos();
+        		if(i!=0) return i<0;
+        		return 0;
+			}
+		bool operator==(const ComparableBam1Record& cp) const
+			{
+			return compareTo(cp)==0;
+			}
+		bool operator<(const ComparableBam1Record& cp) const
+			{
+			return compareTo(cp)<0;
+			}
+		ComparableBam1Record& operator=(const ComparableBam1Record& cp)
+			{
+			if(this!=&cp)
+				{
+				Bam1Record::operator=(cp);
+				bam_header=cp.bam_header;
+				}
+			return *this;
+			}
+	};
+
+
+
 
 class AbstractIndexOfNames
 	{
@@ -313,6 +379,53 @@ class ReadIndexOfNames:public AbstractIndexOfNames
 				}
 			}
 		
+		auto_ptr<ComparableBam1Record> getBamRecordAt(bgzf_filepos_t offset)
+			{
+			auto_ptr<ComparableBam1Record> ret(0);
+			bam1_t *b= bam_init1();
+			if(bam_seek(in,offset,SEEK_SET)!=0)
+				{
+				cerr << "[ERROR]Cannot seek bgzf to " <<   offset << endl;
+				bam_destroy1(b);
+				return ret;
+				}
+			if(bam_read1(in, b)<0)
+				{
+				cerr << "[ERROR]Cannot read BAM record at offset " <<   offset << endl;
+				bam_destroy1(b);
+				return ret;
+				}
+			ret.reset(new ComparableBam1Record(bam_header,b));
+			bam_destroy1(b);
+			return ret;
+			}
+		
+		auto_ptr<set<ComparableBam1Record> > getBamRecordsAt(const vector<bgzf_filepos_t>& offsets)
+			{
+			auto_ptr<set<ComparableBam1Record> > ret(new set<ComparableBam1Record>());
+			bam1_t *b= bam_init1();
+			for(size_t i=0;i< offsets.size();++i)
+				{
+				bgzf_filepos_t offset=offsets.at(i);
+				if(bam_seek(in,offset,SEEK_SET)!=0)
+					{
+					cerr << "[ERROR]Cannot seek bgzf to " <<   offset << endl;
+					bam_destroy1(b);
+					ret.reset(0);
+					return ret;
+					}
+				if(bam_read1(in, b)<0)
+					{
+					cerr << "[ERROR]Cannot read BAM record at offset " <<   offset << endl;
+					bam_destroy1(b);
+					ret.reset(0);
+					return ret;
+					}
+				ret->insert( ComparableBam1Record(bam_header,b));
+				}
+			bam_destroy1(b);
+			return ret;
+			}
 	};
 
 
@@ -421,7 +534,11 @@ class BamIndexNames
 		 	std::auto_ptr<vector<bgzf_filepos_t> > hits0=indexOfNames[0].decode(it0->value());
 		 	std::auto_ptr<vector<bgzf_filepos_t> > hits1=indexOfNames[1].decode(value1);
 		 	 
-		 	
+		 	auto_ptr<set<ComparableBam1Record> > recs0=indexOfNames[0].getBamRecordsAt(*(hits0));
+		 	auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(*(hits1));
+		  	
+		  	
+		  	
 		  	}
 		delete it0;
         	
