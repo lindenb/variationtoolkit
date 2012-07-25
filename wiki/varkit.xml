@@ -499,6 +499,9 @@ xml = <?xml version="1.0"?>
 
 <page title="SamplesPerSnp" labels="vcf,ngs,sample" desc="Appends a column with the number of Samples per Variation">
 &download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/samplespersnp]]></pre>
 <h2>Options</h2>
 <ul>
 <li>--delim (char) or -d  (char) (delimiter) default:tab</li>
@@ -1095,6 +1098,9 @@ Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
 <page title="VcfTTView" labels="samtools,vcf,bam,sam,alignments,visualization" desc="Prints the BAM alignments around variations.">
 Original code from samtools ttview : Heng Li, Bob Handsaker, Jue Ruan, Colin Hercus, Petr Danecek
 &download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/vcfttview]]></pre>
 <h2>Options</h2>
 <ul>
 <li>-c (chrom Column) (1)</li>
@@ -3121,7 +3127,8 @@ chr22	15032711	15392372	359661
 </page>
 
 <page title="AddHeader" labels="unix,utility" desc="inserts a header before a stream">
-Small linux utility inserting a header before a stream
+Small linux utility inserting a header before a stream.
+&download;
 <h2>Compilation</h2>
 <pre><![CDATA[$ cd varkit/src
 make ../bin/addheader]]></pre>
@@ -3143,6 +3150,36 @@ addheader -c 2 HELLO
 A	G	C
 A	azd	x
 
+]]></pre>
+</page>
+
+<page title="FastQGrep" labels="fastq,ngs" desc="search for reads in one ot two (paired) FASTQ files.">
+search for reads in one ot two (paired) FASTQ files."
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/fastqgrep]]></pre>
+<h2>Usage</h2>
+<pre>fastqgrep -R file_of_names.txt [options] (stdin)|(fastq)|(fastq1 fastq2)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-R</b> file_of_names.txt REQUIRED.</li>
+<li><b>-m</b> allow multiple hits per read  (optional) .</li>
+<li><b>-o1</b> (filename) file out1 OPTIONAL.</li>
+<li><b>-o2</b> (filename) file out2 OPTIONAL.</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ $ fastqgrep -R reads.txt  file2.fastq.gz  file1.fastq.gz | head
+@HWI-1KL149:2:C0KR2ACXX:8:2104:4474:86720 2:N:0:TGACAA	@HWI-1KL149:2:C0KR2ACXX:8:2104:4474:86720 1:N:0:TGACAA
+NNNNNTNNNNNNNNNANNNANNNNNNNTNNAANTTNNNNNNNNANNCNANTACNCGTANTNGCTTTNNTNANNACNNTTANATAGATTAGCAATCCTGNAC	AATCTCCTCCACCCCTACTGCCATTACTTTTTTAAAGTGCTAATCACACTATCATCTGTCCCCTTCCAACAAAAAAAAGAAAACCAGAAAAAAGAGTCCAG
++	+
+#####################################################################################################	@<@DFFFFHDHGFIJGGGGJJJJJFIJJJJJCGGIEABFHCGBFHGAHIHCFHEGIEH7=FGHGEHGHEH;EFFDA?=@D299?@B@8>@ABBD<?::>CC
+@HWI-1KL149:2:C0KR2ACXX:8:2104:4417:86728 2:N:0:GCCCAT	@HWI-1KL149:2:C0KR2ACXX:8:2104:4417:86728 1:N:0:GCCCAT
+NNNNNCNNNNNNNNNCNNNANNNNNNNANNATNCANNNNNNNNCNNANANCCCNGCCCNCNACGCGNNTNTNNTANNCTGNACCTCCCCTATGAAGGTNCA	CTTAAGGCAGAGTCAAAAACACAAATAGCTTTCCCTCATTTTTAGTCTAGTAATTCAAACTGAGTTTCAGATTTAGCAGTGTAGATGGATCTATGATAGTA
++	+
+#####################################################################################################	8+=?DBDDDD<ADEEA,AFFIIIF399?E>EEIIEIICDDEED?B9BDBBDD/??D?D)8=8B######################################
+@HWI-1KL149:2:C0KR2ACXX:8:2104:4666:86501 2:N:0:TGACAA	@HWI-1KL149:2:C0KR2ACXX:8:2104:4666:86501 1:N:0:TGACAA
+NNNNNANNNNNNNNNANNNCNNNNNNNCNNAGNAANNNNNNNNCNNANTNCACNAGACNANATTGANNTNANNGANNGGANAAATAGAAAAATCCAAANTT	GTTACTTGATAGCATTGTTCAGTTATTCTATATCTTTACTGACTTTCTGCTTATTTTTTCTATGAAATATTAAGAAATGAGTATAAAATCTCCAATGATAA
 ]]></pre>
 </page>
 

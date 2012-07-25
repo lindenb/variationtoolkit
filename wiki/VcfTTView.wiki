@@ -16,6 +16,15 @@ svn update
 }}}
 ... and edit the `variationtoolkit/congig.mk` file.
 
+==Compilation==
+
+
+{{{
+$ cd varkit/src
+make ../bin/vcfttview
+}}}
+
+
 ==Options==
 
   * -c (chrom Column) (1)

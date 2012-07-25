@@ -2,7 +2,19 @@
 #labels unix,utility
 <wiki:toc max_depth="1" />
 
-Small linux utility inserting a header before a stream
+Small linux utility inserting a header before a stream.
+
+==Download==
+Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].
+{{{
+svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only
+}}}
+... or update the sources of an existing installation... 
+{{{
+cd variationtoolkit
+svn update
+}}}
+... and edit the `variationtoolkit/congig.mk` file.
 
 ==Compilation==
 
