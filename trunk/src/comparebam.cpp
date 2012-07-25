@@ -28,6 +28,8 @@ class CompareBams
 		std::string* db_home;
 		leveldb::DB* db;
 		vector<vector<string> > index2chromNames;
+		leveldb::ReadOptions read_options;
+		leveldb::WriteOptions write_options;
 		struct Hit
 			{
 			unsigned short bamIndex;
@@ -86,6 +88,7 @@ class CompareBams
 	public:
 		CompareBams():in(0),db_home(0),db(0)
 			{
+			
 			}
 
 	
@@ -124,7 +127,7 @@ class CompareBams
 			leveldb::Options options;
 			options.create_if_missing = true;
 			options.error_if_exists= true;
-			
+			options.
 			leveldb::Status status = leveldb::DB::Open(options,folder,&(this->db));
 			if(!status.ok())
 				{
@@ -159,16 +162,16 @@ class CompareBams
 				leveldb::Slice key1(seq.name());
 				value.clear();
 				WHERE(n_reads);
-				leveldb::Status status = db->Get(leveldb::ReadOptions(), key1, &value);
+				leveldb::Status status = db->Get(this->read_options, key1, &value);
 				
 				if(!status.ok())
 					{
 					hits.reset(new vector<Hit>());
 					n_reads++;
-					if(n_reads%1000==0)
+					if(n_reads%1000000UL==0)
 						{
 						clog <<  n_reads << endl;
-						break;//TODO
+						//break;//TODO
 						}
 					}
 				else
@@ -185,7 +188,7 @@ class CompareBams
 				
 				std::auto_ptr<string> encoded = this->encode(hits.get());
 				leveldb::Slice value1(encoded->data(),encoded->size());
-				status = db->Put(leveldb::WriteOptions(), key1, value1);
+				status = db->Put(this->write_options, key1, value1);
 				if(!status.ok())
 					{
 					cerr << "Cannot insert into db" << endl;
@@ -226,11 +229,12 @@ class CompareBams
 		void dump()
 			{
 			
-			leveldb::Iterator* it=db->NewIterator(leveldb::ReadOptions());
+			leveldb::Iterator* it=db->NewIterator(this->read_options);
 			for (it->SeekToFirst(); it->Valid(); it->Next())
 				{
 				std::auto_ptr<vector<Hit> > hits = decode(it->value().ToString());
 				size_t i0=0;
+				
 				while(i0 < hits->size())
 					{
 					size_t i1=i0+1;

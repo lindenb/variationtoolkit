@@ -90,6 +90,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/bamnocoverage \
 	$(BINDIR)/addheader \
 	$(BINDIR)/kg2exons \
+	$(BINDIR)/fastqgrep \
 
 all:$(TARGET_BINARIES)
 
@@ -268,6 +269,8 @@ $(BINDIR)/addheader: addheader.cpp
 	$(CPP) -o $@ $^ $(CFLAGS)
 $(BINDIR)/kg2exons: kg2exons.cpp knowngene.o
 	$(CPP) -o $@ $^ $(CFLAGS)
+$(BINDIR)/fastqgrep: fastqgrep.cpp
+	$(CPP) -o $@ $^ $(CFLAGS) -lz
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
