@@ -43,33 +43,52 @@ class ComparableBam1Record:public Bam1Record
 			}
 		const char* chromosome() const
 			{
-			if(tid()<0) return 0;
+			if(tid()<0 || !is_mapped()) return 0;
 			return bam_header->target_name[tid()];
 			}
+		string format() const
+			{
+			char *x= bam_format1(bam_header, ptr());
+	            	string s(x);
+	            	free(x);
+	            	return s;
+			}
+			
+		
 		int compareTo(const ComparableBam1Record& cp) const
 			{
 			int i=strcmp(name(),cp.name());
-			if(i!=0) return i<0;
+			if(i!=0) return i;
 			int side1=0+(is_read1()?2:0)+(is_read2()?4:0);
 			int side2=0+(cp.is_read1()?2:0)+(cp.is_read2()?4:0);
 			i=side1-side2;
-			if(i!=0) return i<0;
+			if(i!=0) return i;
 			
 			if(chromosome()==0)
 				{
 				if(cp.chromosome()==0) return 0;
+				
 				return -1;
 				}
-        		if(cp.chromosome()==0) return 1;
+        		if(cp.chromosome()==0)
+        			{
+   
+        			return 1;
+        			}
         		i=strcmp(chromosome(),cp.chromosome());
-        		if(i!=0) return i<0;
+        		if(i!=0)return i;
         		i=pos()-cp.pos();
-        		if(i!=0) return i<0;
+        		if(i!=0) return i;
+        		int strand1=(is_reverse_strand()?-1:1);
+        		int strand2=(cp.is_reverse_strand()?-1:1);
+        		i=strand1-strand2;
+        		if(i!=0) return i;
+        		
         		return 0;
 			}
 		bool operator==(const ComparableBam1Record& cp) const
 			{
-			return compareTo(cp)==0;
+			return this==&cp || compareTo(cp)==0;
 			}
 		bool operator<(const ComparableBam1Record& cp) const
 			{
@@ -83,6 +102,20 @@ class ComparableBam1Record:public Bam1Record
 				bam_header=cp.bam_header;
 				}
 			return *this;
+			}
+		
+		void print1(ostream& out) const
+			{
+			if(is_read1()) out << "[1]";
+			if(is_read2()) out << "[2]";
+			if(chromosome()==0)
+				{
+				out << "0";
+				}
+			else
+				{
+				out << chromosome()<<"("<< strand()<< "):"<< pos();
+				}
 			}
 	};
 
@@ -213,7 +246,6 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 				THROW("Cannot open BAM \""<< bamfile <<"\".\n" << strerror(errno));
 				}
 			 this->bam_header=bam_header_read(this->in);
-			WHERE(  bam_tell(this->in));
 			if(user_db_home==0)
 				{
 				this->db_home=new string(bamfile);
@@ -411,17 +443,17 @@ class ReadIndexOfNames:public AbstractIndexOfNames
 					{
 					cerr << "[ERROR]Cannot seek bgzf to " <<   offset << endl;
 					bam_destroy1(b);
-					ret.reset(0);
 					return ret;
 					}
 				if(bam_read1(in, b)<0)
 					{
 					cerr << "[ERROR]Cannot read BAM record at offset " <<   offset << endl;
 					bam_destroy1(b);
-					ret.reset(0);
 					return ret;
 					}
-				ret->insert( ComparableBam1Record(bam_header,b));
+				ComparableBam1Record read(bam_header,b);
+				
+				ret->insert( read);
 				}
 			bam_destroy1(b);
 			return ret;
@@ -483,6 +515,9 @@ class BamIndexNames
         
         int compare_main(int argc,char** argv,int optind)
         	{
+        	bool print_both=true;
+        	bool print_only_in_0=true;
+        	bool print_only_in_1=true;
         	ReadIndexOfNames indexOfNames[2];
 		char* user_index_name[2]={0,0};
         	
@@ -492,6 +527,18 @@ class BamIndexNames
 			        {
 			        usage(cout,argc,argv);
 			        return EXIT_FAILURE;
+			        }
+			else if(strcmp(argv[optind],"-1")==0 && optind+1<argc) 
+			        {
+			        print_only_in_0=false;
+			        }
+			else if(strcmp(argv[optind],"-2")==0 && optind+1<argc) 
+			        {
+			        print_only_in_1=false;
+			        }
+			else if(strcmp(argv[optind],"-3")==0 && optind+1<argc) 
+			        {
+			        print_both=false;
 			        }
 			else if(strcmp(argv[optind],"-f1")==0 && optind+1<argc) 
 			        {
@@ -515,14 +562,15 @@ class BamIndexNames
         	indexOfNames[1].open(bamnames[1],user_index_name[1]);
         	
         	string value1;
-        	string value0;
+        	
         	leveldb::Iterator* it0 = indexOfNames[0].db->NewIterator(indexOfNames[0].read_options);
-		for (; it0->Valid(); it0->Next())
+        	 WHERE("");
+		for (it0->SeekToFirst(); it0->Valid(); it0->Next())
 		 	{
-		 	 
+		 	
 		 	 value1.clear();
 		 	 string readName(it0->key().ToString());
-        		
+        		 
         		 leveldb::Status status = indexOfNames[1].db->Get(indexOfNames[1].read_options, it0->key(), &value1);
 		         if(!status.ok())
 		            	{
@@ -539,22 +587,103 @@ class BamIndexNames
 		  	
 		  	
 		  	
+		  	
+		  	
+		  	if(print_only_in_0)
+			  	{
+			  	set<ComparableBam1Record> only_in_0;
+			  	std::set_difference(
+			  			recs0->begin(),recs0->end(),
+			  			recs1->begin(),recs1->end(),
+	    					std::inserter(only_in_0, only_in_0.end())
+	    					);
+	    			if(!only_in_0.empty())
+	    				{
+	    				cout << readName << "\tONLY_1";
+	    				for(set<ComparableBam1Record>::iterator r=only_in_0.begin();
+	    					r!=only_in_0.end();
+	    					++r)
+		    				{
+		    				cout << " ";
+		    				(*r).print1(cout);
+		    				}
+		    			cout << endl;
+		    			}
+		    		}
+    			
+			if(print_only_in_1)
+			  	{
+			  	set<ComparableBam1Record> only_in_1;
+		  		std::set_difference(
+		  			recs1->begin(),recs1->end(),
+		  			recs0->begin(),recs0->end(),
+    					std::inserter(only_in_1, only_in_1.end())
+    					);
+    				if(!only_in_1.empty())
+	    				{
+	    				cout << readName << "\tONLY_2";
+	    				for(set<ComparableBam1Record>::iterator r=only_in_1.begin();
+	    					r!=only_in_1.end();
+	    					++r)
+		    				{
+		    				cout << " ";
+		    				(*r).print1(cout);
+		    				}
+		    			cout << endl;
+		    			}
+    				}
+    			if(print_both)
+	    			{
+	    			set<ComparableBam1Record> in_both;
+	    			std::set_intersection(
+	    				recs0->begin(),recs0->end(),
+			  		recs1->begin(),recs1->end(),
+			  		std::inserter(in_both, in_both.end())
+			  		);
+			  	
+			  	if(!in_both.empty())
+	    				{
+	    				cout << readName << "\tBOTH";
+	    				for(set<ComparableBam1Record>::iterator r=in_both.begin();
+	    					r!=in_both.end();
+	    					++r)
+		    				{
+		    				cout << " ";
+		    				(*r).print1(cout);
+		    				}
+		    			cout << endl;
+		    			}
+		    		}
+    			
 		  	}
 		delete it0;
-        	
-        	leveldb::Iterator* it1 = indexOfNames[1].db->NewIterator(indexOfNames[1].read_options);
-		for (; it1->Valid(); it1->Next())
-		 	{
-		 	 value0.clear();
-        		 //leveldb::Slice key1(line);
-        		 leveldb::Status status = indexOfNames[0].db->Get(indexOfNames[0].read_options, it1->key(), &value0);
-		         if(status.ok()) continue;//already processed
-		            	
-		           cout << "Only in " << bamnames[1] << " " << it1->key().ToString() << endl;
-		 	
-		  	}
-		delete it1;
-        	
+        	if(print_only_in_1)
+			{
+			string value0;
+			leveldb::Iterator* it1 = indexOfNames[1].db->NewIterator(indexOfNames[1].read_options);
+			for (it1->SeekToFirst(); it1->Valid(); it1->Next())
+			 	{
+			 	 value0.clear();
+				 //leveldb::Slice key1(line);
+				 leveldb::Status status = indexOfNames[0].db->Get(indexOfNames[0].read_options, it1->key(), &value0);
+				 if(status.ok()) continue;//already processed
+				 std::auto_ptr<vector<bgzf_filepos_t> > hits1=indexOfNames[1].decode(it1->value()); 	
+				 auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(*(hits1));
+				 if(!recs1->empty())
+	    				{
+	    				cout << it1->key().ToString() << "\tONLY_2";
+	    				for(set<ComparableBam1Record>::iterator r=recs1->begin();
+	    					r!=recs1->end();
+	    					++r)
+		    				{
+		    				cout << " ";
+		    				(*r).print1(cout);
+		    				}
+		    			cout << endl;
+		    			}
+			  	}
+			delete it1;
+			}
         	
         	indexOfNames[0].close();
         	indexOfNames[1].close();
