@@ -53,6 +53,17 @@ class ComparableBam1Record:public Bam1Record
 	            	free(x);
 	            	return s;
 			}
+		
+		int compareChromosome(const char* s1,const char* s2) const
+			{
+			if(s1[0]=='0') return compareChromosome(&s1[1],s2);
+			if(s2[0]=='0') return compareChromosome(s1,&s2[1]);
+			if(strncmp(s1,"chr",3)==0) return compareChromosome(&s1[3],s2);
+			if(strncmp(s2,"chr",3)==0) return compareChromosome(s1,&s2[3]);
+			if(strcmp(s1,"MT")==0) return compareChromosome("M",s2);
+			if(strcmp(s2,"MT")==0) return compareChromosome(s1,"M");
+			return strcmp(s1,s2);
+			}
 			
 		
 		int compareTo(const ComparableBam1Record& cp) const
@@ -75,7 +86,7 @@ class ComparableBam1Record:public Bam1Record
    
         			return 1;
         			}
-        		i=strcmp(chromosome(),cp.chromosome());
+        		i=compareChromosome(chromosome(),cp.chromosome());
         		if(i!=0)return i;
         		i=pos()-cp.pos();
         		if(i!=0) return i;
