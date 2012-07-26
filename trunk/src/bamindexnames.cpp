@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <cstdlib>
+#include <ctime>
 #include <cstring>
 #include <cerrno>
 #include <fstream>
@@ -222,24 +223,78 @@ class AbstractIndexOfNames
 			    	this->in=0;
 			    	}
 			    	
-		    if(this->db!=NULL)
-			{
-			delete this->db;
-			this->db=0;
+			if(this->db!=NULL)
+				{
+				delete this->db;
+				this->db=0;
+				}
+			if(this->db_home!=0)
+				{
+				delete this->db_home;
+				this->db_home=0;
+				}
 			}
-		    if(this->db_home!=0)
+	};
+
+class ShortReadNameChanger
+	{
+	public:
+		ShortReadNameChanger() {}
+		virtual ~ShortReadNameChanger() {}
+		virtual const char* name() const=0;
+		virtual const char* description() const=0;
+		virtual void change(std::string& name)=0;
+	};
+
+class ChangeNameBwaToCasava:public ShortReadNameChanger
+	{
+	private:
+		int log_error;
+		int log_change;
+	public:
+		ChangeNameBwaToCasava():log_error(10),log_change(10) {}
+		virtual ~ChangeNameBwaToCasava() {}
+		virtual const char* name() const { return "bwa2casava";}
+		virtual const char* description() const
 			{
-			delete this->db_home;
-			this->db_home=0;
+			return "change HW-ST994:162:D0FE4ACXX:8:1103:16915:162319 to "
+				"HWI-ST980_147:5:2104:16350:3671";
 			}
+		virtual void change(std::string& name)
+			{
+			std::string::size_type colons[3];
+			for(int i=0;i<3;++i)
+				{
+				colons[i]=name.find(':',(i==0?0:colons[i-1]+1));
+				if(colons[i]==string::npos)
+					{
+					if(log_error>0)
+						{
+						clog << "[WARNING] cannot find colon $"<<(i+1)<< "in " << name << endl;
+						log_error--;
+						}
+					return;
+					}
+				}
+			if(log_change>0)
+				{
+				clog << "[INFO] change \"" << name << "\" to \"";
+				}
+			name[colons[0]]='_';
+			name.erase(colons[1],colons[2]);
+			if(log_change>0)
+				{
+				clog  << name << "\"";
+				log_change--;
+				}
 			}
 	};
 	
 class WriteIndexOfNames:public AbstractIndexOfNames
 	{
 	public:
-		
-		WriteIndexOfNames()
+		ShortReadNameChanger* nameChanger;
+		WriteIndexOfNames():nameChanger(0)
 			{
 			}
 			
@@ -302,7 +357,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 		    {
 		    size_t n_reads=0;
 		    std::string value;
-		    
+		    clock_t start_time = clock( );
 		   
 		    
 		    bam1_t *b= bam_init1();
@@ -324,7 +379,13 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 		        	{
 		        	continue;
 		        	}
-		        leveldb::Slice key1(seq.name());
+		        std::string shortReadName(seq.name());
+		        if(nameChanger!=0)
+		        	{
+		        	nameChanger->change(shortReadName);
+		        	if(shortReadName.empty()) continue;
+		        	}
+		        const leveldb::Slice key1(shortReadName);
 		        value.clear();
 		        
 		        leveldb::Status status = db->Get(this->read_options, key1, &value);
@@ -334,8 +395,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 		            n_reads++;
 		            if(n_reads%1000000UL==0)
 		                {
-		                clog <<  n_reads << endl;
-		                break;//TODO
+		                clog <<  n_reads << " speed: " << n_reads/((clock()-start_time)/(float)(CLOCKS_PER_SEC))<< " reads/secs" << endl;
 		                }
 		            }
 		        else
@@ -476,9 +536,13 @@ class BamIndexNames
     {
     public:
     	AbstractIndexOfNames* indexOfNamePtr;
+    	ChangeNameBwaToCasava changeNameBwa2Casava;
+    	std::vector<ShortReadNameChanger*> availableNameChangers;
+    	
+    	
         BamIndexNames():indexOfNamePtr(0)
             {
-            
+            availableNameChangers.push_back(&changeNameBwa2Casava);
             }
 
          ~BamIndexNames()
@@ -486,7 +550,14 @@ class BamIndexNames
 		
 		 }
 
-       
+       ShortReadNameChanger* findNameChangerByName(const char* s)
+       		{
+       		 for(size_t i=0;i< availableNameChangers.size();++i)
+			{
+			if(strcmp(availableNameChangers[i]->name(),s)==0) return  availableNameChangers[i];
+			}
+		return 0;
+       		}
 
            void usage(ostream& out,int argc,char **argv)
             {
@@ -500,6 +571,14 @@ class BamIndexNames
             out << "  -f (directory-name) OPTIONAL specifiy alternate database-home (default is file.bam+" << DEFAULT_FOLDER_EXTENSION << "\n";
             out << "  -e (name) OPTIONAL start from this read name\n";
             out << "  -b (name) OPTIONAL read until this read name\n";
+            out << "  -C (name) use this short read name changed\n";
+            out << "Available Name changers:\n";
+             for(size_t i=0;i< availableNameChangers.size();++i)
+             	{
+             	out << "\t"
+             		<< availableNameChangers[i]->name() << "\t"
+             		<< availableNameChangers[i]->description() << endl;
+             	}
             }
 #define END_LOOP else if(strcmp(argv[optind],"--")==0)\
 			        {\
@@ -575,7 +654,7 @@ class BamIndexNames
         	string value1;
         	
         	leveldb::Iterator* it0 = indexOfNames[0].db->NewIterator(indexOfNames[0].read_options);
-        	 WHERE("");
+        	
 		for (it0->SeekToFirst(); it0->Valid(); it0->Next())
 		 	{
 		 	
@@ -610,12 +689,12 @@ class BamIndexNames
 	    					);
 	    			if(!only_in_0.empty())
 	    				{
-	    				cout << readName << "\tONLY_1";
+	    				cout << readName << "\tONLY_1\t";
 	    				for(set<ComparableBam1Record>::iterator r=only_in_0.begin();
 	    					r!=only_in_0.end();
 	    					++r)
 		    				{
-		    				cout << " ";
+		    				if(r!=only_in_0.begin()) cout << "|";
 		    				(*r).print1(cout);
 		    				}
 		    			cout << endl;
@@ -632,12 +711,12 @@ class BamIndexNames
     					);
     				if(!only_in_1.empty())
 	    				{
-	    				cout << readName << "\tONLY_2";
+	    				cout << readName << "\tONLY_2\t";
 	    				for(set<ComparableBam1Record>::iterator r=only_in_1.begin();
 	    					r!=only_in_1.end();
 	    					++r)
 		    				{
-		    				cout << " ";
+		    				if(r!=only_in_1.begin()) cout << "|";
 		    				(*r).print1(cout);
 		    				}
 		    			cout << endl;
@@ -654,12 +733,12 @@ class BamIndexNames
 			  	
 			  	if(!in_both.empty())
 	    				{
-	    				cout << readName << "\tBOTH";
+	    				cout << readName << "\tBOTH\t";
 	    				for(set<ComparableBam1Record>::iterator r=in_both.begin();
 	    					r!=in_both.end();
 	    					++r)
 		    				{
-		    				cout << " ";
+		    				if(r!=in_both.begin()) cout << "|";
 		    				(*r).print1(cout);
 		    				}
 		    			cout << endl;
@@ -682,12 +761,12 @@ class BamIndexNames
 				 auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(*(hits1));
 				 if(!recs1->empty())
 	    				{
-	    				cout << it1->key().ToString() << "\tONLY_2";
+	    				cout << it1->key().ToString() << "\tONLY_2\t";
 	    				for(set<ComparableBam1Record>::iterator r=recs1->begin();
 	    					r!=recs1->end();
 	    					++r)
 		    				{
-		    				cout << " ";
+		    				if(r!=recs1->begin()) cout << "|";
 		    				(*r).print1(cout);
 		    				}
 		    			cout << endl;
@@ -715,6 +794,15 @@ class BamIndexNames
 			        usage(cout,argc,argv);
 			        return EXIT_FAILURE;
 			        }
+			else if(strcmp(argv[optind],"C")==0 && optind+1<argc)
+				{
+				indexOfNames.nameChanger=findNameChangerByName(argv[++optind]);
+				if(indexOfNames.nameChanger==0)
+					{
+					cerr << "Unknown name changed: "<< argv[optind]<< endl;
+					return EXIT_FAILURE;
+					}
+				}
 			COMMON_ARGS
 			END_LOOP
 			

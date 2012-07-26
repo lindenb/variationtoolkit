@@ -148,6 +148,8 @@ $(BINDIR)/fixindels: fixindels.cpp
 	$(CPP) -o $@ $< $(CFLAGS)
 $(BINDIR)/comparebams: comparebam.cpp abstractcharsequence.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -I $(LEVELDBDIR)/include $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -L $(LEVELDBDIR) -lz -lbam -lleveldb -lpthread
+$(BINDIR)/bamindexnames: bamindexnames.cpp abstractcharsequence.o
+	$(CPP) -o $@ $^ $(CFLAGS)  -I $(LEVELDBDIR)/include $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -L $(LEVELDBDIR) -lz -lbam -lleveldb -lpthread
 
 $(BINDIR)/ncbiesearch:ncbiesearch.cpp netstreambuf.o
 	$(CPP) -o $@ $< $(CFLAGS) netstreambuf.o  `xml2-config --cflags --libs` `curl-config --cflags --libs` -lz
