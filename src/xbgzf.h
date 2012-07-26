@@ -18,6 +18,7 @@ class BgzFile
 	BgzFile(const char* filename,const char* m);
 	virtual ~BgzFile();
 	virtual void close();
+	virtual int flush();
 	virtual int read(void* data,int length);
 	virtual int write(void* data,int length);
 	virtual int64_t tell();

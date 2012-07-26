@@ -87,16 +87,21 @@ class AbstractBam1Sequence:public AbstractCharSequence
 	    return is_flag_unset(BAM_FMUNMAP);
 	    }
 
-	bool is_reverse_strand()
+	bool is_reverse_strand() const
 	    {
 	    return is_flag_set(BAM_FREVERSE);
 	    }
 
-	bool is_mate_reverse_strand()
+	bool is_mate_reverse_strand() const
 	    {
 	    return is_flag_set(BAM_FMREVERSE);
 	    }
-
+	
+	char strand() const
+		{
+		if(tid()<0 || ! is_mapped()) return '?';
+		return  is_reverse_strand()?'-':'+';
+		}
 	bool is_proper_pair() const
 	    {
 	    return is_flag_set(BAM_FPROPER_PAIR);

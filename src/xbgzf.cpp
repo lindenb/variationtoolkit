@@ -66,3 +66,9 @@ int BgzFile::getc()
     {
     return _ptr==NULL? -1:bgzf_getc(CASTPTR);
     }
+
+int BgzFile::flush()
+    {
+    return _ptr==NULL? -1: ::bgzf_flush(CASTPTR);
+    }
+    
