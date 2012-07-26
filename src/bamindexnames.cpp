@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <leveldb/db.h>
+#include <db.h>
 #include <algorithm>
 
 //#define NOWHERE
@@ -141,14 +141,13 @@ class AbstractIndexOfNames
         	bamFile in;
         	bam_header_t* bam_header;
 		std::string* db_home;
-		leveldb::DB* db;
-		leveldb::ReadOptions read_options;
-		leveldb::WriteOptions write_options;
-		leveldb::Options open_options;
+		/** berkeleyDB database */
+		DB* dbp;
+		
 	protected:
-		AbstractIndexOfNames():in(0),bam_header(0),db_home(0),db(0)
+		AbstractIndexOfNames():in(0),bam_header(0),db_home(0),dbp(0)
 			{
-			this->open_options.block_size=30*sizeof(char)+sizeof(size_t)+2*sizeof(bgzf_filepos_t);
+			
 			}
 	public:
 		
@@ -169,9 +168,10 @@ class AbstractIndexOfNames
 		    return v;            
 		    }
 		   
-		std::auto_ptr<vector<bgzf_filepos_t> > decode(const leveldb::Slice& slice)const
+		std::auto_ptr<vector<bgzf_filepos_t> > decode(const DBT* slice)const
 		    {
-		    return decode(slice.ToString());            
+		    std::string s((const char*)slice->data,slice->size);
+		    return decode(s);            
 		    }
 		
 		std::auto_ptr<std::string> encode(const std::vector<bgzf_filepos_t>* v) const
@@ -210,8 +210,55 @@ class AbstractIndexOfNames
 			}	
 		
 		virtual void open(const char* bamfile,const char* db_home)=0;
+		
+		virtual void _open(const char* bamfile,const char* user_db_home,bool readOnly)
+			{
+			close();
+			
+			this->in=bam_open(bamfile,"r");
+			if(this->in==0)
+				{WHERE("");
+				THROW("Cannot open BAM \""<< bamfile <<"\".\n" << strerror(errno));
+				}WHERE("");
+			 this->bam_header=bam_header_read(this->in);WHERE("");
+			if(user_db_home==0)
+				{
+				this->db_home=new string(bamfile);
+				this->db_home->append(DEFAULT_FOLDER_EXTENSION);
+				}
+			else
+				{
+				this->db_home=new string(user_db_home);
+				}
+			
+			int ret=0;
+			
+			
+			if ((ret = ::db_create(&dbp, NULL, 0)) != 0)
+				{
+				THROW("db_create: " <<  db_strerror(ret));
+				}
+			
+			if ((ret = dbp->open(
+				this->dbp,
+				NULL, 
+				this->db_home->c_str(),
+				NULL,
+				(readOnly?DB_UNKNOWN:DB_BTREE),
+				(readOnly?DB_RDONLY:DB_CREATE|DB_TRUNCATE) ,
+				0664)) != 0)
+				{
+				
+				this->dbp->err(dbp, ret, "%s", this->db_home->c_str());
+				close();
+				THROW("Cannot open database");
+				}
+			
+			}
+		
 		virtual void close()
 			{
+			WHERE("");
 			if(this->bam_header!=0)
 				{
 				bam_header_destroy(this->bam_header);
@@ -222,17 +269,11 @@ class AbstractIndexOfNames
 				bam_close(this->in);
 			    	this->in=0;
 			    	}
-			    	
-			if(this->db!=NULL)
-				{
-				delete this->db;
-				this->db=0;
-				}
-			if(this->db_home!=0)
-				{
-				delete this->db_home;
-				this->db_home=0;
-				}
+			 if(this->dbp!=0)
+			 	{
+			 	this->dbp->close(this->dbp, 0);
+			 	this->dbp=0;
+			 	}
 			}
 	};
 
@@ -304,59 +345,13 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 			
 		virtual void open(const char* bamfile,const char* user_db_home)
 		 	{
-			close();
-
-			this->in=bam_open(bamfile,"r");
-			if(this->in==0)
-				{
-				THROW("Cannot open BAM \""<< bamfile <<"\".\n" << strerror(errno));
-				}
-			 this->bam_header=bam_header_read(this->in);
-			if(user_db_home==0)
-				{
-				this->db_home=new string(bamfile);
-				this->db_home->append(DEFAULT_FOLDER_EXTENSION);
-				}
-			else
-				{
-				this->db_home=new string(user_db_home);
-				}
-			
-			
-			open_options.create_if_missing = true;
-			open_options.error_if_exists= true;
-			
-			struct stat st;
-			if(stat(this->db_home->c_str(),&st) == 0)//file exist
-				{
-				if(!(S_ISDIR(st.st_mode))) 
-					{
-					THROW("Folder exist and is not a directory: \""<< *(this->db_home) <<"\".\n");
-					}
-				THROW("Folder already exists : \""<< *(this->db_home) <<"\".\n");
-				}
-			
-			if(::mkdir(this->db_home->c_str(),0777)!=0)
-				{
-				THROW(" cannot create new directory \""<< *(this->db_home) << "\".");
-				}
-				
-
-			
-			clog << "Opening folder: " << *(this->db_home) << endl; 
-		
-			leveldb::Status status = leveldb::DB::Open(open_options,*(this->db_home),&(this->db));
-			if(!status.ok())
-				{
-				close();
-				THROW("Cannot open leveldb file \""<< *(this->db_home) <<"\".\n" << status.ToString());
-				}
+			_open(bamfile,user_db_home,false);
 			}
 		
 		void build_index()
 		    {
 		    size_t n_reads=0;
-		    std::string value;
+		    DBT value;
 		    clock_t start_time = clock( );
 		   
 		    
@@ -385,11 +380,18 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 		        	nameChanger->change(shortReadName);
 		        	if(shortReadName.empty()) continue;
 		        	}
-		        const leveldb::Slice key1(shortReadName);
-		        value.clear();
+		        DBT key1;
+		        memset((void*)&key1,0,sizeof(DBT));
+		        key1.data=(void*)shortReadName.data();
+		        key1.size=shortReadName.size();
+		        memset((void*)&value,0,sizeof(DBT));
 		        
-		        leveldb::Status status = db->Get(this->read_options, key1, &value);
-		        if(!status.ok())
+		        int status = this->dbp->get(
+		        		this->dbp,
+		        		NULL,
+		        		&key1, &value, 0);
+		     
+		        if(status==DB_NOTFOUND)
 		            {
 		            hits.reset(new vector<bgzf_filepos_t>());
 		            n_reads++;
@@ -398,20 +400,27 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 		                clog <<  n_reads << " speed: " << n_reads/((clock()-start_time)/(float)(CLOCKS_PER_SEC))<< " reads/secs" << endl;
 		                }
 		            }
-		        else
+		        else if(status==0)
 		            {
-		            hits=decode(value);
+		            hits=decode(&value);
 		            }
+		        else
+		           {
+		           this->dbp->err(this->dbp, status, "DB->get");
+		           break; 
+		           }
 		        
 		        hits->push_back(offset);
 		        
 		        
 		        std::auto_ptr<string> encoded = this->encode(hits.get());
-		        leveldb::Slice value1(encoded->data(),encoded->size());
-		        status = db->Put(this->write_options, key1, value1);
-		        if(!status.ok())
+		        memset((void*)&value,0,sizeof(DBT));
+		        value.data=(void*)encoded->data();
+		        value.size=encoded->size();
+		        status = this->dbp->put(this->dbp, NULL, &key1, &value, 0);
+		        if(status!=0)
 		            {
-		            cerr << "[FATAL] Cannot insert into db:" << status.ToString() << endl;
+		            this->dbp->err(this->dbp, status,  "[FATAL] Cannot insert into db");
 		            break;
 		            }
 		        
@@ -440,46 +449,7 @@ class ReadIndexOfNames:public AbstractIndexOfNames
 			
 		virtual void open(const char* bamfile,const char* user_db_home)
 		 	{
-			close();
-
-			this->in=bam_open(bamfile,"r");
-			if(this->in==0)
-				{
-				THROW("Cannot open BAM \""<< bamfile <<"\".\n" << strerror(errno));
-				}
-			this->bam_header=bam_header_read(this->in);
-			if(user_db_home==0)
-				{
-				this->db_home=new string(bamfile);
-				this->db_home->append(DEFAULT_FOLDER_EXTENSION);
-				}
-			else
-				{
-				this->db_home=new string(user_db_home);
-				}
-			
-			
-			open_options.create_if_missing = false;
-			open_options.error_if_exists= false;
-			
-			struct stat st;
-			if(stat(this->db_home->c_str(),&st) != 0)//file doesnt exist
-				{
-				THROW("Folder doesn't exists : \""<< *(this->db_home) <<"\".\n");
-				}
-			if(!(S_ISDIR(st.st_mode))) 
-				{
-				THROW("Folder exists but is not a directory: \""<< *(this->db_home) <<"\".\n");
-				}
-				
-			clog << "Opening folder: " << *(this->db_home) << endl; 
-		
-			leveldb::Status status = leveldb::DB::Open(open_options,*(this->db_home),&(this->db));
-			if(!status.ok())
-				{
-				close();
-				THROW("Cannot open leveldb file \""<< *(this->db_home) <<"\".\n" << status.ToString());
-				}
+			_open(bamfile,user_db_home,true);
 			}
 		
 		auto_ptr<ComparableBam1Record> getBamRecordAt(bgzf_filepos_t offset)
@@ -653,24 +623,47 @@ class BamIndexNames
         	
         	string value1;
         	
-        	leveldb::Iterator* it0 = indexOfNames[0].db->NewIterator(indexOfNames[0].read_options);
+        	DBC *dbcp0;
+        	DBT key0, data0;
         	
-		for (it0->SeekToFirst(); it0->Valid(); it0->Next())
+        	int ret;
+        	if ((ret = indexOfNames[0].dbp->cursor(indexOfNames[0].dbp, NULL, &dbcp0, 0)) != 0)
+        		{
+			indexOfNames[0].dbp->err(indexOfNames[0].dbp, ret, "DB->cursor");
+			return EXIT_FAILURE;
+			}
+		memset(&key0, 0, sizeof(DBT));
+		memset(&data0, 0, sizeof(DBT));
+        	 
+        	
+        	
+		while ((ret = dbcp0->c_get(dbcp0, &key0, &data0, DB_NEXT)) == 0)
 		 	{
-		 	
-		 	 value1.clear();
-		 	 string readName(it0->key().ToString());
-        		 
-        		 leveldb::Status status = indexOfNames[1].db->Get(indexOfNames[1].read_options, it0->key(), &value1);
-		         if(!status.ok())
+		 	DBT data1;
+		 	memset(&data1, 0, sizeof(DBT));
+		 	string readName((const char*)key0.data,key0.size);
+        		
+        		
+        		std::auto_ptr<vector<bgzf_filepos_t> > hits0=indexOfNames[0].decode(&data0);
+		 	std::auto_ptr<vector<bgzf_filepos_t> > hits1(0);
+
+        		int status = indexOfNames[1].dbp->get(
+        			indexOfNames[1].dbp,
+   				NULL,
+   				&key0,
+   				&data1,
+   				0);
+		         if(status==0)
 		            	{
-		            	cout << "Only in " << readName << " " << it0->key().ToString() << endl;
-		            	continue;
+		            	hits1=indexOfNames[1].decode(&data1);
+		 	 	}
+		 	 else
+		 	 	{
+		 	 	hits1.reset(new vector<bgzf_filepos_t> );
 		 	 	}
 		 	
 		 	 
-		 	std::auto_ptr<vector<bgzf_filepos_t> > hits0=indexOfNames[0].decode(it0->value());
-		 	std::auto_ptr<vector<bgzf_filepos_t> > hits1=indexOfNames[1].decode(value1);
+		 	
 		 	 
 		 	auto_ptr<set<ComparableBam1Record> > recs0=indexOfNames[0].getBamRecordsAt(*(hits0));
 		 	auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(*(hits1));
@@ -746,22 +739,40 @@ class BamIndexNames
 		    		}
     			
 		  	}
-		delete it0;
+		dbcp0->c_close(dbcp0);
+		
         	if(print_only_in_1)
 			{
-			string value0;
-			leveldb::Iterator* it1 = indexOfNames[1].db->NewIterator(indexOfNames[1].read_options);
-			for (it1->SeekToFirst(); it1->Valid(); it1->Next())
+			DBC *dbcp1;
+			DBT key1,data1;
+			memset(&key1, 0, sizeof(DBT));
+		 	memset(&data1, 0, sizeof(DBT));
+		 	
+		 	if ((ret = indexOfNames[1].dbp->cursor(indexOfNames[1].dbp, NULL, &dbcp1, 0)) != 0)
+				{
+				indexOfNames[1].dbp->err(indexOfNames[1].dbp, ret, "DB->cursor");
+				return EXIT_FAILURE;
+				}
+		 	
+			
+			while ((ret = dbcp1->c_get(dbcp1, &key1, &data1, DB_NEXT)) == 0)
 			 	{
-			 	 value0.clear();
+			 	memset(&data0, 0, sizeof(DBT));
 				 //leveldb::Slice key1(line);
-				 leveldb::Status status = indexOfNames[0].db->Get(indexOfNames[0].read_options, it1->key(), &value0);
-				 if(status.ok()) continue;//already processed
-				 std::auto_ptr<vector<bgzf_filepos_t> > hits1=indexOfNames[1].decode(it1->value()); 	
+				 int status = indexOfNames[0].dbp->get(
+					indexOfNames[0].dbp,
+					NULL,
+					&key1,
+					&data0,
+					0);
+				 if(status!=DB_NOTFOUND) continue;//already processed
+				 
+				 std::auto_ptr<vector<bgzf_filepos_t> > hits1=indexOfNames[1].decode(&data1); 	
 				 auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(*(hits1));
 				 if(!recs1->empty())
 	    				{
-	    				cout << it1->key().ToString() << "\tONLY_2\t";
+	    				string readName((const char*)key1.data,key1.size);
+	    				cout << readName << "\tONLY_2\t";
 	    				for(set<ComparableBam1Record>::iterator r=recs1->begin();
 	    					r!=recs1->end();
 	    					++r)
@@ -772,7 +783,7 @@ class BamIndexNames
 		    			cout << endl;
 		    			}
 			  	}
-			delete it1;
+			dbcp1->c_close(dbcp1);
 			}
         	
         	indexOfNames[0].close();
@@ -875,15 +886,18 @@ class BamIndexNames
         			{
         			cerr << "Cannot open " << pattern_names[i] << " " << strerror(errno) << endl;
         			}
-        		string line;
-        		string value;
+        		DBT key, data;
+        		std::string line;
         		while(getline(in,line,'\n'))
         			{
         			if(line.empty() || line[0]=='#') continue;
-        			value.clear();
-        			leveldb::Slice key1(line);
-        			 leveldb::Status status = indexOfNames.db->Get(indexOfNames.read_options, key1, &value);
-		        	if(!status.ok())
+        			memset(&key, 0, sizeof(key));
+				memset(&data, 0, sizeof(data));
+				key.data=(char*)line.data();
+				key.size=line.size();
+				
+        			int status =  indexOfNames.dbp->get(indexOfNames.dbp, NULL, &key, &data, 0);
+		        	if(status!=0)
 		            		{
 		            		if(print_only_not_found)
 		            			{
@@ -896,7 +910,7 @@ class BamIndexNames
 		            		}
 		            	else if(print_only_not_found==false)
 	            			{
-	            			std::auto_ptr<vector<bgzf_filepos_t> > hits=indexOfNames.decode(value);
+	            			std::auto_ptr<vector<bgzf_filepos_t> > hits=indexOfNames.decode(&data);
 	            			for(size_t j=0;j< hits->size();++j)
 	            				{
 	            				bgzf_filepos_t offset=hits->at(j);
@@ -956,27 +970,46 @@ class BamIndexNames
 		        return EXIT_FAILURE;
 		        }
         	indexOfNames.open(argv[optind],user_index_name);
-        	leveldb::Iterator* it = indexOfNames.db->NewIterator(indexOfNames.read_options);
+        	
+        	DBC *dbcp;
+        	int ret;
+        	 /* Acquire a cursor for the database. */
+	       if ((ret = indexOfNames.dbp->cursor(indexOfNames.dbp, NULL, &dbcp, 0)) != 0)
+	       		{
+			indexOfNames.dbp->err(indexOfNames.dbp, ret, "DB->cursor");
+			return EXIT_FAILURE;
+			}
+        	/* Initialize the key/data return pair. */
+        	DBT key, data;
+        	bool first=true;
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
         	if(nameBegin!=0)
         		{
-        		leveldb::Slice start(nameBegin);
-        		it->Seek(start);
+        		key.data=nameBegin;
+        		key.size=strlen(nameBegin);
         		}
-        	else
-        		{
-        		it->SeekToFirst();
-        		}
-		 for (; it->Valid(); it->Next())
+    		
+		 for (; ;)
 		 	{
-		 	 std::auto_ptr<vector<bgzf_filepos_t> > hits=indexOfNames.decode(it->value());
-		 	 string readName(it->key().ToString());
+		 	 if(first && nameBegin!=0)	
+		 	 	{
+		 	 	ret = dbcp->c_get(dbcp,&key, &data, DB_SET_RANGE);
+		 	 	}
+		 	 else
+		 	 	{
+		 	 	ret = dbcp->c_get(dbcp, &key, &data, DB_NEXT);
+		 	 	}
+		 	 first=false;
+		 	 std::auto_ptr<vector<bgzf_filepos_t> > hits=indexOfNames.decode(&data);
+		 	 string readName((char*)key.data,key.size);
 		 	 if(nameEnd!=0)
 		 	 	{
 		 	 	if(readName.compare(nameEnd)>0) break;
 		 	 	}
 		    	cout << readName << "\t" << hits->size() << endl;
 		  	}
-		delete it;
+		 dbcp->c_close(dbcp);
         	indexOfNames.close();
         	return EXIT_SUCCESS;
         	}
