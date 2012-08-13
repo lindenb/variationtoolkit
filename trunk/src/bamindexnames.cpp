@@ -723,6 +723,8 @@ class ReadIndexOfNames:public AbstractIndexOfNames
 			return readOne();
 			}
 		
+		
+		
 		virtual long lower_bound(const char* seq)
 		    {
 		    auto_ptr<NameOffsets> position(0);
@@ -749,7 +751,22 @@ class ReadIndexOfNames:public AbstractIndexOfNames
 		    return beg;
 		    }		
 			
-			
+		
+		virtual auto_ptr<NameOffsets> getByName(const char* name)
+			{
+			auto_ptr<NameOffsets> ret(0);
+			long i= lower_bound(name);
+			if(i< config.count_items)
+				{
+				ret= get(i);
+				if(ret.get()==0 || ret->name.compare(name)!=0)
+					{
+					ret.reset(0);
+					} 
+				}
+			return ret;
+			}
+		
 		virtual void open(const char* bamfile,const char* user_db_home)
 		 	{
 		 	AbstractIndexOfNames::open(bamfile,user_db_home);
@@ -970,52 +987,30 @@ class BamIndexNames
 		        cerr << "Expected two BAM files.\n";
 		        return EXIT_FAILURE;
 		        }
-#ifdef XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+		
 		char* bamnames[2]={0,0};
 		bamnames[0]=argv[optind++];
 		bamnames[1]=argv[optind++];
         	indexOfNames[0].open(bamnames[0],user_index_name[0]);
         	indexOfNames[1].open(bamnames[1],user_index_name[1]);
         	
-        	string value1;
-        	auto_ptr<NameOffsets> prev_name0(0);
-        	
-        	
-        	 
-        	
-        	long index=0;
-        	vector<bgzf_filepos_t> offsets;
-		for(;;)
-		 	{
-		 	if(index< indexOfNames[0].indexHeader.count_items)
-		 		{
-		 		auto_ptr<NameOffsets> curr= indexOfNames[0].readOne();
-		 		}
-        		
-        		
-        		std::auto_ptr<vector<bgzf_filepos_t> > hits0=indexOfNames[0].decode(&data0);
-		 	std::auto_ptr<vector<bgzf_filepos_t> > hits1(0);
 
-        		int status = indexOfNames[1].dbp->get(
-        			indexOfNames[1].dbp,
-   				NULL,
-   				&key0,
-   				&data1,
-   				0);
-		         if(status==0)
-		            	{
-		            	hits1=indexOfNames[1].decode(&data1);
-		 	 	}
-		 	 else
-		 	 	{
-		 	 	hits1.reset(new vector<bgzf_filepos_t> );
-		 	 	}
-		 	
-		 	 
-		 	
-		 	 
-		 	auto_ptr<set<ComparableBam1Record> > recs0=indexOfNames[0].getBamRecordsAt(*(hits0));
-		 	auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(*(hits1));
+		for(long index=0; index < indexOfNames[0].config.count_items;++index)
+		 	{
+		 	auto_ptr<NameOffsets> curr0= indexOfNames[0].readOne();
+		 	auto_ptr<NameOffsets> curr1= indexOfNames[1].getByName(curr0->name.c_str());
+		 		
+        		
+        		
+        		vector<bgzf_filepos_t> hits0(curr0->offsets.begin(),curr0->offsets.end());
+		 	vector<bgzf_filepos_t> hits1;
+		 	if(curr1.get()!=0)
+		 		{
+		 		hits1.insert(hits1.end(),curr1->offsets.begin(),curr1->offsets.end());
+		 		}
+
+		 	auto_ptr<set<ComparableBam1Record> > recs0=indexOfNames[0].getBamRecordsAt(hits0);
+		 	auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(hits1);
 		  	
 		  	
 		  	
@@ -1031,7 +1026,7 @@ class BamIndexNames
 	    					);
 	    			if(!only_in_0.empty())
 	    				{
-	    				cout << readName << "\tONLY_1\t";
+	    				cout << curr0->name << "\tONLY_1\t";
 	    				for(set<ComparableBam1Record>::iterator r=only_in_0.begin();
 	    					r!=only_in_0.end();
 	    					++r)
@@ -1053,7 +1048,7 @@ class BamIndexNames
     					);
     				if(!only_in_1.empty())
 	    				{
-	    				cout << readName << "\tONLY_2\t";
+	    				cout << curr0->name << "\tONLY_2\t";
 	    				for(set<ComparableBam1Record>::iterator r=only_in_1.begin();
 	    					r!=only_in_1.end();
 	    					++r)
@@ -1075,7 +1070,7 @@ class BamIndexNames
 			  	
 			  	if(!in_both.empty())
 	    				{
-	    				cout << readName << "\tBOTH\t";
+	    				cout << curr0->name << "\tBOTH\t";
 	    				for(set<ComparableBam1Record>::iterator r=in_both.begin();
 	    					r!=in_both.end();
 	    					++r)
@@ -1088,40 +1083,22 @@ class BamIndexNames
 		    		}
     			
 		  	}
-		dbcp0->c_close(dbcp0);
+		
 		
         	if(print_only_in_1)
 			{
-			DBC *dbcp1;
-			DBT key1,data1;
-			memset(&key1, 0, sizeof(DBT));
-		 	memset(&data1, 0, sizeof(DBT));
-		 	
-		 	if ((ret = indexOfNames[1].dbp->cursor(indexOfNames[1].dbp, NULL, &dbcp1, 0)) != 0)
-				{
-				indexOfNames[1].dbp->err(indexOfNames[1].dbp, ret, "DB->cursor");
-				return EXIT_FAILURE;
-				}
-		 	
-			
-			while ((ret = dbcp1->c_get(dbcp1, &key1, &data1, DB_NEXT)) == 0)
+			safeFSeek(indexOfNames[1].stream,0L,SEEK_SET);
+			for(long index=0; index < indexOfNames[1].config.count_items;++index)
 			 	{
-			 	memset(&data0, 0, sizeof(DBT));
-				 //leveldb::Slice key1(line);
-				 int status = indexOfNames[0].dbp->get(
-					indexOfNames[0].dbp,
-					NULL,
-					&key1,
-					&data0,
-					0);
-				 if(status!=DB_NOTFOUND) continue;//already processed
+			 	auto_ptr<NameOffsets> curr1= indexOfNames[1].readOne();
+		 		auto_ptr<NameOffsets> curr0= indexOfNames[0].getByName(curr1->name.c_str());
+				 if(curr0.get()!=0) continue;//already processed
 				 
-				 std::auto_ptr<vector<bgzf_filepos_t> > hits1=indexOfNames[1].decode(&data1); 	
-				 auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(*(hits1));
+				
+				 auto_ptr<set<ComparableBam1Record> > recs1=indexOfNames[1].getBamRecordsAt(curr0->offsets);
 				 if(!recs1->empty())
 	    				{
-	    				string readName((const char*)key1.data,key1.size);
-	    				cout << readName << "\tONLY_2\t";
+	    				cout << curr1->name << "\tONLY_2\t";
 	    				for(set<ComparableBam1Record>::iterator r=recs1->begin();
 	    					r!=recs1->end();
 	    					++r)
@@ -1132,13 +1109,12 @@ class BamIndexNames
 		    			cout << endl;
 		    			}
 			  	}
-			dbcp1->c_close(dbcp1);
+			
 			}
         	
         	indexOfNames[0].close();
         	indexOfNames[1].close();
         	
-#endif
 return EXIT_SUCCESS;
         	}
 
@@ -1222,7 +1198,7 @@ return EXIT_SUCCESS;
 		        cerr << "Expected one and only one BAM file.\n";
 		        return EXIT_FAILURE;
 		        }
-		  #ifdef XXXXXXXXXXXXXXx
+		
         	indexOfNames.open(argv[optind],user_index_name);
         	
         	
@@ -1237,19 +1213,18 @@ return EXIT_SUCCESS;
         		if(!in.is_open())
         			{
         			cerr << "Cannot open " << pattern_names[i] << " " << strerror(errno) << endl;
+        			continue;
         			}
-        		DBT key, data;
         		std::string line;
         		while(getline(in,line,'\n'))
         			{
         			if(line.empty() || line[0]=='#') continue;
-        			memset(&key, 0, sizeof(key));
-				memset(&data, 0, sizeof(data));
-				key.data=(char*)line.data();
-				key.size=line.size();
-				
-        			int status =  indexOfNames.dbp->get(indexOfNames.dbp, NULL, &key, &data, 0);
-		        	if(status!=0)
+        			
+				auto_ptr< NameOffsets > ret=indexOfNames.getByName(line.c_str());
+        			
+        			
+        			
+		        	if(ret.get()==0)
 		            		{
 		            		if(print_only_not_found)
 		            			{
@@ -1262,10 +1237,9 @@ return EXIT_SUCCESS;
 		            		}
 		            	else if(print_only_not_found==false)
 	            			{
-	            			std::auto_ptr<vector<bgzf_filepos_t> > hits=indexOfNames.decode(&data);
-	            			for(size_t j=0;j< hits->size();++j)
+	            			for(size_t j=0;j< ret->offsets.size();++j)
 	            				{
-	            				bgzf_filepos_t offset=hits->at(j);
+	            				bgzf_filepos_t offset=ret->offsets.at(j);
 	            				if(bam_seek(indexOfNames.in,offset,SEEK_SET)!=0)
 	            					{
 	            					cerr << "[ERROR]Cannot seek bgzf to " <<   offset << endl;
@@ -1287,7 +1261,7 @@ return EXIT_SUCCESS;
         		}
         	bam_destroy1(b);
         	indexOfNames.close();
-       #endif
+
         	return EXIT_SUCCESS;
         	}
         
@@ -1328,6 +1302,11 @@ return EXIT_SUCCESS;
         	if(nameBegin!=0)
         		{
         		index_file=indexOfNames.lower_bound(nameBegin);
+        		if(index_file< indexOfNames.config.count_items)
+        			{
+        			safeFSeek(indexOfNames.stream, indexOfNames.sizeOf()*index_file, SEEK_SET);
+        			}
+        		
         		}
         	
         	for(;index_file < indexOfNames.config.count_items; ++index_file)
