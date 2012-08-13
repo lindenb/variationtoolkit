@@ -102,6 +102,9 @@ class ComparableBam1Record:public Bam1Record
         		
         		return 0;
 			}
+			
+				
+			
 		bool operator==(const ComparableBam1Record& cp) const
 			{
 			return this==&cp || compareTo(cp)==0;
@@ -181,6 +184,11 @@ class NameOffsets
 		bool operator<(const NameOffsets& cp) const
 			{
 			return name<cp.name;
+			}
+		
+		static bool comparator(const NameOffsets* o1,const NameOffsets* o2)
+			{
+			return o1->name < o2->name;
 			}
 		
 		static auto_ptr<NameOffsets> readOne(FILE* in,const NameIndexHeader* config)
@@ -435,7 +443,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 	public:
 		std::size_t buffer_capacity;
 		ShortReadNameChanger* nameChanger;
-		WriteIndexOfNames():buffer_capacity(10),nameChanger(0)
+		WriteIndexOfNames():buffer_capacity(100000),nameChanger(0)
 			{
 			}
 			
@@ -460,7 +468,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
     		    TmpFile* prev_file=0;
     		   
 		    
-    		    vector<NameOffsets> buffer;
+    		    vector<NameOffsets*> buffer;
 		    buffer.reserve(buffer_capacity);
 		    bool eof_met=false;
 		    auto_ptr<NameOffsets> fileItem(0);
@@ -504,11 +512,11 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 					}
 				if(shortReadName.empty()) continue;
 				
-				NameOffsets record(shortReadName,offset);
+				NameOffsets* record =new NameOffsets(shortReadName,offset);
 				
 				/* insert the record at the correct position in the array */
-				vector<NameOffsets>::iterator r= ::lower_bound(buffer.begin(),buffer.end(),record);
-				if(r==buffer.end() || r->name!=record.name)
+				vector<NameOffsets*>::iterator r= ::lower_bound(buffer.begin(),buffer.end(),record,NameOffsets::comparator);
+				if(r==buffer.end() || (*r)->name!=record->name)
 					{
 					buffer.insert(r,record);
 					next_file->config.max_hits=std::max(
@@ -518,16 +526,16 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 					}
 				else
 					{
-					assert( r->name==record.name);
-					r->offsets.push_back(offset);
-					if(r->offsets.size() > next_file->config.max_hits)
+					assert( (*r)->name==record->name);
+					(*r)->offsets.push_back(offset);
+					if((*r)->offsets.size() > next_file->config.max_hits)
 						{
-						next_file->config.max_hits= (uint16_t)(r->offsets.size());
+						next_file->config.max_hits= (uint16_t)((*r)->offsets.size());
 						WHERE("#### CONFIG CHANGED ######################");
 						}
 					}
 				
-				next_file->config.name_size = std::max(next_file->config.name_size,record.name.size());
+				next_file->config.name_size = std::max(next_file->config.name_size,record->name.size());
 				}
 				
 			//WHERE("sort indexHeader.name_size:"+indexHeader.name_size<<" size:"<<buffer.size() << " max-len-name:"<<indexHeader.name_size );
@@ -539,8 +547,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 				/* first pass, dump the buffer in TMP */
 				for(size_t i=0;i< buffer.size();++i)
 					{
-					WHERE(next_file->config);
-					next_file->writeOne(&buffer[i]);
+					next_file->writeOne(buffer[i]);
 					}
 				assert(next_file->config.count_items==(long)buffer.size());
 				safeFFlush(next_file->tmp);
@@ -552,7 +559,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 				WHERE("################ JOIN prev:" << prev_file->config<< " " << next_file->config);
 				//std::cerr << "merge sort *********************" <<  std::endl;
 				
-				vector<NameOffsets>::iterator iter_buffer=buffer.begin();
+				vector<NameOffsets*>::iterator iter_buffer=buffer.begin();
 				
 				fileItem.reset(0);
 				//std::cerr << "items_on_file " << items_on_file <<  std::endl;
@@ -569,13 +576,13 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 						}
 					
 					/* same name */
-					if(*iter_buffer == *(fileItem))
+					if(**iter_buffer == *(fileItem))
 						{
 						/* put array offset in file-item */
 						fileItem->offsets.insert(
 							fileItem->offsets.end(),
-							iter_buffer->offsets.begin(),
-							iter_buffer->offsets.end()
+							(*iter_buffer)->offsets.begin(),
+							(*iter_buffer)->offsets.end()
 							);
 						sort(fileItem->offsets.begin(),fileItem->offsets.end());
 						
@@ -603,9 +610,9 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 						fileItem.reset(0);
 						++iter_buffer;
 						}	
-					else if(*iter_buffer < *(fileItem))
+					else if(**iter_buffer < *(fileItem))
 						{
-						next_file->writeOne(&(*iter_buffer));
+						next_file->writeOne(*iter_buffer);
 						++iter_buffer;
 						}
 					else
@@ -618,7 +625,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 				while(iter_buffer != buffer.end())
 					{
 					
-					next_file->writeOne(&(*iter_buffer));
+					next_file->writeOne(*iter_buffer);
 					++iter_buffer;
 					}
 				
@@ -642,10 +649,12 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 				delete prev_file;
 				prev_file=next_file;
 				next_file=0;
+				for(size_t i=0;i< buffer.size();++i) delete buffer[i];
+				buffer.clear();
 				}
 			//prev_max_hits=indexHeader.max_hits;
 			
-			if(prev_file!=0 && prev_file->config.count_items> 1E2) break;//TODO
+			if(prev_file!=0 && prev_file->config.count_items> 1E6) break;//TODO
 			
 		   	}
 		   	 bam_destroy1(b);
