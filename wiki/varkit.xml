@@ -1434,6 +1434,9 @@ $1	#CHROM   	1
 
 <page title="UniProt" labels="uniprot,vcf" desc="Take as input a position on a protein and an uniprot ACN, connect to uniprot.org and answers wether a amino acid is contained in a 'feature'">
 &download;
+<h2>Compilation</h2>
+<pre>cd variationtoolkit/src/
+make ../bin/uniprot</pre>
 <h2>Options</h2>
 <ul>
 <li>-d (char) delimiter default:tab</li>
