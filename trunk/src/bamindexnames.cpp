@@ -443,7 +443,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 	public:
 		std::size_t buffer_capacity;
 		ShortReadNameChanger* nameChanger;
-		WriteIndexOfNames():buffer_capacity(100000),nameChanger(0)
+		WriteIndexOfNames():buffer_capacity(1000000),nameChanger(0)
 			{
 			}
 			
@@ -477,7 +477,8 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 		   while(!eof_met)
 		        {
 		        /* clear the buffer */
-		        buffer.clear();
+		        for(size_t i=0;i<buffer.size();++i) delete buffer[i];
+			buffer.clear();
 		       
 		       
 		       assert(next_file==0);
@@ -489,7 +490,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 				next_file->config.name_size = prev_file->config.name_size;
 				}
 		       		
-		        
+		        WHERE("Loading buffer");
 		        while(!eof_met && buffer.size()<buffer_capacity)
 				{
 				/* get current offset in BGZF */
@@ -513,30 +514,43 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 				if(shortReadName.empty()) continue;
 				
 				NameOffsets* record =new NameOffsets(shortReadName,offset);
-				
-				/* insert the record at the correct position in the array */
-				vector<NameOffsets*>::iterator r= ::lower_bound(buffer.begin(),buffer.end(),record,NameOffsets::comparator);
-				if(r==buffer.end() || (*r)->name!=record->name)
+				buffer.push_back(record);
+				next_file->config.name_size = std::max(next_file->config.name_size,record->name.size());
+				}
+			WHERE("sorting");
+			sort(buffer.begin(),buffer.end(),NameOffsets::comparator);
+			WHERE("merging:"<< buffer.size());
+			
+			long x=(long)buffer.size()-1;
+			while(x>=0)
+				{
+				if(x+1 < (long)buffer.size() && buffer[x]->name.compare(buffer[x+1]->name)==0)
 					{
-					buffer.insert(r,record);
-					next_file->config.max_hits=std::max(
-						(uint16_t)1,
-						(uint16_t)next_file->config.max_hits
-						);
+					buffer[x]->offsets.insert(
+							buffer[x]->offsets.end(),
+							buffer[x+1]->offsets.begin(),
+							buffer[x+1]->offsets.end()
+							);
+					delete buffer[x+1];
+					buffer.erase(buffer.begin()+(x+1));
 					}
 				else
 					{
-					assert( (*r)->name==record->name);
-					(*r)->offsets.push_back(offset);
-					if((*r)->offsets.size() > next_file->config.max_hits)
-						{
-						next_file->config.max_hits= (uint16_t)((*r)->offsets.size());
-						WHERE("#### CONFIG CHANGED ######################");
-						}
+					--x;
 					}
 				
-				next_file->config.name_size = std::max(next_file->config.name_size,record->name.size());
 				}
+				
+			WHERE("merged:"<< buffer.size());
+			for(x=0;x< (long)buffer.size();++x)
+				{
+				if(buffer[x]->offsets.size() > next_file->config.max_hits)
+					{
+					next_file->config.max_hits= (uint16_t)(buffer[x]->offsets.size());
+					WHERE("#### CONFIG CHANGED ######################");
+					}
+				}
+			
 				
 			//WHERE("sort indexHeader.name_size:"+indexHeader.name_size<<" size:"<<buffer.size() << " max-len-name:"<<indexHeader.name_size );
 			//sort(buffer.begin(),buffer.end());
@@ -654,7 +668,7 @@ class WriteIndexOfNames:public AbstractIndexOfNames
 				}
 			//prev_max_hits=indexHeader.max_hits;
 			
-			if(prev_file!=0 && prev_file->config.count_items> 1E6) break;//TODO
+			//if(prev_file!=0 && prev_file->config.count_items> 1E6) break;//TODO
 			
 		   	}
 		   	 bam_destroy1(b);
