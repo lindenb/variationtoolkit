@@ -343,6 +343,9 @@ Y 21154529 . G A 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample20
 
 <page title="ExtractInfo" desc="Extracts a field from the INFO column of a VCF file" labels="ngs,vcf">
 &download;
+<h2>Compilation</h2>
+<pre>cd src
+ make ../bin/extractinfo</pre>
 <h2>Options:</h2>
 <ul>
 <li><b>-c</b> (info-column-infex) (7)</li>
@@ -374,6 +377,8 @@ rs2124109
 
 <page title="ExtractFormat" labels="ngs,vcf" desc="Extracts a field from the FORMAT column of a VCF file.">
 &download;
+<pre>cd src
+ make ../bin/extractformat</pre>
 <h2>Options</h2>
 <ul>
 <li>-f (format-column-infex) (8)</li>

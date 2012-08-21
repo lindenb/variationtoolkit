@@ -15,6 +15,12 @@ svn update
 }}}
 ... and edit the `variationtoolkit/congig.mk` file.
 
+{{{
+cd src
+ make ../bin/extractformat
+}}}
+
+
 ==Options==
 
   * -f (format-column-infex) (8)
