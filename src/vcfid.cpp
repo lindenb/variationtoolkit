@@ -108,9 +108,7 @@ class VcfId:public MysqlApplication
 
 			 ostringstream sql;
 			 sql << base_query;
-			 sql << tokens[0] << "\" and "
-				 << " chromStart <= " << POS
-				 << " AND  " << POS << " < chromEnd"
+			 sql << tokens[0] << "\"  "
 				" AND bin in ("
 				;
 
@@ -124,6 +122,24 @@ class VcfId:public MysqlApplication
 				 sql << binList[i];
 				 }
 			sql << ")";
+			if(	tokens.size()>5 &&
+				tokens[5].size()==1 &&
+				tokens[4].size()==1 &&
+                           	(isalpha(tokens[4][0]) || tokens[4][0]=='.') &&
+				(isalpha(tokens[5][0]) || tokens[5][0]=='.')
+				)
+				{
+				sql << " and chromStart=" << POS << " AND chromEnd="<< (POS+1);
+				}
+			else
+				{
+				sql << " and chromStart <= " << POS
+				 	<< " AND  " << POS << " < chromEnd "
+					;
+				}
+
+
+
 			if(limitOne)
 			    {
 			    sql << " LIMIT 1";
