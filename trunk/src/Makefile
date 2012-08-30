@@ -183,8 +183,10 @@ $(BINDIR)/loessapp:loessapp.cpp loess.o application.o
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/redonstructvar: redonstructvar.cpp  xfaidx.o knowngene.o loess.o application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
-$(BINDIR)/redondepth: redondepth.20120618.cpp  xfaidx.o loess.o application.o xbam2.o segments.o tarball.o kentBigWig.o
+$(BINDIR)/redondepth2: redondepth.20120618.cpp  xfaidx.o loess.o application.o xbam2.o segments.o tarball.o kentBigWig.o
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  ${KENTDIR}/src/lib/*/jkweb.a -Wl,--start-group -lz -lm -lssl3 -lssl -Wl,--end-group -lbam 
+$(BINDIR)/redondepth1: redondepth.cpp  xfaidx.o loess.o application.o xbam2.o segments.o tarball.o
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR) -lbam 
 $(BINDIR)/bam2wig: bam2wig.cpp application.o 
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR) -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/ttmap: ttmap.cpp application.o 
