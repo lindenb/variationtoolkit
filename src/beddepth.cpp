@@ -234,8 +234,15 @@ int main(int argc, char *argv[])
             cerr << "No bam defined.\n";
             return(EXIT_FAILURE);
             }
+ 	cout << "#chrom\tstart\tend";
+#define HEADER(a) cout << "\t" << a << "(" << this->bamFiles.at(i)->path() << ")"
         for(size_t i=0;i< this->bamFiles.size();++i)
 	    {
+	    HEADER("size");
+	    HEADER("min");
+	    HEADER("max");
+	    HEADER("median");
+	    HEADER("mean");
 	    BamFile2* bf= this->bamFiles.at(i);
 	    bf->open();
 	    if(!bf->is_open())
@@ -244,6 +251,7 @@ int main(int argc, char *argv[])
 		return(EXIT_FAILURE);
 		}
 	    }
+	cout << endl;
         if(optind==argc)
 		{
 		run(cin);
