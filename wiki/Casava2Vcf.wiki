@@ -1,8 +1,12 @@
-#summary Transforms Casava SNPs and INDEL to VCF
+#summary DEPRECATED: Transforms Casava SNPs and INDEL to VCF
 #labels ngs,casava,vcf
 <wiki:toc max_depth="1" />
 
 Transforms Casava SNPs and INDEL to VCF
+
+==Warning==
+
+This tool has been poorly designed and it only worked for an old version of Casava. You should really look for another software.
 
 ==Download==
 Download the sources from Google-Code using [http://subversion.apache.org/ subversion:...].

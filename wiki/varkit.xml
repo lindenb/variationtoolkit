@@ -2804,8 +2804,10 @@ showprogress | grep 8 > /dev/null
 ]]></pre>
 </page>
 
-<page title="Casava2Vcf" labels="ngs,casava,vcf" desc="Transforms Casava SNPs and INDEL to VCF">
+<page title="Casava2Vcf" labels="ngs,casava,vcf" desc="DEPRECATED: Transforms Casava SNPs and INDEL to VCF">
 Transforms Casava SNPs and INDEL to VCF
+<h2>Warning</h2>
+This tool has been poorly designed and it only worked for an old version of Casava. You should really look for another software.
 &download;
 <h2>Compilation</h2>
 <pre><![CDATA[$ cd varkit/src
