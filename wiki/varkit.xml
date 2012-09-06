@@ -3201,15 +3201,15 @@ Computes the mean coverage for each chromosomes
 <pre><![CDATA[$ cd varkit/src
 make ../bin/genomecoverage]]></pre>
 <h2>Usage</h2>
-<pre>genomecoverage -f refernce.fasta [options] bam1 bam2...</pre>
+<pre>genomecoverage -f reference.fasta [options] bam1 bam2...</pre>
 <h2>Options</h2>
 <ul>
-<li><b>-f</b> reference genome</li>
-<li><b>-m</b> min mapping quality (OPTIONAL)</li>
+<li><b>-f</b> (file) reference genome</li>
+<li><b>-m</b> (int) min mapping quality (OPTIONAL)</li>
 </ul>
 <h2>Example</h2>
 The output is: chrom, chromLength, mean-depth, mean-depth ignoring the unknown ('N') bases.
-<pre><![CDATA[$ $ genomecoverage -f human.fasta  my.bam
+<pre><![CDATA[$ genomecoverage -f human.fasta  my.bam
 
 #chrom    length    mean-depth(my.bam)    mean-depth-noN(my.bam)
 1    249250621    28    30

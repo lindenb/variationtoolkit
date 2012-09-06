@@ -29,14 +29,14 @@ make ../bin/genomecoverage
 
 
 {{{
-genomecoverage -f refernce.fasta [options] bam1 bam2...
+genomecoverage -f reference.fasta [options] bam1 bam2...
 }}}
 
 
 ==Options==
 
-  * *-f* reference genome
-  * *-m* min mapping quality (OPTIONAL)
+  * *-f* (file) reference genome
+  * *-m* (int) min mapping quality (OPTIONAL)
 
 
 ==Example==
@@ -44,7 +44,7 @@ genomecoverage -f refernce.fasta [options] bam1 bam2...
 The output is: chrom, chromLength, mean-depth, mean-depth ignoring the unknown ('N') bases.
 
 {{{
-$ $ genomecoverage -f human.fasta  my.bam
+$ genomecoverage -f human.fasta  my.bam
 
 #chrom    length    mean-depth(my.bam)    mean-depth-noN(my.bam)
 1    249250621    28    30
