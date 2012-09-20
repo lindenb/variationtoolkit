@@ -104,13 +104,20 @@ void cacl_depth(std::ostream& out,BamFile2* bf,int tid,int chromStart,int chromE
     std::sort(shuttle.depth.begin(),shuttle.depth.end());
     if(shuttle.depth.empty())
 	{
-	out << "0\t0\t0\t0\t0";
+	out << "0\t0\t0\t0\t0\t0\t0";
 	return;
 	}
     double total=0;
-    for(size_t i=0;i< shuttle.depth.size();++i) total+=shuttle.depth[i];
+    int covered=0;
+    for(size_t i=0;i< shuttle.depth.size();++i)
+	{
+	if(shuttle.depth[i]>0) covered++;
+	total+=shuttle.depth[i];
+	}
 
     out << shuttle.depth.size() << "\t"
+	<< covered << "\t"
+	<< covered/(double)shuttle.depth.size() << "\t"
 	<< shuttle.depth.front() << "\t"
 	<< shuttle.depth.back() << "\t"
 	<< shuttle.depth[shuttle.depth.size()/2] << "\t"
@@ -239,10 +246,13 @@ int main(int argc, char *argv[])
         for(size_t i=0;i< this->bamFiles.size();++i)
 	    {
 	    HEADER("size");
+	    HEADER("covered");
+	    HEADER("percent_covered");
 	    HEADER("min");
 	    HEADER("max");
 	    HEADER("median");
 	    HEADER("mean");
+	    
 	    BamFile2* bf= this->bamFiles.at(i);
 	    bf->open();
 	    if(!bf->is_open())
