@@ -3,16 +3,6 @@
  *	Pierre Lindenbaum PhD
  * Contact:
  *	plindenbaum@yahoo.fr
- * WWW:
- *	http://plindenbaum.blogspot.com
- *	http://samtools.sourceforge.net/
- *	http://samtools.sourceforge.net/sam-exam.shtml
- * Reference:
- *	http://genome.ucsc.edu/goldenPath/help/wiggle.html
- * Motivation:
- *	creates a WIGGLE file from a BAM file.
- * Usage:
- *	bam2wig <bam-file> (<region>)
  */
 #include <cstdio>
 #include <cstdlib>
@@ -101,30 +91,31 @@ void cacl_depth(std::ostream& out,BamFile2* bf,int tid,int chromStart,int chromE
     	//cerr << "err" << shuttle.depth.size() << " "<< (chromEnd-chromStart) << endl;
     	shuttle.depth.push_back(0);
     	}
-    std::sort(shuttle.depth.begin(),shuttle.depth.end());
-    if(shuttle.depth.empty())
-	{
-	out << "0\t0\t0\t0\t0\t0\t0";
-	return;
-	}
-    double total=0;
-    int covered=0;
-    for(size_t i=0;i< shuttle.depth.size();++i)
-	{
-	if(shuttle.depth[i]>0) covered++;
-	total+=shuttle.depth[i];
-	}
-
-    out << shuttle.depth.size() << "\t"
-	<< covered << "\t"
-	<< covered/(double)shuttle.depth.size() << "\t"
-	<< shuttle.depth.front() << "\t"
-	<< shuttle.depth.back() << "\t"
-	<< shuttle.depth[shuttle.depth.size()/2] << "\t"
-	<< total/shuttle.depth.size()
-	;
-
-
+    	
+    	
+	std::sort(shuttle.depth.begin(),shuttle.depth.end());
+	if(shuttle.depth.empty())
+		{
+		out << "0\t0\t0\t0\t0\t0\t0";
+		return;
+		}
+	double total=0;
+	int covered=0;
+	for(size_t i=0;i< shuttle.depth.size();++i)
+		{
+		if(shuttle.depth[i]>0) covered++;
+		total+=shuttle.depth[i];
+		}
+	
+	out << shuttle.depth.size() << "\t"
+		<< covered << "\t"
+		<< covered/(double)shuttle.depth.size() << "\t"
+		<< shuttle.depth.front() << "\t"
+		<< shuttle.depth.back() << "\t"
+		<< shuttle.depth[shuttle.depth.size()/2] << "\t"
+		<< total/shuttle.depth.size()
+		;
+	
     }
 
 void run(std::istream& in)
@@ -242,25 +233,28 @@ int main(int argc, char *argv[])
             return(EXIT_FAILURE);
             }
  	cout << "#chrom\tstart\tend";
+
+		
 #define HEADER(a) cout << "\t" << a << "(" << this->bamFiles.at(i)->path() << ")"
-        for(size_t i=0;i< this->bamFiles.size();++i)
-	    {
-	    HEADER("size");
-	    HEADER("covered");
-	    HEADER("percent_covered");
-	    HEADER("min");
-	    HEADER("max");
-	    HEADER("median");
-	    HEADER("mean");
-	    
-	    BamFile2* bf= this->bamFiles.at(i);
-	    bf->open();
-	    if(!bf->is_open())
-		{
-		cerr << "cannot open '" << bf->path()<< endl;
-		return(EXIT_FAILURE);
-		}
-	    }
+		for(size_t i=0;i< this->bamFiles.size();++i)
+			{
+			HEADER("size");
+			HEADER("covered");
+			HEADER("percent_covered");
+			HEADER("min");
+			HEADER("max");
+			HEADER("median");
+			HEADER("mean");
+			
+			BamFile2* bf= this->bamFiles.at(i);
+			bf->open();
+			if(!bf->is_open())
+				{
+				cerr << "cannot open '" << bf->path()<< endl;
+				return(EXIT_FAILURE);
+				}
+			}
+		
 	cout << endl;
         if(optind==argc)
 		{
