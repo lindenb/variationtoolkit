@@ -154,7 +154,7 @@ void run(std::istream& in)
 			cout << "\t" << depth;
 			for(int t=0;t < TRANCHE_DE_10;++t)
 				{
-				if(depth<=t*10) stats.at(i).count[t]++;;
+				if(depth<=t*10 || t+1==TRANCHE_DE_10) stats.at(i).count[t]++;;
 				}
 			}
 		cout << endl;
@@ -169,7 +169,15 @@ void run(std::istream& in)
      	{
      	for(int t=0;t < TRANCHE_DE_10;++t)
 		{
-		cout << "%bases-having-depth<="<<(t*10)<<"\t.\t.\t.";
+		if(t+1==TRANCHE_DE_10)
+			{
+			cout << "%all-bases";
+			}
+		else
+			{
+			cout << "%bases-having-depth<="<<(t*10);
+			}
+		cout <<"\t.\t.\t.";
 		for(size_t i=0;i< this->bamFiles.size();++i)
 			{
 			 cout << "\t" << stats.at(i).count[t];
