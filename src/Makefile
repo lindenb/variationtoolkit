@@ -76,6 +76,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/vcf2snpeff \
 	$(BINDIR)/bedsplit \
 	$(BINDIR)/beddepth \
+	$(BINDIR)/beddepthperbase \
 	$(BINDIR)/extractsnpeff \
 	$(BINDIR)/mpileup2pileup \
 	$(BINDIR)/depthofcoverage \
@@ -253,6 +254,8 @@ $(BINDIR)/md5cols : md5cols.cpp  application.o
 $(BINDIR)/vcf2snpeff : vcf2snpeff.cpp
 	$(CPP) $(CFLAGS) -o $@ $^  -lz
 $(BINDIR)/beddepth: beddepth.cpp xbam2.o $(PARSESEG)
+	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
+$(BINDIR)/beddepthperbase: beddepthperbase.cpp xbam2.o $(PARSESEG)
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
 $(BINDIR)/depthofcoverage: depthofcoverage.cpp xbam2.o $(PARSESEG)
 	$(CPP) -o $@ $^ $(CFLAGS) -I $(SAMDIR)  -L $(SAMDIR) -lbam   -lz
