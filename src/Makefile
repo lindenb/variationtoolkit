@@ -93,6 +93,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/kg2exons \
 	$(BINDIR)/fastqgrep \
 	$(BINDIR)/genomecoverage \
+	$(BINDIR)/simplekeyvalue 
 
 all:$(TARGET_BINARIES)
 
@@ -237,6 +238,8 @@ $(BINDIR)/fasta2term: fasta2term.cpp
 	$(CPP) -o $@ $^  $(CFLAGS) 
 $(BINDIR)/xsltstream: xsltstream.cpp xstream.o application.o
 	$(CPP) -o $@ $^  $(CFLAGS) `xml2-config --cflags --libs` `xslt-config --cflags --libs` -lz
+$(BINDIR)/simplekeyvalue:simplekeyvalue.cpp
+	$(CPP) -o $@ $^  $(CFLAGS) `xml2-config --cflags --libs`
 $(BINDIR)/godbmgr: godatabasemgr.cpp xsqlite.cpp application.o xstream.o xxml.o
 	if ! [ -z "$(SQLITE_LIB)" ] ;then $(CPP) -o $@ $^ -g `xml2-config --cflags `  $(SQLITE_CFLAGS)   -lz $(SQLITE_LIB) `xml2-config  --libs` ; else $(CPP) -o $@ godatabasemgr.cpp  -DNOSQLITE $(CFLAGS)  ; fi
 $(CGI_BIN_DIR)/tabixserver.cgi: tabixserver.cpp $(PARSESEG) xtabix.o xxml.o cgi.o
