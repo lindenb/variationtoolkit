@@ -12,6 +12,7 @@
 #include <limits>
 #include <fstream>
 #include <algorithm>
+#include <set>
 #include <stdint.h>
 #include "tokenizer.h"
 #include "xbam2.h"
@@ -35,10 +36,11 @@ class BedDepth
 	auto_vector<BamFile2> bamFiles;
 	auto_ptr<uint32_t> max_qual;
 	auto_ptr<uint32_t> min_qual;
+	set<uint32_t> min_depth;
 
 	BedDepth():max_qual(0),min_qual(0)
 	    {
-
+	    this->min_depth.insert(0);
 	    }
 
 	virtual ~BedDepth()
@@ -96,21 +98,32 @@ void cacl_depth(std::ostream& out,BamFile2* bf,int tid,int chromStart,int chromE
 	std::sort(shuttle.depth.begin(),shuttle.depth.end());
 	if(shuttle.depth.empty())
 		{
-		out << "0\t0\t0\t0\t0\t0\t0";
+		out << "0\t0\t0\t0\t0";
+		for(set<uint32_t>::iterator r=min_depth.begin();r!=min_depth.end();++r) out << "\t0\t0";
 		return;
 		}
 	double total=0;
-	int covered=0;
 	for(size_t i=0;i< shuttle.depth.size();++i)
 		{
-		if(shuttle.depth[i]>0) covered++;
 		total+=shuttle.depth[i];
 		}
 	
-	out << shuttle.depth.size() << "\t"
-		<< covered << "\t"
-		<< covered/(double)shuttle.depth.size() << "\t"
-		<< shuttle.depth.front() << "\t"
+	out << shuttle.depth.size() << "\t";
+	for(set<uint32_t>::iterator r=min_depth.begin();
+		r!=min_depth.end();
+		++r)
+		{
+		int covered=0;
+		for(size_t i=0;i< shuttle.depth.size();++i)
+			{
+			if(shuttle.depth[i]>=(int)(*r)) covered++;
+			}
+		
+		out << covered << "\t"
+			<< covered/(double)shuttle.depth.size() << "\t"
+			;
+		}
+ 	out << shuttle.depth.front() << "\t"
 		<< shuttle.depth.back() << "\t"
 		<< shuttle.depth[shuttle.depth.size()/2] << "\t"
 		<< total/shuttle.depth.size()
@@ -168,7 +181,8 @@ void run(std::istream& in)
 	out << "Options:\n";
 	out << " -f <bam-file> add this bam file. Can be called multiple times\n";
 	out << " -m <min-qual uint32> (optional) min SAM record Quality.\n";
-	out << " -M <max-qual uint32> (optional) max SAM record Quality.\n";
+	out << " -m <min-qual uint32> (optional) min SAM record Quality.\n";
+	out << " -D <min-depth> (optional) min depth.\n";
 	}
 	
 int main(int argc, char *argv[])
@@ -210,6 +224,17 @@ int main(int argc, char *argv[])
 			}
 		    this->max_qual.reset(new uint32_t(q));
 		    }
+		else if(strcmp(argv[optind],"-D")==0 && optind+1<argc)
+		    {
+		    uint32_t q;
+		    if(!numeric_cast<uint32_t>(argv[++optind],&q))
+			{
+			cerr << "Bad value for -D "<< argv[optind] << endl;
+			usage(cerr,argc,argv);
+			return EXIT_FAILURE;
+			}
+		    this->min_depth.insert(q);
+		    }
 		else if(strcmp(argv[optind],"--")==0)
 		        {
 		        ++optind;
@@ -239,8 +264,13 @@ int main(int argc, char *argv[])
 		for(size_t i=0;i< this->bamFiles.size();++i)
 			{
 			HEADER("size");
-			HEADER("covered");
-			HEADER("percent_covered");
+			for(set<uint32_t>::iterator r=min_depth.begin();
+                	   r!=min_depth.end();
+               		   ++r)
+				{
+				 HEADER("covered[depth:"<< (*r)<<"]");
+                       		 HEADER("percent_covered[depth:"<< (*r)<<"]");
+				}
 			HEADER("min");
 			HEADER("max");
 			HEADER("median");

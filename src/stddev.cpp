@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 
@@ -30,7 +31,7 @@ int main(int argc,char** argv)
 	return EXIT_FAILURE;
 	}
 
-    sort(all.begin(),all.end());
+    ::sort(all.begin(),all.end());
     double mean=total/all.size();
     double stddev=0;
     for(vector<double>::iterator r=all.begin();r!=all.end();++r)
