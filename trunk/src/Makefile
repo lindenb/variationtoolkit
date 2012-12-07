@@ -363,7 +363,8 @@ xstream.o: xstream.cpp xstream.h
 	$(CPP) -c -o $@ $< $(CFLAGS) `xml2-config --cflags `
 xxml.o: xxml.cpp xxml.h
 	$(CPP) -c -o $@ $< $(CFLAGS) `xml2-config --cflags `
-
+bedindex.o: bedindex.cpp bedindex.h
+	$(CPP) -c -o $@ $(CFLAGS)  $< 
 
 keyvaluedatastore.o: keyvaluedatastore.cpp keyvaluedatastore.h
 	if ! [ -z "$(LEVELDBDIR)" ] ;then $(CPP) -c -o $@ $< -I $(LEVELDBDIR)/include $(CFLAGS) ; else $(CPP) -c -o $@ $< -DNOLEVELDB $(CFLAGS)  ; fi
