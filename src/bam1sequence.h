@@ -127,10 +127,10 @@ class AbstractBam1Sequence:public AbstractCharSequence
 		{
 		return ptr()->core.qual;
 		}
-	/* 0-based alignment start (for BED) */
-	int32_t alignment_start0() const
+	
+	const char* chromosome(const bam_header_t *header) const
 		{
-		return pos()-1;
+		return tid()<0?0:header->target_name[tid()];
 		}
 	
 	std::string format(const bam_header_t *header) const
