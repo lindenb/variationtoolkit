@@ -127,6 +127,12 @@ class AbstractBam1Sequence:public AbstractCharSequence
 		{
 		return ptr()->core.qual;
 		}
+	/* 0-based alignment start (for BED) */
+	int32_t alignment_start0() const
+		{
+		return pos()-1;
+		}
+	
 	std::string format(const bam_header_t *header) const
 		{
 		extern char *bam_format1(const bam_header_t *header, const bam1_t *b);

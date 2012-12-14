@@ -93,7 +93,8 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/kg2exons \
 	$(BINDIR)/fastqgrep \
 	$(BINDIR)/genomecoverage \
-	$(BINDIR)/simplekeyvalue 
+	$(BINDIR)/simplekeyvalue \
+	$(BINDIR)/bamstats01
 
 all:$(TARGET_BINARIES)
 
@@ -284,6 +285,9 @@ $(BINDIR)/fastqgrep: fastqgrep.cpp
 	$(CPP) -o $@ $^ $(CFLAGS) -lz
 $(BINDIR)/genomecoverage: genomecoverage.cpp xbam2.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
+$(BINDIR)/bamstats01: bamstats01.cpp bedindex.o abstractcharsequence.o
+	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
+
 
 $(BINDIR)/embbedC:embbedC.c
 	$(CPP) -o $@ $^
