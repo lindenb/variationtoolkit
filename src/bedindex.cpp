@@ -2,11 +2,12 @@
 #include "bedindex.h"
 #include "throw.h"
 
+extern "C" {
 extern void bed_index(void *_h);
 extern int bed_overlap(const void *_h, const char *chr, int beg, int end);
 extern  void *bed_read(const char *fn);
 extern void bed_destroy(void *_h);
-
+}
 
 BedIndex::BedIndex(void* bed):bed(bed)
 	{
