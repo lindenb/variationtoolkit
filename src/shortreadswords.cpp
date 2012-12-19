@@ -32,8 +32,9 @@ class ShortReaWords
 	uint16_t word_size;
 	bool sortocc;
 	bool printnotfound;
+	uint64_t totaldestotaux;
 
-	ShortReaWords():word_size(5),sortocc(false),printnotfound(false)
+	ShortReaWords():word_size(5),sortocc(false),printnotfound(false),totaldestotaux(0UL)
 	    {
 
 	    }
@@ -51,7 +52,7 @@ class ShortReaWords
 			if(words.find(seq)==words.end())
 				{
 				cout.write(seq,this->word_size);
-				cout << "\t0\n";
+				cout << "\t0\t0\n";
 				}
 			return;
 			}
@@ -80,7 +81,7 @@ class ShortReaWords
 	    		line.copy(seq,this->word_size,i);
 	    		if(strspn(seq,"ATGC")!=this->word_size) continue;
 	    		std::map<string,uint64_t >::iterator r=words.find(seq);
-
+			totaldestotaux++;
 	    		if(r==words.end())
 	    			{
 	    			words.insert(make_pair<string,uint64_t>(seq,01L));
@@ -116,7 +117,10 @@ class ShortReaWords
 			std::multimap<uint64_t,string>::reverse_iterator r2=occmap.rbegin();
 			while(r2!=occmap.rend())
 				{
-				cout << r2->second << "\t" << r2->first << endl;
+				cout << r2->second
+					<< "\t" << r2->first
+					<< "\t" << (r2->first/(double)totaldestotaux)
+					<< endl;
 				++r2;
 				}
 			}
@@ -125,7 +129,10 @@ class ShortReaWords
 			std::map<string,uint64_t >::iterator r=words.begin();
 			while(r!=words.end())
 				{
-				cout << r->first << "\t" << r->second << endl;
+				cout 	<< r->first
+					<< "\t" << r->second
+					<< "\t" << (r->second/(double)totaldestotaux)
+					<< endl;
 				++r;
 				}
 			}
