@@ -6,6 +6,7 @@
  */
 #include <map>
 #include <vector>
+#include <cmath>
 #include <cstring>
 #include <cctype>
 #include <string>
@@ -23,7 +24,7 @@
 
 using namespace std;
 
-
+#define EXPECTED  (1.0/std::pow(4,word_size))
 
 class ShortReaWords
     {
@@ -33,8 +34,13 @@ class ShortReaWords
 	bool sortocc;
 	bool printnotfound;
 	uint64_t totaldestotaux;
+	bool allow_N;
 
-	ShortReaWords():word_size(5),sortocc(false),printnotfound(false),totaldestotaux(0UL)
+	ShortReaWords():word_size(5),
+		sortocc(false),
+		printnotfound(false),
+		totaldestotaux(0UL),
+		allow_N(false)
 	    {
 
 	    }
@@ -52,7 +58,7 @@ class ShortReaWords
 			if(words.find(seq)==words.end())
 				{
 				cout.write(seq,this->word_size);
-				cout << "\t0\t0\n";
+				cout << "\t0\t0\t" << EXPECTED <<"\n";
 				}
 			return;
 			}
@@ -77,9 +83,8 @@ class ShortReaWords
 	    	std::transform(line.begin(), line.end(),line.begin(), ::toupper);
 	    	for(size_t i=0;i+this->word_size <= line.size();++i)
 	    		{
-	    		
 	    		line.copy(seq,this->word_size,i);
-	    		if(strspn(seq,"ATGC")!=this->word_size) continue;
+	    		if(strspn(seq,(allow_N?"ATGCN":"ATGC"))!=this->word_size) continue;
 	    		std::map<string,uint64_t >::iterator r=words.find(seq);
 			totaldestotaux++;
 	    		if(r==words.end())
@@ -104,22 +109,23 @@ class ShortReaWords
 		
 		if(sortocc)
 			{
-			std::multimap<uint64_t,string> occmap;
+			std::multimap<uint64_t,const string*> occmap;
 			
 			std::map<string,uint64_t >::iterator r=words.begin();
 			while(r!=words.end())
 				{
-				occmap.insert(make_pair<uint64_t,string>(r->second,r->first));
+				occmap.insert(make_pair<uint64_t,const string*>(r->second,&(r->first)));
 				++r;
 				}
 
 			
-			std::multimap<uint64_t,string>::reverse_iterator r2=occmap.rbegin();
+			std::multimap<uint64_t,const string*>::reverse_iterator r2=occmap.rbegin();
 			while(r2!=occmap.rend())
 				{
-				cout << r2->second
+				cout << *(r2->second)
 					<< "\t" << r2->first
 					<< "\t" << (r2->first/(double)totaldestotaux)
+					<< "\t" << EXPECTED
 					<< endl;
 				++r2;
 				}
@@ -132,6 +138,7 @@ class ShortReaWords
 				cout 	<< r->first
 					<< "\t" << r->second
 					<< "\t" << (r->second/(double)totaldestotaux)
+					<< "\t" << EXPECTED
 					<< endl;
 				++r;
 				}
@@ -156,6 +163,7 @@ class ShortReaWords
 	    out << "  -N (word_size) default:" << word_size << endl;
 	    out << "  -S sort on frequency"<< endl;
 	    out << "  -F print not found."<< endl;
+	    out << "  -n allow 'N'."<< endl;
 	    out << endl;
 	    }
 
@@ -186,6 +194,10 @@ class ShortReaWords
 		else if(std::strcmp(argv[optind],"-F")==0 )
 		    {   
 		    this-> printnotfound=true;
+		    }
+		else if(std::strcmp(argv[optind],"-n")==0 )
+		    {   
+		    this->allow_N=true;
 		    }
 		else if(argv[optind][0]=='-')
 		    {
