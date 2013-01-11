@@ -11,6 +11,7 @@
 #ifndef BAM1SEQUENCE_H_
 #define BAM1SEQUENCE_H_
 
+#include <iostream>
 #include <string>
 #include "bam.h"
 #include "sam.h"
@@ -128,6 +129,42 @@ class AbstractBam1Sequence:public AbstractCharSequence
 		return ptr()->core.qual;
 		}
 	
+	uint32_t* cigar() const
+		{
+		return bam1_cigar(ptr());
+		}
+	int  cigar_size() const
+		{
+		return core()->n_cigar;
+		}
+	int cigar_operator(int index) const
+		{
+		return ((cigar()[index])&BAM_CIGAR_MASK);
+		}
+	int cigar_length(int index) const
+		{
+		return ((cigar()[index])>>BAM_CIGAR_SHIFT);
+		}
+	
+	uint8_t* get_aux(const char* flag) const
+		{
+		return ::bam_aux_get(ptr(), flag);	
+		}
+	const char* get_aux_MD() const
+		{
+		uint8_t* md= get_aux("MD");
+		if(md==0) return 0;
+		char type=((char*)md)[0];
+		if(type!='Z')
+			{
+			std::cerr << "[ERROR]" << __FILE__<< ": not an MD:Z (but MD:"
+				<< type << ") for "
+				<< this->name() << std::endl;
+			return 0;
+			}
+		return ((char*)md)+1;
+		}
+		
 	const char* chromosome(const bam_header_t *header) const
 		{
 		return tid()<0?0:header->target_name[tid()];
@@ -143,6 +180,7 @@ class AbstractBam1Sequence:public AbstractCharSequence
 		free(p);
 		return sam;
 		}
+	
     };
 /**
  * Bam1Sequence
