@@ -296,7 +296,7 @@ int main(int argc, char **argv)
 		    cerr << "Illegal value for shift" << endl;
 		    return EXIT_FAILURE;
 		    }
-		app.tv.mcol=min(app.tv.mcol,10);
+		app.tv.mcol=max(app.tv.mcol,10);
 		}
 	    else if(strcmp(argv[optind],"--")==0)
 		    {
