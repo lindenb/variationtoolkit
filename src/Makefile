@@ -96,6 +96,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/simplekeyvalue \
 	$(BINDIR)/bamstats01 \
 	$(BINDIR)/bamstats02 \
+	$(BINDIR)/bamstats03 \
 	$(BINDIR)/shortreadswords
 
 all:$(TARGET_BINARIES)
@@ -290,6 +291,8 @@ $(BINDIR)/genomecoverage: genomecoverage.cpp xbam2.o
 $(BINDIR)/bamstats01: bamstats01.cpp bedindex.o abstractcharsequence.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/bamstats02: bamstats02.cpp abstractcharsequence.o
+	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
+$(BINDIR)/bamstats03: bamstats03.cpp bedindex.o abstractcharsequence.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/shortreadswords: shortreadswords.cpp
 	$(CPP) -o $@ $< $(CFLAGS) -lz
