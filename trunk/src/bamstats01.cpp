@@ -35,7 +35,7 @@ class BamStats
 			}
  		void usage(ostream& out,int argc,char **argv)
 		    {
-		    out << argv[0] << " Pierre Lindenbaum PHD. 2012.\n";
+		    out << argv[0] << " Pierre Lindenbaum PHD. 2013.\n";
 		    out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 		    out << "Usage:\n\t"<< argv[0] << " [options] (stdin | file1.bam file2.bam ... fileN.bam)\n";
 		    out << "Options:\n";
@@ -50,6 +50,7 @@ class BamStats
 			uint64_t totalmapped=0UL;
 			uint64_t totalmappedproperpair=0UL;
 			uint64_t totalmappedbed=0UL;
+			uint64_t totalmappedbedq30=0UL;
 			uint64_t totalmappedbeddup=0UL;
 			
         		//bam1_core_t *c=&b->core;
@@ -83,6 +84,7 @@ class BamStats
 						)
 						{
 						++totalmappedbed;
+						if(bs.quality()>30) totalmappedbedq30++;
 						if(bs.is_duplicate())
 							{
 							++totalmappedbeddup;
@@ -104,6 +106,7 @@ class BamStats
 				{
 				cout
 					<< "\t" << totalmappedbed
+					<< "\t" << totalmappedbedq30
 					<< "\t" << totalmappedbeddup
 					;
 				}
@@ -151,6 +154,7 @@ class BamStats
 				{
 				cout
 					<< "\t" << "mappedbed"
+					<< "\t" << "mappedbedq30"
 					<< "\t" << "mappedbeddup"
 					;
 				}
