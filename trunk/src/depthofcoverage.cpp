@@ -30,8 +30,9 @@ class DepthOfCoverage
     public:
 	auto_vector<BamFile2> bamFiles;
 	uint32_t min_qual;
+        bool  discard_duplicates;
 
-	DepthOfCoverage():min_qual(0)
+	DepthOfCoverage():min_qual(0),discard_duplicates(true)
 	    {
 	    }
 
@@ -49,6 +50,10 @@ class DepthOfCoverage
 		{
 		const bam_pileup1_t* curr=&pl[i];
 		if(curr->b->core.qual < stat->min_qual) continue;
+		if(stat->discard_duplicates)
+			{
+			if( ((curr->b->core.flag) & (BAM_FDUP))!=0) continue;
+			}
 		stat->coverage[pos-stat->currStart]++;
 		}
 	    return 0;
@@ -176,7 +181,8 @@ class DepthOfCoverage
 	    out << "\nOptions:\n";
 	    out << " -B (file) limit to that bed file (required)\n";
 	    out << " -m (int) min mapping quality default:0\n";
-	    out << endl;
+	    out << " -d do NOT dicard reads marked as duplicates." << endl;
+            out << endl;
 	    out << endl;
 	    }
 
@@ -191,6 +197,10 @@ class DepthOfCoverage
 		    this->usage(cerr,argc,argv);
 		    return(EXIT_SUCCESS);
 		    }
+                else if(strcmp(argv[optind],"-d")==0)
+			{
+                        this->discard_duplicates=false;
+		        }
 		else if( (strcmp(argv[optind],"-B")==0 || strcmp(argv[optind],"--bed")==0) && optind+1<argc)
 		    {
 		    befFile=argv[++optind];
