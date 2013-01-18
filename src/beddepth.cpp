@@ -181,7 +181,7 @@ void run(std::istream& in)
 	out << "Options:\n";
 	out << " -f <bam-file> add this bam file. Can be called multiple times\n";
 	out << " -m <min-qual uint32> (optional) min SAM record Quality.\n";
-	out << " -m <min-qual uint32> (optional) min SAM record Quality.\n";
+	out << " -M <max-qual uint32> (optional) max SAM record Quality.\n";
 	out << " -D <min-depth> (optional) min depth.\n";
 	}
 	
