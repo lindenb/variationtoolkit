@@ -10,7 +10,7 @@ using namespace std;
 extern int segparserlex(); 
 #define yylex segparserlex
 
-void yyerror (char *s)
+void yyerror (const char *s)
  	{
  	THROW("Parsing error :\""<< (const char*)s<< "\"");
  	}
@@ -64,7 +64,8 @@ segment: chrom range
 	delete $2;
 	if($$->start > $$->end) THROW("Range error in "<< *($$));
 	}
-chrom:  TEXT {$$=$1}|
+        ;
+chrom:  TEXT {$$=$1;}|
 	INTEGER { ostringstream os; os << $1; $$=new string(os.str()); }
 	;
 range: 	{$$=new StartEnd(0,numeric_limits<int32_t>::max()-10); } |
