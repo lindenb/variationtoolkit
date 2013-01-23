@@ -18,7 +18,7 @@ static Color* ROOT=NULL;
 extern int parsecolorlex(); 
 #define yylex parsecolorlex
 
-void yyerror (char *s)
+void yyerror(const char *s)
  	{
  	THROW("Parsing error :\""<< (const char*)s<< "\"");
  	}

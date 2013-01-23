@@ -91,7 +91,7 @@ Node* Node::ROOT=NULL;
 extern int selectsetlex(); 
 #define yylex selectsetlex
 
-void yyerror (char *s)
+void yyerror (const char *s)
  	{
  	THROW("Parsing error :\""<< (const char*)s<< "\"");
  	}
