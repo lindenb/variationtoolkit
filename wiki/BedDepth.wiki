@@ -29,7 +29,7 @@ make ../bin/beddepth
 
 
 {{{
-genomecoverage -f reference.fasta [options] bam1 bam2...
+beddepth -f bam [options] (stdin|bam)..
 }}}
 
 

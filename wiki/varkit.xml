@@ -3246,7 +3246,7 @@ Computes the mean depth of a set of BAMs in the regions of a BED.
 <pre><![CDATA[$ cd varkit/src
 make ../bin/beddepth]]></pre>
 <h2>Usage</h2>
-<pre>genomecoverage -f reference.fasta [options] bam1 bam2...</pre>
+<pre>beddepth -f bam [options] (stdin|bam)..</pre>
 <h2>Options</h2>
 <ul>
 <li> -f (bam-file) add this bam file. Can be called multiple times</li>
