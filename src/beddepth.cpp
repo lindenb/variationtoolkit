@@ -37,8 +37,9 @@ class BedDepth
 	auto_ptr<uint32_t> max_qual;
 	auto_ptr<uint32_t> min_qual;
 	set<uint32_t> min_depth;
+	bool discard_dup;
 
-	BedDepth():max_qual(0),min_qual(0)
+	BedDepth():max_qual(0),min_qual(0),discard_dup(true)
 	    {
 	    this->min_depth.insert(0);
 	    }
@@ -70,7 +71,10 @@ class BedDepth
 		{
 		continue;
 		}
-
+	    if(shuttle->owner->discard_dup)
+	    	{
+	    	if( ((curr->b->core.flag) & (BAM_FDUP))!=0) continue;
+	    	}
 	    coverage++;
 	    }
 	shuttle->depth.push_back(coverage);
@@ -147,7 +151,7 @@ void run(std::istream& in)
 	    cerr << "Bad bed line "<< line << endl;
 	    continue;
 	    }
-	cout << line;
+	cout << tokens[0] << "\t" << tokens[1] << "\t" << tokens[2];
 	for(size_t i=0;i< this->bamFiles.size();++i)
 	    {
 	    cout << "\t";
@@ -165,7 +169,7 @@ void run(std::istream& in)
 		}
 	    else
 		{
-		cout << "ERROR\tERROR\tERROR\tERROR\tERROR";
+		cout << "ERROR\tERROR\tERROR\tERROR\tERROR\tERROR\tERROR";
 		}
 	    }
 
@@ -182,7 +186,8 @@ void run(std::istream& in)
 	out << " -f <bam-file> add this bam file. Can be called multiple times\n";
 	out << " -m <min-qual uint32> (optional) min SAM record Quality.\n";
 	out << " -M <max-qual uint32> (optional) max SAM record Quality.\n";
-	out << " -D <min-depth> (optional) min depth.\n";
+	out << " -D <min-depth> (optional) min depth.  Can be called multiple times\n";
+	out << " -d do NOT discard duplicates" << endl;
 	}
 	
 int main(int argc, char *argv[])
@@ -197,6 +202,10 @@ int main(int argc, char *argv[])
 		        usage(cout,argc,argv);
 		        return EXIT_FAILURE;
 		        }
+		else if(strcmp(argv[optind],"-d")==0)
+			{
+			this->discard_dup=false;
+			}
 		else if(strcmp(argv[optind],"-f")==0 && optind+1<argc)
 			{
 			BamFile2* bf=new BamFile2(argv[++optind]);
