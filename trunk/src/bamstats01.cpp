@@ -80,7 +80,7 @@ class BamStats
 						}
 						
 					if(bedindex.get()!=0 &&
-						bedindex->overlap(bs.chromosome(header),bs.pos()-1, bs.pos())
+						bedindex->overlap(bs.chromosome(header),bs.pos(), bs.end())
 						)
 						{
 						++totalmappedbed;

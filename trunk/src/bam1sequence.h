@@ -54,6 +54,10 @@ class AbstractBam1Sequence:public AbstractCharSequence
 		{
 		return core()->pos;
 		}
+	virtual int32_t end() const
+		{
+		return bam_calend(core(), bam1_cigar(ptr()));
+		}
 	virtual const char* name() const
 	    {
 	    return bam1_qname(ptr());
