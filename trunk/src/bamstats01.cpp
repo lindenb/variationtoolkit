@@ -16,8 +16,11 @@
 #include <cerrno>
 #include <iostream>
 #include <memory>
+#include <vector>
 #include <limits>
 #include <stdint.h>
+#include <pthread.h>    /* POSIX Threads */
+#include <sys/types.h>  /* Primitive System Data Types */ 
 #include "sam.h"
 #include "bedindex.h"
 #include "bam1sequence.h"
@@ -27,7 +30,21 @@ using namespace std;
 
 class BamStats
 	{
-	public:
+	public: 
+		struct Parallel
+			{
+			BamStats* owner;
+			char* filebam;
+			pthread_t thread;
+			uint64_t total;
+			uint64_t totalq30;
+			uint64_t totalmappeddup;
+			uint64_t totalmapped;
+			uint64_t totalmappedproperpair;
+			uint64_t totalmappedbed;
+			uint64_t totalmappedbedq30;
+			uint64_t totalmappedbeddup;
+			};
 		std::auto_ptr<BedIndex> bedindex;
 		
 		BamStats():bedindex(0)
@@ -40,54 +57,52 @@ class BamStats
 		    out << "Usage:\n\t"<< argv[0] << " [options] (stdin | file1.bam file2.bam ... fileN.bam)\n";
 		    out << "Options:\n";
 		    out << " -b <bedfile> optional.\n";
+		    out << " -t <number of threads> default: 1.\n";
 		    }
-		void scan(const char* filebam)
+		    
+		    
+		    
+		static void* scan(void* ptr)
 			{
+			Parallel* p=(Parallel*)ptr;
 			int ret;
-			uint64_t total=0UL;
-			uint64_t totalq30=0UL;
-			uint64_t totalmappeddup=0UL;
-			uint64_t totalmapped=0UL;
-			uint64_t totalmappedproperpair=0UL;
-			uint64_t totalmappedbed=0UL;
-			uint64_t totalmappedbedq30=0UL;
-			uint64_t totalmappedbeddup=0UL;
+			
 			
         		//bam1_core_t *c=&b->core;
-			bamFile fp=((filebam==0 || strcmp(filebam, "-")==0) ? ::bam_dopen(fileno(stdin), "r") : ::bam_open(filebam, "r")) ;
+			bamFile fp=((p->filebam==0 || strcmp(p->filebam, "-")==0) ? ::bam_dopen(fileno(stdin), "r") : ::bam_open(p->filebam, "r")) ;
 			
 			if(fp==0)
 				{
-				THROW("cannot open "<<(filebam==0?"stdin":filebam));
+				THROW("cannot open "<<(p->filebam==0?"stdin":p->filebam));
 				}
 			bam_header_t *header= bam_header_read(fp);
 			bam1_t *b=bam_init1();
         		while ((ret = bam_read1(fp, b)) >= 0)
 				{
 				Bam1Sequence bs(b);
-				++total;
-				if(bs.quality()>30) totalq30++;
+				p->total++;
+				if(bs.quality()>30) p->totalq30++;
 				if(bs.is_mapped())
 					{
-					++totalmapped;
+					p->totalmapped++;
 					if(bs.is_proper_pair())
 						{
-						++totalmappedproperpair;
+						p->totalmappedproperpair++;
 						}
 					if(bs.is_duplicate())
 						{
-						++totalmappeddup;
+						p->totalmappeddup++;
 						}
 						
-					if(bedindex.get()!=0 &&
-						bedindex->overlap(bs.chromosome(header),bs.pos(), bs.end())
+					if(p->owner->bedindex.get()!=0 &&
+						p->owner->bedindex->overlap(bs.chromosome(header),bs.pos(), bs.end())
 						)
 						{
-						++totalmappedbed;
-						if(bs.quality()>30) totalmappedbedq30++;
+						p->totalmappedbed++;
+						if(bs.quality()>30) p->totalmappedbedq30++;
 						if(bs.is_duplicate())
 							{
-							++totalmappedbeddup;
+							p->totalmappedbeddup++;
 							}
 						}
 					}
@@ -95,25 +110,32 @@ class BamStats
 			bam_destroy1(b);
 			::bam_header_destroy(header);
        			::bam_close(fp);
-			cout << (filebam==0?"stdin":filebam) 
-				<< "\t" << total
-				<< "\t" << totalq30
-				<< "\t" << totalmapped
-				<< "\t" << totalmappedproperpair
-				<< "\t" << totalmappeddup
+			return NULL;
+			}
+			
+		void print(const Parallel* p)
+			{
+			cout << (p->filebam==0?"stdin":p->filebam) 
+				<< "\t" << p->total
+				<< "\t" << p->totalq30
+				<< "\t" << p->totalmapped
+				<< "\t" << p->totalmappedproperpair
+				<< "\t" << p->totalmappeddup
 				;
 			if(bedindex.get()!=0 )
 				{
 				cout
-					<< "\t" << totalmappedbed
-					<< "\t" << totalmappedbedq30
-					<< "\t" << totalmappedbeddup
+					<< "\t" << p->totalmappedbed
+					<< "\t" << p->totalmappedbedq30
+					<< "\t" << p->totalmappedbeddup
 					;
 				}
 			cout	<< endl;
-			}
+			}	
+			
 		int main(int argc, char *argv[])
 			{
+			int nthreads=1;
 			int optind=1;
 			while(optind < argc)
 				{
@@ -125,6 +147,10 @@ class BamStats
 				else if(strcmp(argv[optind],"-b")==0 && optind+1<argc)
 					{
 					this->bedindex= BedIndex::read(argv[++optind]);
+					}
+				else if(strcmp(argv[optind],"-t")==0 && optind+1<argc)
+					{
+					nthreads= atoi(argv[++optind]);
 					}
 				else if(strcmp(argv[optind],"--")==0)
 					{
@@ -143,6 +169,13 @@ class BamStats
 					}
 				++optind;
 				}
+			int count_files=argc-optind;
+			if(nthreads>count_files) nthreads=count_files;
+			if(nthreads<=0) nthreads=1;
+			
+			
+			
+			
 			cout << "#BAM"
 				<< "\t" << "all"
 				<< "\t" << "q30"
@@ -159,13 +192,58 @@ class BamStats
 					;
 				}
 			cout << endl;
-			if(optind==argc)
+			if(count_files==0)
 				{
-				scan(0);
+				Parallel p;
+				memset((void*)&p,0,sizeof(Parallel));
+				p.owner=this;
+				p.filebam=0;
+				scan(&p);
+				print(&p);
 				}
-			else while(optind<argc)
-				{
-				scan(argv[optind++]);
+			else	{
+				vector<Parallel*> threads;
+				while(optind<argc)
+					{
+					while(optind<argc && (int)threads.size() < nthreads)
+						{
+						Parallel* p=new Parallel;
+						memset((void*)p,0,sizeof(Parallel));
+						p->owner=this;
+						p->filebam=argv[optind++];
+						threads.push_back(p);
+						}
+					if(threads.size()==1)
+						{
+						scan(threads[0]);
+						}
+					else
+						{
+						for(size_t i=0;i< threads.size();++i)
+							{
+							if(::pthread_create(
+								&(threads[i]->thread),
+								NULL,
+								&BamStats::scan,
+								(void *)threads[i]
+								)!=0)
+								{
+								cerr << "bamstats01: Cannot create thread." << endl;
+								exit(EXIT_FAILURE);
+								}
+							}
+						for(size_t i=0;i< threads.size();++i)
+							{
+							 pthread_join(threads[i]->thread, NULL);
+							}
+						}
+					for(size_t i=0;i< threads.size();++i)
+						{
+						print(threads[i]);
+						delete threads[i];
+						}
+					threads.clear();
+					}
 				}
 			return EXIT_SUCCESS;
 			}

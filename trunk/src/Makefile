@@ -289,7 +289,7 @@ $(BINDIR)/fastqgrep: fastqgrep.cpp
 $(BINDIR)/genomecoverage: genomecoverage.cpp xbam2.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/bamstats01: bamstats01.cpp bedindex.o abstractcharsequence.o
-	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
+	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz -lpthread
 $(BINDIR)/bamstats02: bamstats02.cpp abstractcharsequence.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/bamstats03: bamstats03.cpp bedindex.o abstractcharsequence.o
