@@ -20,7 +20,7 @@ svn update
 
 
 {{{
-$ cd varkit/src
+$ cd variationtoolkit/src
 make ../bin/bamstats04
 }}}
 
