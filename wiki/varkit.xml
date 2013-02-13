@@ -3366,7 +3366,7 @@ $29	mean(ex1.bam)                         	32.34
 Computes a statistics about the fraction of covered bases in a Bam.
 &download;
 <h2>Compilation</h2>
-<pre><![CDATA[$ cd varkit/src
+<pre><![CDATA[$ cd variationtoolkit/src
 make ../bin/bamstats04]]></pre>
 <h2>Usage</h2>
 <pre>bamstats04 [options]  -b file.bed file1.bam file2.bam ... fileN.bam</pre>
