@@ -154,19 +154,30 @@ class AbstractBam1Sequence:public AbstractCharSequence
 		{
 		return ::bam_aux_get(ptr(), flag);	
 		}
-	const char* get_aux_MD() const
+		
+	
+	const char* get_aux_as_string(const char* aux_name) const
 		{
-		uint8_t* md= get_aux("MD");
-		if(md==0) return 0;
-		char type=((char*)md)[0];
+		uint8_t* v= get_aux(aux_name);
+		if(v==0) return 0;
+		char type=((char*)v)[0];
 		if(type!='Z')
 			{
-			std::cerr << "[ERROR]" << __FILE__<< ": not an MD:Z (but MD:"
+			std::cerr << "[ERROR]" << __FILE__<< ": not an "
+				<< aux_name << ":Z (but "<<aux_name << ":"
 				<< type << ") for "
 				<< this->name() << std::endl;
 			return 0;
 			}
-		return ((char*)md)+1;
+		return ((char*)v)+1;
+		}
+	const char* get_aux_MD() const
+		{
+		return get_aux_as_string("MD");
+		}
+	const char* get_aux_RG() const
+		{
+		return get_aux_as_string("RG");
 		}
 		
 	const char* chromosome(const bam_header_t *header) const
