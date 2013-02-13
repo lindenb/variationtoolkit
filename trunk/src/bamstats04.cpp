@@ -20,6 +20,7 @@
 #include <vector>
 #include <set>
 #include <limits>
+#include <cassert>
 #include <stdint.h>
 #include "xbam2.h"
 #include "sam.h"
@@ -53,6 +54,7 @@ class BamStats4
 		
 		 void fill_empty( uint32_t pos)
 		 	{
+
 		 	while(previous_pos<pos)
 		 		{
 		 		this->bases_per_bin[0]++;
@@ -157,12 +159,24 @@ class BamStats4
 				bam_plbuf_t *buf; buf = bam_plbuf_init(static_scan_bed_func,(void*)this); // initialize pileup
     				bam_fetch(bf->bamPtr(), bf->bamIndex(), tid,chromStart,chromEnd, buf, BamFile2::fetch_func);
     				bam_plbuf_push(0, buf); // finalize pileup
+
     				fill_empty(chromEnd);
 				}
 			in.close();
 			delete bf;
-			cout << bamFile << "\t" << total_bases;
 			
+
+			
+			cout << bamFile << "\t" << total_bases;
+			 if(!groupids.empty())
+			 	{
+			 	cout << "\t";
+			 	for(set<string>::iterator r=groupids.begin();r!=groupids.end();++r)
+			 		{
+			 		if(r!=groupids.begin()) cout << "|";
+			 		cout << (*r);
+			 		}
+			 	}
 			
 			for(size_t i=0;i< this->bases_per_bin.size();++i)
 				{
@@ -188,7 +202,7 @@ class BamStats4
 		    out << argv[0] << " Pierre Lindenbaum PHD. 2013.\n";
 		    out << "Compilation: "<<__DATE__<<"  at "<< __TIME__<<".\n";
 		    out << "Histogram of bases covered." << endl;
-		    out << "Usage:\n\t"<< argv[0] << " [options] (stdin | file1.bam file2.bam ... fileN.bam)\n";
+		    out << "Usage:\n\t"<< argv[0] << " [options]  -b file.bed file1.bam file2.bam ... fileN.bam\n";
 		    out << "Options:\n";
 		    out << " -m <min-qual uint32> (optional) min SAM record Quality.\n";
 		    out << " -M <max-qual uint32> (optional) max SAM record Quality.\n";
@@ -299,6 +313,10 @@ class BamStats4
 				}
 				
 			cout << "#filename\ttotal-bases";
+			if(!groupids.empty())
+				{
+				cout << "\tgroup-id";
+				}
 			for(size_t i=0;i< bases_per_bin.size();++i)
 				{
 				cout << "\t[" << (i*bin_step);
