@@ -97,6 +97,7 @@ TARGET_BINARIES=$(BINDIR)/scanvcf \
 	$(BINDIR)/bamstats01 \
 	$(BINDIR)/bamstats02 \
 	$(BINDIR)/bamstats03 \
+	$(BINDIR)/bamstats04 \
 	$(BINDIR)/shortreadswords
 
 all:$(TARGET_BINARIES)
@@ -293,6 +294,8 @@ $(BINDIR)/bamstats01: bamstats01.cpp bedindex.o abstractcharsequence.o
 $(BINDIR)/bamstats02: bamstats02.cpp abstractcharsequence.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/bamstats03: bamstats03.cpp bedindex.o abstractcharsequence.o
+	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
+$(BINDIR)/bamstats04: bamstats04.cpp bedindex.o abstractcharsequence.o xbam2.o
 	$(CPP) -o $@ $^ $(CFLAGS)  -I $(SAMDIR)  -L $(SAMDIR)  -lbam -lz
 $(BINDIR)/shortreadswords: shortreadswords.cpp
 	$(CPP) -o $@ $< $(CFLAGS) -lz
