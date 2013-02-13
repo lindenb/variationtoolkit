@@ -234,6 +234,10 @@ class BamStats4
 					{
 				        this->discard_duplicates=false;
 		       			 }
+				else if(strcmp(argv[optind],"--cumulative")==0)
+					{
+					this->cumulative=true;
+					}
 		       		else if(strcmp(argv[optind],"-p")==0)
 					{
 				        this->print_percentage=true;
