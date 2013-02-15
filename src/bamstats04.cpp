@@ -48,7 +48,7 @@ class BamStats4
 		uint32_t previous_pos;
 	public: 
 		
-		BamStats4():discard_duplicates(true),bin_step(10),bin_max(200),cumulative(false),print_percentage(false)
+		BamStats4():discard_duplicates(true),bin_step(5),bin_max(200),cumulative(false),print_percentage(false)
 			{
 			}
 		

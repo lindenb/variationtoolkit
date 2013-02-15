@@ -16,6 +16,7 @@
 #include <cerrno>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <vector>
 #include <limits>
 #include <stdint.h>
@@ -46,6 +47,7 @@ class BamStats
 			uint64_t totalmappedbeddup;
 			};
 		std::auto_ptr<BedIndex> bedindex;
+		set<string> groupids;
 		
 		BamStats():bedindex(0)
 			{
@@ -57,6 +59,7 @@ class BamStats
 		    out << "Usage:\n\t"<< argv[0] << " [options] (stdin | file1.bam file2.bam ... fileN.bam)\n";
 		    out << "Options:\n";
 		    out << " -b <bedfile> optional.\n";
+		    out << " -g <groupid> optional.\n";
 		    out << " -t <number of threads> default: 1.\n";
 		    }
 		    
@@ -80,6 +83,12 @@ class BamStats
         		while ((ret = bam_read1(fp, b)) >= 0)
 				{
 				Bam1Sequence bs(b);
+				if(!p->owner->groupids.empty())
+		                    	{
+		                    	const char* g=bs.get_aux_RG();
+		                    	if(g==NULL) continue;
+		                    	if(p->owner->groupids.find(g)==p->owner->groupids.end()) continue;
+		                    	}
 				p->total++;
 				if(bs.quality()>30) p->totalq30++;
 				if(bs.is_mapped())
@@ -147,6 +156,10 @@ class BamStats
 				else if(strcmp(argv[optind],"-b")==0 && optind+1<argc)
 					{
 					this->bedindex= BedIndex::read(argv[++optind]);
+					}
+				else if(strcmp(argv[optind],"-g")==0 && optind+1<argc)
+					{
+					groupids.insert(argv[++optind]);
 					}
 				else if(strcmp(argv[optind],"-t")==0 && optind+1<argc)
 					{
