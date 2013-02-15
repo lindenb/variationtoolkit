@@ -3431,6 +3431,7 @@ make ../bin/bamstats01]]></pre>
 <ul>
 
 <li> -b (bedfile) optional.</li>
+<li> -g (groupid) optional.</li>
 
 
 </ul>
@@ -3463,5 +3464,87 @@ barplot(as.matrix(t(T)),beside=TRUE,col=rainbow(8),las=2,cex.names=0.8,legend=co
 dev.off()']]></pre>
 <img src="http://variationtoolkit.googlecode.com/svn/wiki/bamstats01.jpg"/>
 </page>
+
+<page title="BamStats05" labels="bam,ngs" desc=" Depth of coverage for each bases for one or more BAM">
+Depth of coverage for each bases for one or more BAM. It's slow and takes some memory, but it works fine.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd variationtoolkit/src
+make ../bin/bamstats05]]></pre>
+<h2>Usage</h2>
+<pre>bamstats05 [options] (stdin|file1.bam file2.bam ... fileN.bam)</pre>
+<h2>Options</h2>
+<ul>
+
+
+<li> -m (min-qual uint32) (optional) min SAM record Quality.</li>
+<li> -M (max-qual uint32) (optional) max SAM record Quality.</li>
+<li> -b (bedfile) required.</li>
+<li> -g split by group (optional).</li>
+<li> -d do NOT dicard reads marked as duplicates.</li>
+
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[$ $ bamstats05 -g -b target.bed *.bam
+#CHROM	POS	file1.bam : idp11184	file1..bam : idp8320	file2.bam : idp653008	file2.bam : idp655904	file3.bam : idp816976	file3.bam : idp819872	file4.bam : idp15056	file4.bam : idp17920	file5.bam : idp35264	file5.bam : idp38128
+chrX	480532	206	221	2	1	287	280	92	104	2	0
+chrX	480533	206	221	2	1	287	283	92	104	2	0
+chrX	480534	206	221	2	1	287	284	92	104	2	0
+chrX	480535	206	221	2	1	287	284	92	104	2	0
+chrX	480536	206	221	2	1	287	284	92	104	2	0
+chrX	480537	206	221	2	1	287	284	92	104	2	0
+chrX	480538	206	221	2	1	287	284	92	104	2	0
+chrX	480539	206	221	2	1	287	284	92	104	2	0
+chrX	480540	206	221	2	1	287	284	92	104	2	0
+chrX	480541	206	221	2	1	287	284	92	104	2	0
+chrX	480542	206	221	2	1	287	284	92	104	2	0
+chrX	480543	206	222	2	1	287	284	92	104	2	0
+chrX	480544	206	222	2	1	287	284	92	104	2	0
+chrX	480545	206	222	2	1	287	284	92	104	2	0
+chrX	480546	206	222	2	1	287	284	92	104	2	0
+chrX	480547	206	222	2	1	287	284	92	104	2	0
+chrX	480548	206	222	2	1	287	284	92	104	2	0
+chrX	480549	206	222	2	1	287	284	92	104	2	0
+chrX	480550	206	222	2	1	287	284	92	104	2	0
+chrX	480551	206	222	2	1	287	284	92	104	2	0
+chrX	480552	206	222	2	1	287	284	92	104	2	0
+chrX	480553	206	222	2	1	287	284	92	104	2	0
+chrX	480554	206	222	2	1	287	284	92	104	2	0
+chrX	480555	206	222	2	1	287	284	92	104	2	0
+chrX	480556	206	222	2	1	287	284	92	104	2	0
+chrX	480557	206	222	2	1	287	284	92	104	2	0
+chrX	480558	206	222	2	1	287	284	92	104	2	0
+chrX	480559	206	222	2	1	287	284	92	104	2	0
+chrX	480560	206	222	2	1	287	284	92	104	2	0
+chrX	480561	206	222	2	1	287	284	92	104	2	0
+chrX	480562	206	222	2	1	287	284	92	104	2	0
+chrX	480563	206	222	2	1	287	284	92	104	2	0
+chrX	480564	206	222	2	1	287	284	92	104	2	0
+chrX	480565	206	222	2	1	287	284	92	104	2	0
+chrX	480566	206	222	2	1	287	284	92	104	2	0
+chrX	480567	206	222	2	1	287	284	92	104	2	0
+chrX	480568	206	222	2	1	287	284	92	104	2	0
+chrX	480569	206	222	2	1	287	284	92	104	2	0
+chrX	480570	206	222	2	1	287	284	92	104	2	0
+chrX	480571	206	222	2	1	287	284	92	104	2	0
+chrX	480572	206	222	2	1	287	284	92	104	2	0
+chrX	480573	206	222	2	1	287	284	92	104	2	0
+chrX	480574	206	222	2	1	287	285	92	104	2	0
+chrX	480575	206	222	2	1	287	285	92	104	2	0
+chrX	480576	206	222	2	1	287	285	92	104	2	0
+chrX	480577	206	222	2	1	287	285	92	104	2	0
+chrX	480578	206	222	2	1	287	285	92	104	2	0
+chrX	480579	206	222	2	1	287	285	92	104	2	0
+chrX	480580	206	222	2	1	287	285	92	104	2	0
+chrX	480581	206	222	2	1	287	285	92	104	2	0
+chrX	480582	206	222	2	1	287	285	92	104	2	0
+chrX	480583	206	222	2	1	287	285	92	104	2	0
+chrX	480584	206	222	2	1	287	285	92	104	2	0
+chrX	480585	206	222	2	1	287	285	92	104	2	0
+chrX	480586	206	222	2	1	287	285	92	104	2	0
+(...)]]></pre>
+</page>
+
 
 </documentation>

@@ -36,6 +36,7 @@ bamstats01 [options] (stdin|file1.bam file2.bam ... fileN.bam)
 ==Options==
 
   *  -b (bedfile) optional.
+  *  -g (groupid) optional.
 
 
 ==Example==
