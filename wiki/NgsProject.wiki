@@ -113,7 +113,7 @@ sudo /etc/init.d/apache2 restart
 ==Screenshot==
 
 
-http://variationtoolkit.googlecode.com/svn/wiki/ucscgenesps.jpg
+http://variationtoolkit.googlecode.com/svn/trunk/doc/ngsproject.jpg
 
 
 

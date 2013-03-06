@@ -130,7 +130,7 @@ SetEnv NGS_PROJECT_PATH /var/www/cgi-bin/ngsproject.xml
 and restart apache:
 <pre>sudo /etc/init.d/apache2 restart</pre>
 <h2>Screenshot</h2>
-<img  src="http://variationtoolkit.googlecode.com/svn/wiki/ucscgenesps.jpg"/>
+<img src="http://variationtoolkit.googlecode.com/svn/trunk/doc/ngsproject.jpg"/>
 </page>
 
 
@@ -1855,7 +1855,7 @@ variation in postscript.
 <li>--port (mysql password) default:0</li>
 </ul>
 <h2>Example</h2>
-<url>http://variationtoolkit.googlecode.com/svn-history/r67/trunk/doc/ucscgenes.eps</url>
+<img src="http://variationtoolkit.googlecode.com/svn/trunk/doc/ngsproject.jpg"/>
 <!-- Structure of a gene -->
 
 <pre><![CDATA[

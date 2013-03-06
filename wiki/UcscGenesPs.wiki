@@ -32,7 +32,9 @@ svn update
 
 ==Example==
 
-[http://variationtoolkit.googlecode.com/svn-history/r67/trunk/doc/ucscgenes.eps http://variationtoolkit.googlecode.com/svn-history/r67/trunk/doc/ucscgenes.eps]
+
+http://variationtoolkit.googlecode.com/svn/trunk/doc/ngsproject.jpg
+
 
 
 
