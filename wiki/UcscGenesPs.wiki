@@ -33,7 +33,7 @@ svn update
 ==Example==
 
 
-http://variationtoolkit.googlecode.com/svn/trunk/doc/ngsproject.jpg
+http://variationtoolkit.googlecode.com/svn/wiki/ucscgenesps.jpg
 
 
 
