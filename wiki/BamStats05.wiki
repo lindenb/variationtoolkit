@@ -159,7 +159,7 @@ cat bamstats05.output.tsv |awk -f haloplex.awk | sqlite3 file.sql
 and query:
 
 {{{
-$ sqlite3 jeter.sql 'select sum(BASES.total) from BASES,GID where BASES.gid=GID.id and GID.bam="file001.bam";'
+$ sqlite3 file.sql 'select sum(BASES.total) from BASES,GID where BASES.gid=GID.id and GID.bam="file001.bam";'
 }}}
 
 

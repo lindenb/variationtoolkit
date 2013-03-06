@@ -130,8 +130,7 @@ SetEnv NGS_PROJECT_PATH /var/www/cgi-bin/ngsproject.xml
 and restart apache:
 <pre>sudo /etc/init.d/apache2 restart</pre>
 <h2>Screenshot</h2>
-<img src="http://variationtoolkit.googlecode.com/svn/trunk/doc/ngsproject.jpg"/>
-
+<img  src="http://variationtoolkit.googlecode.com/svn/wiki/ucscgenesps.jpg"/>
 </page>
 
 
@@ -3584,7 +3583,7 @@ END	{
 insert into sqlite3:
 <pre>cat bamstats05.output.tsv |awk -f haloplex.awk | sqlite3 file.sql</pre>
 and query:
-<pre>$ sqlite3 jeter.sql 'select sum(BASES.total) from BASES,GID where BASES.gid=GID.id and GID.bam="file001.bam";'</pre>
+<pre>$ sqlite3 file.sql 'select sum(BASES.total) from BASES,GID where BASES.gid=GID.id and GID.bam="file001.bam";'</pre>
 
 </page>
 
