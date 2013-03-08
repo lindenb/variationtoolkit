@@ -107,7 +107,7 @@ class FastqCount
 		     	{
 		     	int nRead= ::gzread(in,(void*)buffer,BUFSIZ);
 		     	if(nRead<=0) break;
-		     	for(int i=0;i< nRead;++i) if(buffer[i]=='\n') nRead++;
+		     	for(int i=0;i< nRead;++i) if(buffer[i]=='\n') ++N;
 		     	}
 		     gzclose(in);
 		     N=N/4;
