@@ -356,6 +356,7 @@ class Methyl01
 		    out << "Options:\n";
 		    out << " -R <refernce> REQUIRED.\n";
 		    out << " -n no display.\n";
+		    out << " -s (int) score min.\n";
 		    }
 		int main(int argc,char** argv)
 			{
@@ -370,6 +371,15 @@ class Methyl01
 				else if(strcmp(argv[optind],"-R")==0 && optind+1<argc)
 					{
 					load_reference(argv[++optind]);
+					}
+				else if(strcmp(argv[optind],"-s")==0 && optind+1<argc)
+					{
+					this->min_score=atoi(argv[++optind]);
+					if(this->min_score<2)
+						{
+						cerr << "Bad value for min score\n";
+						return EXIT_FAILURE;
+						}
 					}
 				else if(strcmp(argv[optind],"-n")==0)
 					{
