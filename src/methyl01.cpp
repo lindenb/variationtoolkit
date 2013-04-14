@@ -143,8 +143,9 @@ class Methyl01
 		size_t width;
 		size_t height;
 		vector<int> matrix;
+		bool display_count;
 	public:
-		Methyl01():min_score(10),show_align(true)
+		Methyl01():min_score(10),show_align(true),display_count(false)
 			{
 			
 			}
@@ -223,6 +224,7 @@ class Methyl01
 				}
 			if(best.score> this->min_score )
 			    	{
+			    	int count_bases[5]={0,0,0,0,0};
 			    	vector<MethylBase> candidates;
 			    	
 			    	DISPLAY("%READ: "); 
@@ -253,6 +255,14 @@ class Methyl01
 			    				{
 			    				mb.readBase = complementary(mb.readBase);
 			    				}
+			    			switch(mb.readBase)
+			    				{
+			    				case 'A': count_bases[0]++; break;
+			    				case 'T': count_bases[3]++; break;
+			    				case 'G': count_bases[2]++; break;
+			    				case 'C': count_bases[1]++; break;
+			    				default: count_bases[4]++; break;
+			    				}
 			    			candidates.push_back(mb);
 			    			}
 			    		}
@@ -277,7 +287,14 @@ class Methyl01
 			    			<< endl );
 			    		}
 			    	DISPLAY(endl);
-			    	
+			    	if(display_count)
+			    		{
+			    		cout << "BASES\t"<<name <<"\t"
+			    			<< best.ref->ref->ref_name
+			    			;
+			    		for(size_t k=0;k< 5;++k) cout << "\t" << count_bases[k];
+			    		cout << std::endl;
+			    		}
 			    	}
 			else
 				{
@@ -356,6 +373,7 @@ class Methyl01
 		    out << "Options:\n";
 		    out << " -R <refernce> REQUIRED.\n";
 		    out << " -n no display.\n";
+		    out << " -c display count.\n";
 		    out << " -s (int) score min.\n";
 		    }
 		int main(int argc,char** argv)
@@ -384,6 +402,10 @@ class Methyl01
 				else if(strcmp(argv[optind],"-n")==0)
 					{
 					this->show_align=!this->show_align;
+					}
+				else if(strcmp(argv[optind],"-c")==0)
+					{
+					this->display_count=!this->display_count;
 					}
 				else if(strcmp(argv[optind],"--")==0)
 					{
