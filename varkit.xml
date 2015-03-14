@@ -1,0 +1,3591 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE projects [
+<!ENTITY download "<h2>Download</h2>Download the sources from Google-Code using <a href='http://subversion.apache.org/'>subversion:...</a>.<pre>svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only</pre>... or update the sources of an existing installation... <pre>cd variationtoolkit
+svn update</pre>... and edit the <code>variationtoolkit/congig.mk</code> file.">
+
+
+<!ENTITY vcf "<a href='http://www.1000genomes.org/wiki/Analysis/Variant+Call+Format/vcf-variant-call-format-version-40'>VCF</a>">
+
+
+<!ENTITY sqlite "<a href='http://www.sqlite.org/'>sqlite3</a>" >
+
+]>
+<documentation>
+<page title="HowToInstall" desc="How to Install the Variation toolkit" labels="documentation,install,make,build,makefile">
+
+<h2>Dependencies</h2>
+<ul>
+<li><b>Samtools</b>: Utilities for post-processing alignments in the SAM format. <pmid>19505943</pmid></li>
+<li><b>Tabix</b>: fast retrieval of sequence features from generic TAB-delimited files. <pmid>21208982</pmid></li>
+<li><b>mysql-dev</b>: the files and libraries for the mysql database.</li>
+<li><b>libxml2</b>: the C library for xml <url>http://xmlsoft.org/</url>.</li>
+<li><b>libxslt</b>: the C library for xslt <url>http://xmlsoft.org/XSLT/</url>.</li>
+<li><b>libcurl</b>: the C library for downloading URLs.</li>
+<li><b>jkentsrc</b>: (optional) Jim Kent's C library / Ucsc parsing bigbed, bigwig...</li>
+<li><b>sqlite3</b>: (optional) SQL database engine (<url>http://www.sqlite.org</url>).</li>
+</ul>
+&download;
+<h2>Building</h2>
+Download the latest version of varkit using <code>subversion</code>:
+
+<pre>svn checkout http://variationtoolkit.googlecode.com/svn/trunk/ variationtoolkit-read-only</pre>
+
+or update your current version by calling <code>svn update</code> in the  variationtoolkit folder.
+<pre>svn update</pre>
+<h2>Edit the Config file.</h2>
+Edit the file variationtoolkit/config.mk . You'll have to set the path to the sources of tabix (>=0.2.5), samtools (>=-0.1.18), etc..
+<pre>##path to SAMTOOLS
+SAMDIR=${HOME}/samtools-0.1.18
+##path to TABIX
+TABIXDIR=/home/lindenb/tabix-0.2.5
+##optional path to UCSC kent's src
+KENTDIR=${HOME}/src/kent/kent
+##optional path to google leveldb
+LEVELDBDIR=${HOME}/tmp/leveldb-read-only
+SQLITE_LIB=-lsqlite3
+SQLITE_CFLAGS=</pre>
+
+then type:
+<pre>
+make</pre>
+the binaries will be generated in the <b>bin/</b> folder.
+<h2>Compiling one program without dependencies</h2>
+If you don't want to install all the programs and just beed one program you can go in the `src` folder and ask for compiling the software. e.g:
+<pre>cd src
+make ../bin/fastatail
+$ make ../bin/fasta2tsv
+g++ -o ../bin/fasta2tsv fasta2tsv.cpp -O3 -Wall -lz</pre>
+</page>
+
+
+<page title="NgsProject" desc="CGI interface to Samtools tview. Visualize short reads alignments" labels="samtools,bam,vcf,cgi,apache,web,httpd,ngs,visualization">
+
+This C++ program named ngsproject.cgi uses the samtools api, it allows any user to visualize all the alignments in a given NGS project. The projects and their BAMS are defined on the server side using a simple XML document.
+&download;
+<h1>How to install on apache/httpd</h1>
+add the path to the cgi directory in the configuration file variationtoolkit/config.mk
+
+<pre>(...)
+CGI_BIN_DIR=/var/www/cgi-bin</pre>
+Create the cgi-bin folder is needed
+<pre>sudo mkdir -p /var/www/cgi-bin
+sudo chmod 755 /var/www/cgi-bin</pre>
+Create a XML file describing your project<pre>cat /var/www/cgi-bin/ngsproject.xml  
+
+
+<![CDATA[<?xml version="1.0"?>
+<!DOCTYPE projects [
+<!ENTITY samdir "/tmp">
+]>
+<projects>
+  <reference id="ref1">
+    <name>Samtools1</name>
+    <description>Samtools example 1</description>
+    <path>&samdir;/examples/ex1.fa</path>
+  </reference>
+  <bam id="b1">
+    <sample>Huey</sample>
+    <path>&samdir;/examples/ex1.bam</path>
+  </bam>
+  <bam id="b2">
+    <sample>Dewey</sample>
+    <path>&samdir;/examples/ex1.bam</path>
+  </bam>
+  <bam id="b3">
+    <sample>Louie</sample>
+    <path>&samdir;/examples/ex1.bam</path>
+  </bam>
+  <project id="p1">
+    <name>Project P1</name>
+    <description>This is my 1st project</description>
+    <bam ref="b1"/>
+    <bam ref="b2"/>
+    <bam ref="b3"/>
+    <reference ref="ref1"/>
+  </project>
+  <project id="p2">
+    <name>Project P2</name>
+    <description>This is my 2nd project</description>
+    <bam ref="b1"/>
+    <bam ref="b3"/>
+    <reference ref="ref1"/>
+  </project>
+</projects>]]></pre>
+Edit the apache2/httpd config <code>/etc/apache2/apache2.conf</code> or <code>/etc/httpd/conf/httpd.conf</code>:
+<pre>sudo nano /etc/apache2/apache2.conf</pre>
+and add the following lines, specify <b>NGS_PROJECT_PATH</b>, the path to the XML file
+<pre><![CDATA[<VirtualHost *:80>
+ServerName localhost
+DocumentRoot /var/www/
+AddHandler cgi-script .cgi .pl 
+SetEnv NGS_PROJECT_PATH /var/www/cgi-bin/ngsproject.xml    
+<Directory /cgi-bin/>
+        AllowOverride None
+        Options ExecCGI -MultiViews +SymLinksIfOwnerMatch
+        Order allow,deny
+        Allow from all    
+</Directory>
+
+</VirtualHost>]]></pre>
+and restart apache:
+<pre>sudo /etc/init.d/apache2 restart</pre>
+<h2>Screenshot</h2>
+<img src="http://variationtoolkit.googlecode.com/svn/trunk/doc/ngsproject.jpg"/>
+</page>
+
+
+<page title="Vcf2Sqlite" desc="Inserts a VCF into a sqlite3 database" labels="VCF,sqlite,sql,database">
+Inserts a Variant Call Format document (&vcf;) into a &sqlite; database.
+&download;
+<h2>Dependencies</h2>
+<url>http://www.sqlite.org/</url> : libraries and headers for sqlite3.
+<h2>Compilation</h2>
+Define "<code>SQLITE_LIB</code>" and 
+"<code>SQLITE_CFLAGS</code>" in <code>config.mk</code> (see <url>HowToInstall</url> )
+<pre>$ cd variationtoolkit/src/
+$ make ../bin/vcf2sqlite 
+
+if ! [ -z "$(SQLITE_LIB)" ] ;then g++ -o ../bin/vcf2sqlite vcf2sqlite.cpp xsqlite.cpp application.o -O3 -Wall -lz   ; else g++ -o ../bin/vcf2sqlite vcf2sqlite.cpp  -DNOSQLITE -O3 -Wall  ; fi</pre>
+<h2>Usage</h2>
+<pre>vcf2sqlite -f database.sqlite (file1.vcf file2... | stdin )</pre>
+<h2>Options</h2>
+<ul>
+<li>-f (file) &sqlite; database (<b>REQUIRED</b>).</li>
+</ul>
+<h2>Schema</h2>
+<img src="http://variationtoolkit.googlecode.com/svn/wiki/schema01.png"/>
+<h2>Example:</h2>
+<pre><![CDATA[$ vcf2sqlite -f db.sqlite file.vcf
+$ sqlite3 -line db.sqlite  "select * from VCFCALL LIMIT 4"
+
+       id = 1
+   nIndex = 0
+vcfrow_id = 1
+sample_id = 1
+     prop = GT
+    value = 1/1
+
+       id = 2
+   nIndex = 1
+vcfrow_id = 1
+sample_id = 1
+     prop = PL
+    value = 46,6,0
+
+       id = 3
+   nIndex = 2
+vcfrow_id = 1
+sample_id = 1
+     prop = GQ
+    value = 10
+
+       id = 4
+   nIndex = 0
+vcfrow_id = 2
+sample_id = 1
+     prop = GT
+    value = 1/1
+
+]]></pre>
+
+
+<pre><![CDATA[$ sqlite3 -column -header  db.sqlite \
+   "select SAMPLE.name,VCFCALL.value,count(*) from VCFCALL,SAMPLE where SAMPLE.id=VCFCALL.sample_id and prop='GT' group by SAMPLE.id,VCFCALL.value"
+
+name         value       count(*)  
+-----------  ----------  ----------
+rmdup_1.bam  0/1         545       
+rmdup_1.bam  1/1         429       
+rmdup_2.bam  0/1         625       
+rmdup_2.bam  1/1         349       
+rmdup_3.bam  0/1         595       
+rmdup_3.bam  1/1         379       
+rmdup_4.bam  0/1         548       
+rmdup_4.bam  1/1         426       
+rmdup_5.bam  0/1         564       
+rmdup_5.bam  1/1         410       
+rmdup_6.bam  0/1         724       
+rmdup_6.bam  1/1         250]]></pre>
+
+
+</page>
+
+
+<page title="Vcf2xml" desc="Transforms a VCF to xml" labels="vcf,transform,format,xml,ngs">
+&download;
+<h2>Motivation</h2>
+<b>vcf2xml</b> a &quot;Variant Call Format&quot; (&vcf;) document to XML so it can be later processed with <a href="http://www.w3.org/TR/xslt">xslt</a>, <a href="http://www.w3.org/TR/xquery/">xquery</a>, etc...
+<h2>Dependencies</h2>
+<code>libxml</code> <url>http://xmlsoft.org/</url> ( see also: <url>HowToInstall</url> )
+<h2>Compiling</h2>
+<pre>$ cd variationtoolkit/src/
+$ make ../bin/vcf2xml
+
+g++ -o ../bin/vcf2xml vcf2xml.cpp application.o -O3 -Wall `xml2-config --cflags --libs` -lz</pre>
+<h2>Usage:</h2>
+<pre>vcf2xml (file.vcf | stdin)</pre>
+<h2>Example:</h2>
+<pre><![CDATA[$ vcf2xml input.vcf | xmllint --format -
+
+<?xml version="1.0" encoding="UTF-8"?>
+<vcf>
+  <head>
+    <meta key="fileformat">VCFv4.1</meta>
+    <meta key="samtoolsVersion">0.1.17 (r973:277)</meta>
+    <infos>
+      <info>
+        <id>DP</id>
+        <number>1</number>
+        <type>Integer</type>
+        <description>Raw read depth</description>
+      </info>
+      <info>
+        <id>DP4</id>
+        <number>4</number>
+        <type>Integer</type>
+        <description># high-quality ref-forward bases</description>
+      </info>
+      <info>
+        <id>MQ</id>
+(...)
+      </calls>
+    </variation>
+    <variation>
+      <chrom>chr1</chrom>
+      <pos>112697</pos>
+      <ref>T</ref>
+      <alt>G</alt>
+      <qual>10.4</qual>
+      <infos>
+        <info key="DP">1</info>
+        <info key="AF1">1</info>
+        <info key="AC1">2</info>
+        <info key="DP4">0,0,0,1</info>
+        <info key="MQ">60</info>
+        <info key="FQ">-30</info>
+      </infos>
+      <calls>
+        <call sample="input.bam">
+          <prop key="GT">1/1</prop>
+          <prop key="PL">40,3,0</prop>
+          <prop key="GQ">5</prop>
+        </call>
+      </calls>
+    </variation>
+  </body>
+</vcf>]]></pre>
+</page>
+
+<page title="FastaSlice" desc="Slice a FASTA input" labels="fasta,sequence">
+&download;
+<h2>Options:</h2>
+<ul>
+<li><b>-e</b> (every)  default:1</li>
+<li><b>-L</b> (fragment size)  default: (same as -e)</li>
+</ul>
+<h2>Example:</h2>
+
+<pre>$ fastaslice -e 10 -L 20 &lt; nsp3.fasta | head
+
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:0-20
+MLKMESTQQMASSIINTSFE
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:10-30
+ASSIINTSFEAAVVAATSTL
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:20-40
+AAVVAATSTLELMGIQYDYN
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:30-50
+ELMGIQYDYNEIYTRVKSKF
+&gt;gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:40-60
+EIYTRVKSKFDYVMDDSGVK</pre>
+
+</page>
+
+<page title="Scanvcf" desc="reads some VCFs, appends a column with the sample name" labels="vcf,ngs,sample">
+Reads a strean with two columns: a <b>Sample-Name</b> and the <b>file path to a VCF</b>(.gz).
+&download;
+<pre>#VCF	SAMPLE
+/path/to/file1a.vcf.gz	Sample1
+/path/to/file1b.vcf.gz	Sample1
+/path/to/file2.vcf.gz	Sample2</pre>
+it then prints all the VCF, adding an extra column with the sample name to the output.
+
+<h2>Options:</h2>
+<ul>
+<li><b>--sample or -S</b> (column-index) column for the path to <b>SAMPLE</b></li>
+<li><b>--vcf or -V</b> (column-index) column for the path to <b>VCF(.gz)</b></li>
+</ul>
+
+<h2>Example:</h2>
+<pre>$ head -n3 input.txt
+
+#Sample	VCF
+Sample1	data/sample1.vcf.gz
+Sample2	data/sample1.vcf.gz
+Sample2	data/sample1.vcf.gz
+
+
+$ cat input.txt |scanvcf 
+
+#CHROM POS ID REF ALT QUAL FILTER . FORMAT Call SAMPLE
+1 879317 rs7523549 C T 71 0 . GT:GQ:DP:FLT 0/1:34:8:0 Sample1
+1 880238 rs3748592 A G 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample1
+1 880390 rs3748593 C A 99 0 . GT:GQ:DP:FLT 1/0:99:30:0 Sample1
+1 881627 rs2272757 G A 99 0 . GT:GQ:DP:FLT 1/0:59:20:0 Sample1
+(...)
+Y 13524507 . C T 99 0 . GT:GQ:DP:FLT 1/1:99:233:0 Sample20
+Y 21154323 rs10465459 G A 99 0 . GT:GQ:DP:FLT 1/1:99:215:0 Sample20
+Y 21154426 rs52812045 G A 99 0 . GT:GQ:DP:FLT 1/0:99:143:0 Sample20
+Y 21154466 rs10465460 T A 99 0 . GT:GQ:DP:FLT 1/1:99:134:0 Sample20
+Y 21154529 . G A 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 Sample20
+</pre>
+</page>
+
+<page title="ExtractInfo" desc="Extracts a field from the INFO column of a VCF file" labels="ngs,vcf">
+&download;
+<h2>Compilation</h2>
+<pre>cd src
+ make ../bin/extractinfo</pre>
+<h2>Options:</h2>
+<ul>
+<li><b>-c</b> (info-column-infex) (7)</li>
+<li><b>--delim</b> (column-delimiter) (default:tab)</li>
+<li><b>-t</b> (tag) (required)</li>
+<li><b>-N</b> (string) symbol for NOT-FOUND. default:N/A</li>
+<li><b>-i</b> ignore line if tag was not found</li>
+</ul>
+
+<h2>Example:</h2>
+The following script extract the <b>GN</b>(gene name) field from the column <b>INFO</b>. We keep the lines for the gene NOTCH2 and we display the associated SNP.
+<pre><![CDATA[
+$ gunzip -c data.vcf.gz |\
+  extractinfo -t GN -i | \
+  awk -F '       ' '($11 =="NOTCH2")' |\
+  cut -d ' ' -f 3 | grep rs
+
+rs6685892
+rs2493392
+rs2493420
+rs7534585
+rs7534586
+rs2493409
+rs2453040
+rs2124109
+]]></pre>
+</page>
+
+
+<page title="ExtractFormat" labels="ngs,vcf" desc="Extracts a field from the FORMAT column of a VCF file.">
+&download;
+<pre>cd src
+ make ../bin/extractformat</pre>
+<h2>Options</h2>
+<ul>
+<li>-f (format-column-infex) (8)</li>
+<li>-c (call-column-infex) (9)</li>
+<li>--delim (column-delimiter) (default:tab)</li>
+<li>-t (tag) (required)</li>
+<li>-N (string) symbol for NOT-FOUND. default:N/A</li>
+</ul>
+<h2>Example</h2>
+The following command line extract the field <b>'GT'</b> from the VCF and we count the occurence of the values.
+
+<pre><![CDATA[
+$ gunzip -c data.vcf.gz |\
+   extractformat -t GT |\
+   cut -d '        ' -f 11 |\
+   sort |\
+    uniq -c
+
+     29 
+  10729 0/1
+  10800 1/0
+  13518 1/1
+     11 1/2
+]]></pre>
+</page>
+
+
+
+<page title="NcbiEFetch" labels="ncbi,pubmed,gene,snp,taxonomy,protein,nucleotide" desc="Fetch a record from the NCBI database">
+Currently supported databases: pubmed , nucleotide, protein, snp , gene and taxonomy.
+&download;
+<h2>Options</h2>
+<ul>
+<li>-D (database) (default pubmed)</li>
+<li>-d (delimiter) (default:tab)</li>
+<li>-c (column=int) </li>
+<li>-f (sqlite-database-file) (OPTIONAL) store the XML records in a &sqlite; database. Make things faster next time this record will be asked.</li>
+</ul>
+<h2>Example</h2>
+The following example generates a sequences of 6 pubmed ID and we call ncbiefetch to download the records.
+
+<pre><![CDATA[
+$  (echo "#GI"; seq 1000 2 1010)   |\
+      ncbiefetch -c 1 |\
+      cut -c 1-100
+
+#GI	pubmed.year	pubmed.title	pubmed.journal	pubmed.abstract
+1000	1976	The amino acid sequence of Neurospora NADP-specific glutamate dehydrogenase. The tryptic p
+1002	1976	The amino acid sequence of Neurospora NADP-specific glutamate dehydrogenase. Peptic and ch
+1004	1976	Properties of 5-aminolaevulinate synthetase and its relationship to microsomal mixed-funct
+1006	1976	The attachment of glutamine synthetase to brain membranes.	Biochemical medicine	...
+1008	1976	Nature and possible origin of human serum ribonuclease.	Biochemical and biophysical resear
+1010	1976	Formation of non-amidine products in the chemical modification of horse liver alcohol dehy
+]]></pre>
+
+
+The following example creates a sequence of 3 gi, we fetch each record (the gi is in the 1st column) and we cut the result down to 80 characters.
+
+
+<pre><![CDATA[
+$ (echo "#GI"; seq 5 2 10)  | ncbiefetch -c 1 -D nucleotide | cut -c 1-80
+#GI	nucleotide.type	nucleotide.accver	nucleotide.taxid	nucleotide.orgname	nucleo
+5	nucleotide	X60065.1	9913	Bos taurus	B.bovis beta-2-gpI mRNA for beta-2-glycopr
+7	nucleotide	X51700.1	9913	Bos taurus	Bos taurus mRNA for bone Gla protein	437	G
+9	nucleotide	X68321.1	9913	Bos taurus	B.taurus mRNA for cyclin A	1512	GAATTCCAGG
+]]></pre>
+
+
+Let's download some data for 3 rs\#\# from dbsnp.
+
+<pre><![CDATA[
+echo -e "#RS\nrs25\nrs26\nrs27"  | ncbiefetch -c 1 -D snp
+
+#RS	snp.het	snp.bitField	snp.seq5	snp.obs	snp.seq3	snp.map
+rs25	0	050100080001030500120101	AGTAAGAGGAATCAATGTCATAGGCTTTAGATAGCATTTATGACTGTGTGCTCGTGTGTGTGAAAACT..
+rs26	0	050100080011000100000700	AAATGTGTGACCAAGAAAATGACtttttttttttccgactgtgtctcgctctgttgccaggctggagt..
+rs27	0	050100080001030100100100	TCTATGTCCAGAACTATGGATATATATTGACCTTAACTGTCAAGTATATACAAAAGAGCCAAACTGCA..
+]]></pre>
+
+
+Taxonomy
+
+<pre><![CDATA[
+$ echo -e "#Taxon-id\n9606\n9605"  | ncbiefetch -c 1 -D taxonomy
+
+#Taxon-id	taxon.name	taxon.lineage
+9606	Homo sapiens	cellular organisms; Eukaryota; Opisthokonta; Metazoa; Eumetazo...
+9605	Homo	cellular organisms; Eukaryota; Opisthokonta; Metazoa; Eumetazoa; Bilat...
+]]></pre>
+
+
+Gene:
+
+<pre><![CDATA[
+$ (echo "#Gene-Id"; seq 105 2 110)  | ncbiefetch -c 1 -D gene
+
+#Gene-Id	gene.locus	gene.desc	gene.maploc	gene.ids	gene.summary
+105	ADARB2	adenosine deaminase, RNA-specific, B2		HGNC=227|Ensembl=ENSG000001857
+107	ADCY1	adenylate cyclase 1 (brain)		HGNC=232|Ensembl=ENSG00000164742|HPRD=000
+109	ADCY3	adenylate cyclase 3		HGNC=234|Ensembl=ENSG00000138031|HPRD=02620|MIM=6
+]]></pre>
+
+Using &sqlite; :
+<pre><![CDATA[$echo -e "25\n26" | ncbiefetch -D snp -c 1 -f entrez.sqlite
+(...)
+$ echo "select * from entrez;" | sqlite3 -header -line entrez.sqlite  | cut -c 1-300
+id = 25
+db = snp
+xml = <?xml version="1.0"?>
+<ExchangeSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ncbi.nlm.nih.gov/SNP/docsum" xsi:schemaLocation="http://www.ncbi.nlm.nih.gov/SNP/docsum ftp://ftp.ncbi.nlm.nih.gov/snp/specs/docsum_3.3.xsd"><Rs rsId="25" snpClass="snp" snpType="notwithdrawn" molType="genomic" geno
+</ExchangeSet>
+
+
+id = 26
+db = snp
+xml = <?xml version="1.0"?>
+<ExchangeSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.ncbi.nlm.nih.gov/SNP/docsum" xsi:schemaLocation="http://www.ncbi.nlm.nih.gov/SNP/docsum ftp://ftp.ncbi.nlm.nih.gov/snp/specs/docsum_3.3.xsd"><Rs rsId="26" snpClass="mixed" snpType="notwithdrawn" molType="genomic" bi
+</ExchangeSet>]]></pre>
+
+</page>
+
+
+
+<page title="SamplesPerSnp" labels="vcf,ngs,sample" desc="Appends a column with the number of Samples per Variation">
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/samplespersnp]]></pre>
+<h2>Options</h2>
+<ul>
+<li>--delim (char) or -d  (char) (delimiter) default:tab</li>
+<li>--norefalt : don't look at REF and ALT</li>
+<li>--sample SAMPLE column index</li>
+<li>--chrom CHROM column index: default 1</li>
+<li>--pos POS position column index: default 2</li>
+<li>--ref REF reference allele column index: default 4</li>
+<li>--alt ALT alternate allele column index: default 5</li>
+<li>-e (query) (optional) filters by samples using boolean request eg. '((S1 &amp;&amp; S2) || (!(S3) || "S4"))'.</li>
+</ul>
+<h2>Example</h2>
+The following command line scans the VCF, sort the variations by CHROM/POS/REF/ALT/SAMPLE, counts the number of samples/variation 
+
+
+<pre><![CDATA[
+$ cat list.tsv | scanvcf  |\
+  sort -t'  ' -k1,1 -k2,2n -k4,4 -k5,5 -k11,11 |\
+  samplespersnp --sample 11 | awk '($8=".")'
+
+1 753269 rs61770172 C G 99 0 . GT:GQ:DP:FLT 1/1:99:116:0 Sample16 1
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:63:31:0 Sample10 7
+1 753405 rs61770173 C A 81 0 . GT:GQ:DP:FLT 1/1:51:19:0 Sample12 7
+1 753405 rs61770173 C A 35 0 . GT:GQ:DP:FLT 1/0:35:66:0 Sample19 7
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:99:35:0 Sample3 7
+1 753405 rs61770173 C A 90 0 . GT:GQ:DP:FLT 1/1:90:21:0 Sample5 7
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:99:36:0 Sample6 7
+1 753405 rs61770173 C A 90 0 . GT:GQ:DP:FLT 1/1:90:21:0 Sample9 7
+1 876499 rs4372192 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample12 6
+1 876499 rs4372192 A G 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample16 6
+1 876499 rs4372192 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample17 6
+1 876499 rs4372192 A G 45 0 . GT:GQ:DP:FLT 1/1:45:6:0 Sample18 6
+1 876499 rs4372192 A G 45 0 . GT:GQ:DP:FLT 1/1:45:6:0 Sample4 6
+1 876499 rs4372192 A G 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample6 6
+1 877831 rs6672356 T C 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample14 2
+1 877831 rs6672356 T C 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample4 2
+1 878601 . C T 98 0 . GT:GQ:DP:FLT 0/1:50:11:0 Sample14 1
+]]></pre>
+
+
+This tool also takes an option '-e' for a query over the samples. e.g: "variation must contains Sample11, Sample12 BUT NOT Sample1 to Sample5:"
+
+<pre><![CDATA[
+-e '(Sample11  && Sample12 && (!(Sample1 || Sample2 || Sample3 || Sample4 || Sample5)))'
+]]></pre>
+</page>
+
+
+
+
+
+<page title="GroupBySnp" labels="vcf,snp,ngs" desc="Creates a pivot table with the data(samples)=f(SNP)">
+&download;
+<h2>Options</h2>
+<ul>
+<li>--delim (char) or -d  (char) (delimiter) default:tab</li>
+<li>--norefalt : don't look at REF and ALT</li>
+<li>--sample SAMPLE column index</li>
+<li>--chrom CHROM column index: default 1</li>
+<li>--pos POS position column index: default 2</li>
+<li>--ref REF reference allele column index: default 4</li>
+<li>--alt ALT alternate allele column index: default 5</li>
+<li>-T 1,2,3,4,... columns indexes on top.</li>
+<li>-L 5,6,7,... columns indexes on left.</li>
+<li>-n (name1,name2,name3,...) add this sample name.</li>
+<li>-c print a count by pair. This option loop over each pair of samples adds a column ('0' or '1') telling if a variation was found in both samples in the pair.</li>
+</ul>
+<h3>Examples</h3>
+Read the VCF data and generate a pivot table.
+
+<pre><![CDATA[
+$  cat sample2vcf.tsv | scanvcf | grep -v "##"  |\
+   sed 's/^#CHROM/#/' |\
+   sort -t '       ' -k1,1 -k2,2n -k4,4 -k5,5 -k11,11 |\
+   sed 's/^#/#CHROM/' |\
+   groupbysnp -L 1,2,3,4,5 -T 6,7,8,9,10 --sample 11  -n Sample1,Sample2,Sample3,Sample4  |\
+   verticalize
+
+>>>	2
+$1	#CHROM       	1
+$2	POS          	753405
+$3	ID           	rs61770173
+$4	REF          	C
+$5	ALT          	A
+$6	Sample1         	.
+$7	Sample1:QUAL    	.
+$8	Sample1:FILTER  	.
+$9	Sample1:INFO    	.
+$10	Sample1:FORMAT  	.
+$11	Sample1:CALL    	.
+$12	Sample2         	.
+$13	Sample2:QUAL    	.
+$14	Sample2:FILTER  	.
+$15	Sample2:INFO    	.
+$16	Sample2:FORMAT  	.
+$17	Sample2:CALL    	.
+$18	Sample3         	Sample3
+$19	Sample3:QUAL    	99
+$20	Sample3:FILTER  	0
+$21	Sample3:INFO    	AC=2;DB=3;ST=0:0,3:32;DP=35;NC=-0.76;UM=3;CQ=...
+$22	Sample3:FORMAT  	GT:GQ:DP:FLT
+$23	Sample3:CALL    	1/1:99:35:0
+$24	Sample4         	.
+$25	Sample4:QUAL    	.
+$26	Sample4:FILTER  	.
+$27	Sample4:INFO    	.
+$28	Sample4:FORMAT  	.
+$29	Sample4:CALL    	.
+$30	count.samples	1
+<<<	2
+
+>>>	3
+$1	#CHROM       	1
+$2	POS          	876499
+$3	ID           	rs4372192
+$4	REF          	A
+$5	ALT          	G
+$6	Sample1         	.
+$7	Sample1:QUAL    	.
+$8	Sample1:FILTER  	.
+$9	Sample1:INFO    	.
+$10	Sample1:FORMAT  	.
+$11	Sample1:CALL    	.
+$12	Sample2         	.
+$13	Sample2:QUAL    	.
+$14	Sample2:FILTER  	.
+$15	Sample2:INFO    	.
+$16	Sample2:FORMAT  	.
+$17	Sample2:CALL    	.
+$18	Sample3         	.
+$19	Sample3:QUAL    	.
+$20	Sample3:FILTER  	.
+$21	Sample3:INFO    	.
+$22	Sample3:FORMAT  	.
+$23	Sample3:CALL    	.
+$24	Sample4         	Sample4
+$25	Sample4:QUAL    	45
+$26	Sample4:FILTER  	0
+$27	Sample4:INFO    	AC=2;DB=1;ST=0:0,6:0;DP=6;NC=-3.05;UM=3;CQ=...
+$28	Sample4:FORMAT  	GT:GQ:DP:FLT
+$29	Sample4:CALL    	1/1:45:6:0
+$30	count.samples	1
+<<<	3
+
+>>>	4
+$1	#CHROM       	1
+$2	POS          	877831
+$3	ID           	rs6672356
+$4	REF          	T
+$5	ALT          	C
+$6	Sample1         	.
+$7	Sample1:QUAL    	.
+$8	Sample1:FILTER  	.
+$9	Sample1:INFO    	.
+$10	Sample1:FORMAT  	.
+$11	Sample1:CALL    	.
+$12	Sample2         	.
+$13	Sample2:QUAL    	.
+$14	Sample2:FILTER  	.
+$15	Sample2:INFO    	.
+$16	Sample2:FORMAT  	.
+$17	Sample2:CALL    	.
+$18	Sample3         	.
+$19	Sample3:QUAL    	.
+$20	Sample3:FILTER  	.
+$21	Sample3:INFO    	.
+$22	Sample3:FORMAT  	.
+$23	Sample3:CALL    	.
+$24	Sample4         	Sample4
+$25	Sample4:QUAL    	39
+$26	Sample4:FILTER  	0
+$27	Sample4:INFO    	AC=2;DB=1;ST=0:0,2:2;DP=4;NC=0.40;UM=3;CQ=...
+$28	Sample4:FORMAT  	GT:GQ:DP:FLT
+$29	Sample4:CALL    	1/1:39:4:0
+$30	count.samples	1
+<<<	4
+
+>>>	5
+$1	#CHROM       	1
+$2	POS          	879317
+$3	ID           	rs7523549
+$4	REF          	C
+$5	ALT          	T
+$6	Sample1         	CALL
+$7	Sample1:QUAL    	71
+$8	Sample1:FILTER  	0
+$9	Sample1:INFO    	AC=1;DB=1;ST=2:1,3:2;DP=8;NC=2.16;UM=3;CQ=...
+$10	Sample1:FORMAT  	GT:GQ:DP:FLT
+$11	Sample1:CALL    	0/1:34:8:0
+$12	Sample2         	.
+$13	Sample2:QUAL    	.
+$14	Sample2:FILTER  	.
+$15	Sample2:INFO    	.
+$16	Sample2:FORMAT  	.
+$17	Sample2:CALL    	.
+$18	Sample3         	.
+$19	Sample3:QUAL    	.
+$20	Sample3:FILTER  	.
+$21	Sample3:INFO    	.
+$22	Sample3:FORMAT  	.
+$23	Sample3:CALL    	.
+$24	Sample4         	.
+$25	Sample4:QUAL    	.
+$26	Sample4:FILTER  	.
+$27	Sample4:INFO    	.
+$28	Sample4:FORMAT  	.
+$29	Sample4:CALL    	.
+$30	count.samples	1
+<<<	5
+
+>>>	6
+$1	#CHROM       	1
+$2	POS          	880238
+$3	ID           	rs3748592
+$4	REF          	A
+$5	ALT          	G
+$6	Sample1         	CALL
+$7	Sample1:QUAL    	51
+$8	Sample1:FILTER  	0
+$9	Sample1:INFO    	AC=2;DB=1;ST=0:0,4:4;DP=8;NC=-3.73;UM=3;CQ=...
+$10	Sample1:FORMAT  	GT:GQ:DP:FLT
+$11	Sample1:CALL    	1/1:51:8:0
+$12	Sample2         	Sample2
+$13	Sample2:QUAL    	54
+$14	Sample2:FILTER  	0
+$15	Sample2:INFO    	AC=2;DB=1;ST=0:0,3:6;DP=9;NC=-3.73;UM=3;CQ=..
+$16	Sample2:FORMAT  	GT:GQ:DP:FLT
+$17	Sample2:CALL    	1/1:54:9:0
+$18	Sample3         	Sample3
+$19	Sample3:QUAL    	54
+$20	Sample3:FILTER  	0
+$21	Sample3:INFO    	AC=2;DB=1;ST=0:0,4:5;DP=9;NC=-3.73;UM=3;CQ=...
+$22	Sample3:FORMAT  	GT:GQ:DP:FLT
+$23	Sample3:CALL    	1/1:54:9:0
+$24	Sample4         	Sample4
+$25	Sample4:QUAL    	72
+$26	Sample4:FILTER  	0
+$27	Sample4:INFO    	AC=2;DB=1;ST=0:0,5:10;DP=15;NC=-3.73;UM=3;CQ=...
+$28	Sample4:FORMAT  	GT:GQ:DP:FLT
+$29	Sample4:CALL    	1/1:72:15:0
+$30	count.samples	4
+<<<	6
+(...)
+]]></pre>
+</page>
+
+
+
+<page title="NumericSplit" labels="ngs,vcf" desc="A simple numeric splitter">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-c (column-infex) (-1)</li>
+<li>--delim (column-delimiter) (default:tab)</li>
+<li>-m (min-value)</li>
+<li>-M (max-value)</li>
+<li>-v Inverse</li>
+</ul>
+<h2>Example</h2>
+The following command line extracts the number of samples/variation and only keep the variation carried by 5 to 9 samples.
+
+<pre><![CDATA[
+$ cat list.tsv | scanvcf  |\
+ sort -t'  ' -k1,1 -k2,2n -k4,4 -k5,5 -k11,11 |\
+ samplespersnp --sample 11 |\
+ numericsplit -c 12 -m 5 -M 9 | awk '($8=".")' | head
+
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:63:31:0 Sample10 7
+1 753405 rs61770173 C A 81 0 . GT:GQ:DP:FLT 1/1:51:19:0 Sample12 7
+1 753405 rs61770173 C A 35 0 . GT:GQ:DP:FLT 1/0:35:66:0 Sample19 7
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:99:35:0 Sample3 7
+1 753405 rs61770173 C A 90 0 . GT:GQ:DP:FLT 1/1:90:21:0 Sample5 7
+1 753405 rs61770173 C A 99 0 . GT:GQ:DP:FLT 1/1:99:36:0 Sample6 7
+1 753405 rs61770173 C A 90 0 . GT:GQ:DP:FLT 1/1:90:21:0 Sample9 7
+1 876499 rs4372192 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample12 6
+1 876499 rs4372192 A G 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample16 6
+1 876499 rs4372192 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample17 6
+1 876499 rs4372192 A G 45 0 . GT:GQ:DP:FLT 1/1:45:6:0 Sample18 6
+1 876499 rs4372192 A G 45 0 . GT:GQ:DP:FLT 1/1:45:6:0 Sample4 6
+1 876499 rs4372192 A G 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample6 6
+1 900285 rs4970435 C T 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 Sample11 9
+1 900285 rs4970435 C T 42 0 . GT:GQ:DP:FLT 1/1:32:6:0 Sample12 9
+1 900285 rs4970435 C T 66 0 . GT:GQ:DP:FLT 1/1:66:13:0 Sample13 9
+1 900285 rs4970435 C T 42 0 . GT:GQ:DP:FLT 1/1:42:5:0 Sample14 9
+1 900285 rs4970435 C T 48 0 . GT:GQ:DP:FLT 1/1:48:7:0 Sample15 9
+1 900285 rs4970435 C T 66 0 . GT:GQ:DP:FLT 1/1:66:13:0 Sample16 9
+1 900285 rs4970435 C T 51 0 . GT:GQ:DP:FLT 1/1:51:9:0 Sample17 9]]></pre>
+
+</page>
+
+<page title="GroupByGene" labels="ngs,sample,vcf" desc="transposes a VCF table with a 'GENE' and a 'SAMPLE' column and ouput a new table: count(Gene)=f(SAMPLE)">
+&download;
+<h2>Options</h2>
+<ul>
+<li>--delim (char) delimiter default:tab</li>
+<li>--norefalt : don't look at REF and ALT</li>
+<li>--sample SAMPLE column index</li>
+<li>--gene GENE column index</li>
+<li>--chrom CHROM column index: default 1</li>
+<li>--pos POS position column index: default 2</li>
+<li>-ref REF reference allele column index: default 4</li>
+<li>--alt ALT alternate allele column index: default 5</li>
+</ul>
+<h2>Example</h2>
+The following command line extracts the name of the GENE, sort the data on CHROM/POS/REF/ALT/SAMPLE and group the data by gene.
+
+<pre><![CDATA[
+$  cat list.tsv | scanvcf  |\
+   extractinfo -t GN | awk '($12!="N/A")' |\
+   sort -t '       ' -k1,1 -k2,2n -k4,4 -k5,5 -k11,11 |\
+   groupbygene --gene 12 --sample 11
+
+
+GENE	CHROM	START	END	count(SAMPLES)	count(distinct_MUTATION)	count(Sample1)	count(Sample2)	count(Sample3)	count(Sample4)	count(Sample5)
+A1	19	58862835	58864479	5	2	2	2	2	2	2
+A1CF	10	52569637	52576068	5	3	1	3	1	1	1
+A2M	12	9230038	9264946	5	8	2	2	2	7	3
+A2ML1	12	8990937	9020912	5	17	12	7	12	13	10
+A4GALT	22	43088971	43089849	5	3	3	3	3	3	1
+A4GNT	3	137843106	137850003	4	3	3	3	3	3	0
+(...)
+]]></pre>
+</page>
+
+
+
+<page title="NormalizeChrom" labels="ngs,vcf" desc="Normalizes the name of a chromosome to/from UCSC/ENSEMBL">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-i (string) ignore lines starting with this string.</li>
+<li>-d (string) column delimiter (default:tab).</li>
+<li>-c (int) column index (+1) (default:1).</li>
+<li>-E convert to ENSEMBL syntax (default is UCSC).</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ echo -e "1\t10\nX\t20\nMT\t30" | normalizechrom 
+
+chr1	10
+chrY	20
+chrM	30
+
+$ echo -e "chr1\t10\nX\t20\nchrM\t30" | normalizechrom -E
+
+1	10
+X	20
+MT	30
+]]></pre>
+</page>
+
+
+<page title="DnaContext" labels="vcf,ngs,genome,genomics,dna,sequence,gc,bed" desc="Prints the DNA context of a variation using a genome indexed with samtools faidx and its GC percent">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-c (chrom Column) (1)</li>
+<li>-p|-s (pos or start Column) (2)</li>
+<li>-d (column-delimiter) (default:tab)</li>
+<li>-x (segment-size) (default:10)</li>
+<li>-e (end-column) . exclusive of -x . Assumes BED data (first base=0)</li>
+<li>-f (genome file indexed with tabix</li>
+<li>--no-gc don't print gc percent</li>
+<li>--no-seq don't print DNA sequence</li>
+</ul>
+<h2>Example</h2>
+
+
+<pre><![CDATA[
+$ gunzip -c data.vcf.gz |\
+  grep -v "##" | normalizechrom |\
+  dnacontext -f hg19.fa  |\
+  awk '($8=".")'
+
+#CHROM POS ID REF ALT QUAL FILTER . FORMAT CALL LEFT(DNA) CONTEXT(DNA) RIGHT(DNA)
+chr1 879317 rs7523549 C T 71 0 . GT:GQ:DP:FLT 0/1:34:8:0 GAGTTTTCTA C GTGGCCAGCT
+chr1 880238 rs3748592 A G 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 AGCCAGCCTT A GAGGTTACTC
+chr1 880390 rs3748593 C A 99 0 . GT:GQ:DP:FLT 1/0:99:30:0 TGCCCTCCCG C CAGATGGGCT
+chr1 881627 rs2272757 G A 99 0 . GT:GQ:DP:FLT 1/0:59:20:0 TACAAGGTCA G GGGTGTCCCC
+chr1 883625 rs4970378 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 GAAGAGCAGG A GAGAGGGCCG
+chr1 887560 rs3748595 A C 99 0 . GT:GQ:DP:FLT 1/1:99:40:0 CCAGGCTGAC A AGTCAGGCTG
+(...)
+]]></pre>
+</page>
+
+
+<page title="Prediction" labels="ngs,snp,variation,vcf,genomics,protein,prediction" desc="basic variation predictor">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d (column-delimiter) (default:tab)</li>
+<li>-f genome file indexed with samtools faidx.</li>
+<li>-c (CHROM col) (default:0)</li>
+<li>-p (POS col) (default:1)</li>
+<li>-r (REF col) (default:3)</li>
+<li>-a (ALT col) (default:4)</li>
+<li>--host (mysql host) default:genome-mysql.cse.ucsc.edu</li>
+<li>--user (mysql user) default:genome</li>
+<li>--password (mysql password) default:</li>
+<li>--database (mysql database) default:hg19</li>
+<li>--port (mysql password) default:0</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ mysql -e 'select chrom as "#CHROM",cdsStart+1 as "POS","." as "ID","A" as "REF" ,"G" as "ALT" from knownGene where strand="+" and cdsStart<cdsEnd limit 10' -D hg19 |\
+   prediction -f hg19.fa  | \
+   verticalize | cut -c 1-80
+   
+>>>	2
+$1	#CHROM                   	chr1
+$2	POS                      	12190
+$3	REF                      	A
+$4	ALT                      	G
+$5	knownGene.name           	uc001aaa.3
+$6	knownGene.strand         	+
+$7	knownGene.txStart        	11873
+$8	knownGene.txEnd          	14409
+$9	knownGene.cdsStart       	11873
+$10	knownGene.cdsEnd         	11873
+$11	prediction.type          	UTR3
+$12	prediction.pos_in_cdna   	.
+$13	prediction.pos_in_protein	.
+$14	prediction.exon          	.
+$15	prediction.intron        	.
+$16	prediction.wild.codon    	.
+$17	prediction.mut.codon     	.
+$18	prediction.wild.aa       	.
+$19	prediction.mut.aa        	.
+$20	prediction.wild.prot     	.
+$21	prediction.mut.prot      	.
+$22	prediction.wild.rna      	.
+$23	prediction.mut.rna       	.
+$24	prediction.splicing      	.
+<<<	2
+
+>>>	3
+$1	#CHROM                   	chr1
+$2	POS                      	12190
+$3	REF                      	A
+$4	ALT                      	G
+$5	knownGene.name           	uc010nxq.1
+$6	knownGene.strand         	+
+$7	knownGene.txStart        	11873
+$8	knownGene.txEnd          	14409
+$9	knownGene.cdsStart       	12189
+$10	knownGene.cdsEnd         	13639
+$11	prediction.type          	EXON|EXON_CODING_NON_SYNONYMOUS
+$12	prediction.pos_in_cdna   	0
+$13	prediction.pos_in_protein	1
+$14	prediction.exon          	Exon 1
+$15	prediction.intron        	.
+$16	prediction.wild.codon    	ATG
+$17	prediction.mut.codon     	GTG
+$18	prediction.wild.aa       	M
+$19	prediction.mut.aa        	V
+$20	prediction.wild.prot     	MSESINFSHNLGQLLSPPRCVVMPGMPFPSIRSPELQKTTADLDHTLVSV
+$21	prediction.mut.prot      	VSESINFSHNLGQLLSPPRCVVMPGMPFPSIRSPELQKTTADLDHTLVSV
+$22	prediction.wild.rna      	ATGAGTGAGAGCATCAACTTCTCTCACAACCTAGGCCAGCTCCTGTCTCC
+$23	prediction.mut.rna       	GTGAGTGAGAGCATCAACTTCTCTCACAACCTAGGCCAGCTCCTGTCTCC
+$24	prediction.splicing      	.
+<<<	3
+
+>>>	4
+$1	#CHROM                   	chr1
+$2	POS                      	12190
+$3	REF                      	A
+$4	ALT                      	G
+$5	knownGene.name           	uc010nxr.1
+$6	knownGene.strand         	+
+$7	knownGene.txStart        	11873
+$8	knownGene.txEnd          	14409
+$9	knownGene.cdsStart       	11873
+$10	knownGene.cdsEnd         	11873
+$11	prediction.type          	UTR3
+$12	prediction.pos_in_cdna   	.
+$13	prediction.pos_in_protein	.
+$14	prediction.exon          	.
+$15	prediction.intron        	.
+$16	prediction.wild.codon    	.
+$17	prediction.mut.codon     	.
+$18	prediction.wild.aa       	.
+$19	prediction.mut.aa        	.
+$20	prediction.wild.prot     	.
+$21	prediction.mut.prot      	.
+$22	prediction.wild.rna      	.
+$23	prediction.mut.rna       	.
+$24	prediction.splicing      	.
+<<<	4
+
+>>>	5
+$1	#CHROM                   	chr1
+$2	POS                      	69091
+$3	REF                      	A
+$4	ALT                      	G
+$5	knownGene.name           	uc001aal.1
+$6	knownGene.strand         	+
+$7	knownGene.txStart        	69090
+$8	knownGene.txEnd          	70008
+$9	knownGene.cdsStart       	69090
+$10	knownGene.cdsEnd         	70008
+$11	prediction.type          	EXON|EXON_CODING_NON_SYNONYMOUS
+$12	prediction.pos_in_cdna   	0
+$13	prediction.pos_in_protein	1
+$14	prediction.exon          	Exon 1
+$15	prediction.intron        	.
+$16	prediction.wild.codon    	ATG
+$17	prediction.mut.codon     	GTG
+$18	prediction.wild.aa       	M
+(...)
+]]></pre>
+</page>
+
+
+
+
+
+<page title="Manhattan" labels="ngs,vcf,postscript,visualization,chart,graph" desc="draws a manhattan plot as a postscript file">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-c (int) CHROM column default:1</li>
+<li>-p (int) POS column default:2</li>
+<li>-v (int) value column default:0</li>
+<li>-r (int) COLOR column (optional)</li>
+<li>-s (int) SAMPLE column (optional)</li>
+<li>-m (double) optional user's min value</li>
+<li>-M (double) optional user's max value</li>
+</ul>
+
+<h2>Example</h2>
+the following command lines creates a Manhattan plot for the QUALities of a VCF file.
+
+<pre><![CDATA[
+$ gunzip -c data.vcf.gz | grep -v "##" | \
+   normalizechrom | cut -d '     ' -f 1,2,6 |\
+   manhattan > result.ps
+$ evince result.ps
+]]></pre>
+
+
+<url>http://variationtoolkit.googlecode.com/svn/trunk/doc/manhattan2eps</url>
+<!-- A Manhattan plot with colors and samples -->
+<h2>Example 2</h2>
+plotting with Samples and Colors.
+
+<pre><![CDATA[
+ cat sample2vcf.tsv |\
+     scanvcf | awk '($3==".")' |grep NON_SYNO |\
+     cut -d '     ' -f 1,2,6,11 |\
+     awk '{printf("%s\trgb(10,%d,%d)\n",$0,255-(int($3)/100.0)*255.0,(int($3)/100.0)*255.0);}'|\
+     manhattan -v 3 -r 5 -s 4 > result.ps
+$ evince result.ps
+]]></pre>
+
+
+<url>http://variationtoolkit.googlecode.com/svn/trunk/doc/manhattan2.eps</url>
+<!-- A Manhattan plot with colors and samples -->
+
+</page>
+
+
+
+<page title="NcbiESearch" labels="ncbi,entrez" desc="Search NCBI/Entrez">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-D (database) (default pubmed)</li>
+<li>-q (query) [required]</li>
+<li>-d (delimiter) (default:tab)</li>
+<li>-L (limit=int) (default:10)</li>
+</ul>
+<h2>Example</h2>
+The following example creates a sequence of 3 names, we search the NCBi for each name and the word "Rotavirus" in the title, limit to 2 record, we fetch each record (the PMID is in the 2nd column) and we cut the result down to 80 characters.
+ 
+
+<pre><![CDATA[
+$ echo -e "#subject\nPiron\nLindenbaum\nPoncet" |\
+   ncbiesearch -q '$1 "Rotavirus"[TITL]' -L 2  |\
+   ncbiefetch -c 2 |\
+   cut -c 1-80
+#subject	pubmed.id	pubmed.year	pubmed.title	pubmed.journal	pubmed.abstract
+Piron	10888646	2000	Efficient translation of rotavirus mRNA requires simultaneou
+Piron	10364288	1999	Identification of the RNA-binding, dimerization, and eIF4GI-
+Lindenbaum	15047801	2004	RoXaN, a novel cellular protein containing TPR, LD, and
+Lindenbaum	8985320	1997	In vivo and in vitro phosphorylation of rotavirus NSP5 c
+Poncet	21864538	2011	Structural Organisation of the Rotavirus Nonstructural Prot
+Poncet	20935207	2010	Rapid generation of rotavirus-specific human monoclonal ant
+]]></pre>
+</page>
+
+
+<page title="VcfTTView" labels="samtools,vcf,bam,sam,alignments,visualization" desc="Prints the BAM alignments around variations.">
+Original code from samtools ttview : Heng Li, Bob Handsaker, Jue Ruan, Colin Hercus, Petr Danecek
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/vcfttview]]></pre>
+<h2>Options</h2>
+<ul>
+<li>-c (chrom Column) (1)</li>
+<li>-p (pos Column) (2)</li>
+<li>-s (sample Column) (0) [optional]</li>
+<li>-d (column-delimiter) (default:tab)</li>
+<li>-B (bam-file) [defines one main bam for all data]</li>
+<li>-f (file) loads a file tab delimited with SAMPLE-NAME\\tPATH-TO-BAM</li>
+<li>-F (SAMPLE) (FILE)  push a SAMPLE-NAME/PATH-TO-BAM in the current list</li>
+<li>-a for one position, print all BAM</li>
+<li>-x (int) shift x bases to the right: default10</li>
+<li>-w (int) screen width default:80</li>
+<li>-R (fasta) reference file indexed with samtools faidx </li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+
+$ echo -e "ref\t3\nref2\t2" |\
+  vcfttview -x 3 -B toy.bam -R toy.fa
+
+>ref:3
+
+1         11              21        31         41        51        61           
+AGCATGTTAGATAA****GATA**GCTGTGCTAGTAGGCAG*TCAGCGCCATNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+      ........    ....  ......K.K......K. ..........                            
+      ........AGAG....***...      ,,,,,    ,,,,,,,,,                            
+        ......GG**....AA                                                        
+        ..C...**** ...**...>>>>>>>>>>>>>>T.....                                 
+
+
+
+>ref2:2
+
+1         11            21        31        41        51        61              
+aggttttataaaac****aattaagtctacagagcaactacgcgNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+.............Y    ..W...................                                        
+..............****..A...                                                        
+ .............****..A...T.                                                      
+     .........AAAT.............                                                 
+         C...T****....................                                          
+           ..T****.....................                                         
+             T****......................                                        
+                                                               
+]]></pre>
+</page>
+
+
+
+<page title="VCFTabix" labels="tabix,ngs,vcf" desc="Intersection VCF/Tabix">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d (char) column delimiter. default: TAB</li>
+<li>-c (int) chromosome column (1).</li>
+<li>-p (int) pos column (2).</li>
+<li>-f (filename) tabix file (required).</li>
+<li>-1 remove 1 to the VCF coodinates.</li>
+<li>-S (NOT-FOUND-String) default:!N/A.</li>
+<li>-m  (int=mode) 0)=all 1:only-matching  2:only-non-matching default:0.</li>
+</ul>
+<h2>Example</h2>
+ download some 1000G data:
+
+<pre><![CDATA[
+ curl  -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of4intersection.20100804.sites.vcf.gz" |\
+            gunzip -c | grep -v "##" |\
+            head -n 10000 > ~/1000G.vcf
+]]></pre>
+
+Index this file with tabix.
+
+<pre><![CDATA[
+$ bgzip 1000G.vcf
+$ tabix -p vcf 1000G.vcf.gz
+<pre><![CDATA[
+]]></pre>
+
+Compute the intersection of this file with our VCF. Only retain the matching line (option -m 1)
+
+<pre><![CDATA[
+$ gunzip -c data.vcf.gz |\
+  grep -v "##"  |  normalizechrom -E | vcftabix  -f 1000G.vcf.gz -m 1 |\
+  awk '($8=".")' |  awk '($18=".")'
+#CHROM POS ID REF ALT QUAL FILTER . FORMAT Call #CHROM POS ID REF ALT QUAL FILTER .
+1 879317 rs7523549 C T 71 0 . GT:GQ:DP:FLT 0/1:34:8:0 1 879317 rs7523549 C T . PASS .
+1 880238 rs3748592 A G 51 0 . GT:GQ:DP:FLT 1/1:51:8:0 1 880238 rs3748592 A G . PASS .
+1 880390 rs3748593 C A 99 0 . GT:GQ:DP:FLT 1/0:99:30:0 1 880390 rs3748593 C A . PASS .
+1 881627 rs2272757 G A 99 0 . GT:GQ:DP:FLT 1/0:59:20:0 1 881627 rs2272757 G A . PASS .
+1 883625 rs4970378 A G 39 0 . GT:GQ:DP:FLT 1/1:39:4:0 1 883625 rs4970378 A G . PASS .
+1 887560 rs3748595 A C 99 0 . GT:GQ:DP:FLT 1/1:99:40:0 1 887560 rs3748595 A C . PASS .
+1 887801 rs3828047 A G 99 0 . GT:GQ:DP:FLT 1/1:99:32:0 1 887801 rs3828047 A G . PASS .
+1 888639 rs3748596 T C 99 0 . GT:GQ:DP:FLT 1/1:99:32:0 1 888639 rs3748596 T C . PASS .
+1 888659 rs3748597 T C 99 0 . GT:GQ:DP:FLT 1/1:99:26:0 1 888659 rs3748597 T C . PASS .
+(...)
+]]></pre>
+</page>
+
+
+<page title="MysqlQuery" labels="mysql,database" desc="Sends a mysql query for each row">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d (char) delimiter default:tab</li>
+<li>--host mysql host ( genome-mysql.cse.ucsc.edu)</li>
+<li>--user mysql user ( genome)</li>
+<li>--password mysql password ( )</li>
+<li>--database mysql db ( hg19)</li>
+<li>--port (int) mysql port ( default)</li>
+<li>-e or -q (SQL query)</li>
+<li>-L (int) limit number or rows returned</li>
+</ul>
+<h2>Example</h2>
+
+
+<pre><![CDATA[
+$  echo -e "#Gene\nuc001aaa.3\nHello\nuc001aac.3" |\
+      mysqlquery --host localhost --user anonymous --port 3316  \
+             -q 'select mRNA,description from kgXref where kgId="$1"'  |\
+      verticalize 
+>>>	2
+$1	#Gene      	uc001aaa.3
+$2	mRNA       	BC032353
+$3	description	Homo sapiens mRNA for DEAD/H box polypeptide 11 like 1 (DDX11L1 gene).
+<<<	2
+
+>>>	3
+$1	#Gene      	Hello
+$2	mRNA       	.
+$3	description	.
+<<<	3
+
+>>>	4
+$1	#Gene      	uc001aac.3
+$2	mRNA       	BC063459
+$3	description	Homo sapiens cDNA FLJ31670 fis, clone NT2RI2004984.
+<<<	4
+]]></pre>
+</page>
+
+
+<page title="MysqlUcsc" labels="vcf,ngs,mysql,database,ucsc" desc="Intersection VCF/UCSC mysql data.">
+&download;
+<h2>Options</h2>
+<ul>
+<li>--delim (char) delimiter default:tab</li>
+<li>--host mysql host ( genome-mysql.cse.ucsc.edu)</li>
+<li>--user mysql user ( genome)</li>
+<li>--password mysql password ( )</li>
+<li>--database mysql db ( hg19)</li>
+<li>--port (int) mysql port ( default)</li>
+<li>--table or -T (string)</li>
+<li>-C (int) chromosome column (first is 1).</li>
+<li>-S (int)start column (first is 1).</li>
+<li>-E (int) end column (first is 1).</li>
+<li>-f first column is not header.</li>
+<li>-1 data are +1 based.</li>
+<li>--limit (int) limit number or rows returned</li>
+<li>--field (string) set custom field. Can be used several times</li>
+<li>--type (int) type of selection: 0 any (default), 1 user data IN mysql data,2 user data embrace mysql data. (stdin|files)</li>
+</ul>
+<h2>Example</h2>
+Compute the intersection of our data with ucsc.snp132 keep the lines containing the word 'syn'.
+
+<pre><![CDATA[
+$ gunzip -c data.vcf.gz |\
+   grep -v "##"  |  normalizechrom |\
+   mysqlucsc --host myhost --user mypassword -C 1 -S 2 -E 2 --table snp132    |\
+   awk '($8=".")' | grep -i syn |\
+   head
+   
+chr1 16375063 rs45612832 C G 67 0 . GT:GQ:DP:FLT 0/1:67:53:0 709 chr1 16375063 16375064 rs1889790 0 + A A A/C genomic single by-cluster,by-frequency 0.4488 0.151587 coding-synon,near-gene-5 exact 1 NonIntegerChromCount 9 BCMHGSC_JDW,BCM_SSAHASNP,BGI,HGSV,SC_SNP,SEATTLESEQ,SSAHASNP,TSC-CSHL,UCSF_HG, 2 A,C, 15.980000,31.020000, 0.340000,0.660000, maf-5-some-pop,maf-5-all-pops
+chr1 16375063 rs45612832 C G 67 0 . GT:GQ:DP:FLT 0/1:67:53:0 709 chr1 16375063 16375064 rs45575235 0 + A A A/C genomic single by-cluster,by-frequency 0 0 coding-synon,near-gene-5 exact 2 MultipleAlignments 3 ENSEMBL,GMI,PHARMGKB_PCE, 1 C, 2.000000, 1.000000, maf-5-some-pop,maf-5-all-pops
+chr1 16890671 rs55951643 T C 99 0 . GT:GQ:DP:FLT 1/0:99:1177:0 713 chr1 16890671 16890672 rs2419525 0 - G G C/T genomic single by-cluster,by-2hit-2allele,by-hapmap 0.18 0.24 coding-synon exact 1 10 BCMHGSC_JDW,BGI,CSHL-HAPMAP,ENSEMBL,GMI,HGSV,SC_JCM,SC_SNP,TSC-CSHL,WI_SSAHASNP, 2 T,C, 9.000000,1.000000, 0.900000,0.100000, maf-5-some-pop,maf-5-all-pops
+chr1 16890671 rs55951643 T C 99 0 . GT:GQ:DP:FLT 1/0:99:1177:0 713 chr1 16890671 16890672 rs17409315 0 - G G C/T cDNA single unknown 0 0 coding-synon exact 3 MultipleAlignments 1 SEQUENOM, 0
+chr1 22176831 rs2290500 C T 87 0 . GT:GQ:DP:FLT 0/1:47:9:0 754 chr1 22176683 22176855 rs2229485 0 - TGCTGGGGACAGAGGGCAAAGGGTCAATAGCCGGCTAGGAGGTGAGATGAGATGGGGCTCCTGGTCTCAAGGCAGGTGCAGTCTGCGGCTTGGCCTCCTGATCCTGCCGTTGCAAGAGTGGGGGGCCTCCCACCCTGGGTCCCCAGCCCTGCCCTCCCTGAGAGCTACTCAC TGCTGGGGACAGAGGGCAAAGGGTCAATAGCCGGCTAGGAGGTGAGATGAGATGGGGCTCCTGGTCTCAAGGCAGGTGCAGTCTGCGGCTTGGCCTCCTGATCCTGCCGTTGCAAGAGTGGGGGGCCTCCCACCCTGGGTCCCCAGCCCTGCCCTCCCTGAGAGCTACTCAC A/T cDNA single by-frequency 0.120708 0.213971 coding-synon rangeInsertion 1 FlankMismatchGenomeLonger,SingleClassLongerSpan,ObservedMismatch 2 CORNELL,WICVAR, 2 T,A, 77.000000,59.000000, 0.566176,0.433824, maf-5-some-pop,maf-5-all-pops,observed-mismatch
+chr1 26361669 rs61742342 C A 99 0 . GT:GQ:DP:FLT 1/0:99:34:0 786 chr1 26361669 26361670 rs61739493 0 + G G G/T genomic single unknown 0 0 coding-synon exact 1 1 CORNELL, 2 G,T, 77.000000,1.000000, 0.987179,0.012820,
+chr1 26608828 rs17838088 G A 36 0 . GT:GQ:DP:FLT 1/1:28:4:0 788 chr1 26608828 26608829 rs61775085 0 + G G A/G genomic single unknown 0.5 0 coding-synon exact 1 2 BCMHGSC_JDW,ENSEMBL, 2 G,A, 1.000000,1.000000, 0.500000,0.500000, maf-5-some-pop,maf-5-all-pops
+chr1 27210721 rs3170660 T C 99 0 . GT:GQ:DP:FLT 1/1:99:63:0 792 chr1 27210721 27210722 rs78109142 0 + G G A/G genomic single by-cluster,by-frequency,by-1000genomes 0.165289 0.235211 coding-synon exact 1 1 1000GENOMES, 2 G,A, 195.000000,13.000000, 0.937500,0.062500, maf-5-some-pop,maf-5-all-pops
+chr1 64643277 rs7527017 C T 99 0 . GT:GQ:DP:FLT 0/1:99:117:0 1078 chr1 64643277 64643278 rs80063252 0 + G G A/G genomic single by-cluster,by-frequency,by-1000genomes 0.0768 0.180282 coding-synon exact 1 1 1000GENOMES, 2 G,A, 158.000000,10.000000, 0.940476,0.059524, maf-5-some-pop
+chr1 110709719 rs7527375 T C 99 0 . GT:GQ:DP:FLT 1/0:99:31:0 1429 chr1 110709719 110709720 rs12737742 0 + G G A/C/G genomic single by-cluster,by-1000genomes 0.375 0.216506 coding-synon,missense exact 1 SingleClassTriAllelic 9 1000GENOMES,BCMHGSC_JDW,BUSHMAN,CORNELL,ENSEMBL,HGSV,ILLUMINA,SEATTLESEQ,SSAHASNP, 3 G,A,C, 57.000000,21.000000,1.000000, 0.721519,0.265823,0.012658, maf-5-some-pop,maf-5-all-pops
+]]></pre>
+</page>
+
+
+
+<page title="VcfBigWig" labels="bigwig,wiggle,wig,vcf,genomics,ngs,ucsc" desc="Intersection VCF/BigWig">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-f (bigwig file)</li>
+<li>-d (delimiter) (default:tab)</li>
+<li>-c (CHROM column=int) (default:1)</li>
+<li>-p (POS column=int) (default:2)</li>
+<li>-x (extend=int) extends window size (default:0)</li>
+</ul>
+<h2>Example</h2>
+What's in the Big wig ?
+
+<pre><![CDATA[
+$ kent/src/hg/encode/validateFiles/tests/test4.bw file.wig
+$ cat file.wig
+
+#bedGraph section chr1:1-1099
+chr1    1       1000    54
+chr1    1000    1099    53
+]]></pre>
+
+
+let's get the intersection of a VCF file with this BIGWIG file.
+
+
+<pre><![CDATA[
+$ echo -e "#CHROM\tPOS\nchr1\t500\nchr1\t1001"  |\
+  vcfbigwig -f  kent/src/hg/encode/validateFiles/tests/test4.bw
+  
+#CHROM	POS	bigwig:min	bigwig:max	bigwig:mean	bigwig:coverage	bigwig:stddev
+chr1	500	54	54	54	1	0
+chr1	1001	53	53	53	1	0
+
+$ echo -e "#CHROM\tPOS\nchr1\t500\nchr1\t1001"  |\
+  vcfbigwig -x 100 -f  kent/src/hg/encode/validateFiles/tests/test4.bw
+  
+#CHROM	POS	bigwig:min	bigwig:max	bigwig:mean	bigwig:coverage	bigwig:stddev
+chr1	500	54	54	54	1	0
+chr1	1001	53	54	53.5025	0.99005	0.501255
+
+$ echo -e "#CHROM\tPOS\nchrX\t500\nchrX\t1001"  |\
+  vcfbigwig  -f  kent/src/hg/encode/validateFiles/tests/test4.bw
+  
+#CHROM	POS	bigwig:min	bigwig:max	bigwig:mean	bigwig:coverage	bigwig:stddev
+chrX	500	nan	nan	nan	nan	nan
+chrX	1001	nan	nan	nan	nan	nan
+]]></pre>
+
+
+</page>
+
+
+<page title="VcfBigBed" labels="ucsc,vcf,genomics,bed,bigbed" desc="Intersection VCF/BigBed">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-f (BigBed file)</li>
+<li>-d (delimiter) (default:tab)</li>
+<li>-c (CHROM column=int) (default:1)</li>
+<li>-p (POS column=int) (default:2)</li>
+<li>-x (extend=int) extends window size (default:0)</li>
+<li>-L (limit=int) limit to L records in bed (default:unbound)</li>
+<li>-S (NOT-FOUND-String) default:!N/A.</li>
+<li>-m  (int=mode) 0)=all 1:only-matching  2:only-non-matching default:0.</li>
+</ul>
+<h2>Example</h2>
+What's in the Big BED ?
+
+<pre><![CDATA[
+$ cat test.bed 
+chr7    115000000       116000000       100.0
+chr7    115500000       116500000       200.0
+chr7    116000000       117000000       100.0
+chr8    1000000         2000000         1000
+chr8    1100000         1200000         1000
+chr8    1100000         1200000         1000
+chr9    100     200     10
+chr9    100     300     10
+chr9    100     400     10
+chr9    1000    2000    10
+chr9    1200    2000    10
+chr9    1300    2000    10
+]]></pre>
+
+
+let's get the intersection of a VCF file with this BigBed file.
+
+
+<pre><![CDATA[
+$ echo -e "#CHROM\tPOS\nchr9\t1250\nchrX\t1"  |\
+  vcfbigbed  -f  test.bb 
+
+#CHROM	POS	BigBed:chromStart	BigBed:chromEnd	BigBed:rest
+chr9	1250	1000	2000	10
+chr9	1250	1200	2000	10
+chrX	1	!N/A	!N/A	!N/A
+
+$ echo -e "#CHROM\tPOS\nchr9\t1250\nchrX\t1"  |\
+  vcfbigbed  -x 1000 -f  test.bb 
+
+#CHROM	POS	BigBed:chromStart	BigBed:chromEnd	BigBed:rest
+chr9	1250	100	300	10
+chr9	1250	100	400	10
+chr9	1250	1000	2000	10
+chr9	1250	1200	2000	10
+chr9	1250	1300	2000	10
+chrX	1	!N/A	!N/A	!N/A
+
+]]></pre>
+</page>
+
+
+<page title="Verticalize" labels="tool,unix,table" desc="Verticalize a table">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d or --delim (char) delimiter default:tab</li>
+<li>-n first line is NOT the header.</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ gunzip -c file.vcf.gz | grep -v "##" |\
+   verticalize  |\
+   head -n 100
+>>>	2
+$1	#CHROM   	1
+$2	POS      	880238
+$3	ID       	rs3748592
+$4	REF      	A
+$5	ALT      	G
+$6	QUAL     	48
+$7	FILTER   	0
+$8	INFO     	AC=2;DB=1;ST=0:0,3:4;DP=7;NC=-3.73;UM=3;CQ=INTRONIC;MQ=60;AN=2;PA=1^1:0.930&2^1:0.860&3^1:0.950;MZ=0;GN=NOC2L;PS=1
+$9	FORMAT   	GT:GQ:DP:FLT
+$10	162214_A1	1/1:48:7:0
+<<<	2
+
+>>>	3
+$1	#CHROM   	1
+(...)
+]]></pre>
+</page>
+
+<page title="UniProt" labels="uniprot,vcf" desc="Take as input a position on a protein and an uniprot ACN, connect to uniprot.org and answers wether a amino acid is contained in a 'feature'">
+&download;
+<h2>Compilation</h2>
+<pre>cd variationtoolkit/src/
+make ../bin/uniprot</pre>
+<h2>Options</h2>
+<ul>
+<li>-d (char) delimiter default:tab</li>
+<li>-p (column-index) column containing the amino acid index.</li>
+<li>-s (spId-index) column containing the swissprot-acn  (e.g.: Q04721 or  NOTC2\_HUMAN).</li>
+</ul>
+<h2>Example</h2>
+
+
+<pre><![CDATA[
+$ echo -e "#POS\tID\n54\tQ04721\n1\tHELLO\n166\tP03536" |\
+    uniprot -p 1 -s 2 |\
+    verticalize 
+#warning: Cannot find record for HELLO
+>>>	2
+$1	#POS            	54
+$2	ID              	Q04721
+$3	uniprot.beg     	26
+$4	uniprot.end     	2471
+$5	uniprot.type    	chain
+$6	uniprot.status  	.
+$7	uniprot.desc    	Neurogenic locus notch homolog protein 2
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	2
+
+>>>	3
+$1	#POS            	54
+$2	ID              	Q04721
+$3	uniprot.beg     	26
+$4	uniprot.end     	1677
+$5	uniprot.type    	topological domain
+$6	uniprot.status  	potential
+$7	uniprot.desc    	Extracellular
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	3
+
+>>>	4
+$1	#POS            	54
+$2	ID              	Q04721
+$3	uniprot.beg     	26
+$4	uniprot.end     	63
+$5	uniprot.type    	domain
+$6	uniprot.status  	.
+$7	uniprot.desc    	EGF-like 1
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	4
+
+>>>	5
+$1	#POS            	54
+$2	ID              	Q04721
+$3	uniprot.beg     	53
+$4	uniprot.end     	62
+$5	uniprot.type    	disulfide bond
+$6	uniprot.status  	by similarity
+$7	uniprot.desc    	.
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	5
+
+>>>	6
+$1	#POS            	1
+$2	ID              	HELLO
+$3	uniprot.beg     	.
+$4	uniprot.end     	.
+$5	uniprot.type    	.
+$6	uniprot.status  	.
+$7	uniprot.desc    	.
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	6
+
+>>>	7
+$1	#POS            	166
+$2	ID              	P03536
+$3	uniprot.beg     	1
+$4	uniprot.end     	315
+$5	uniprot.type    	chain
+$6	uniprot.status  	.
+$7	uniprot.desc    	Non-structural protein 3
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	7
+
+>>>	8
+$1	#POS            	166
+$2	ID              	P03536
+$3	uniprot.beg     	150
+$4	uniprot.end     	206
+$5	uniprot.type    	region of interest
+$6	uniprot.status  	.
+$7	uniprot.desc    	Dimerization
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	8
+
+>>>	9
+$1	#POS            	166
+$2	ID              	P03536
+$3	uniprot.beg     	166
+$4	uniprot.end     	237
+$5	uniprot.type    	coiled-coil region
+$6	uniprot.status  	potential
+$7	uniprot.desc    	.
+$8	uniprot.evidence	.
+$9	uniprot.ref     	.
+<<<	9
+]]></pre>
+</page>
+
+
+<page title="PfamScan" labels="pfma,vcf,motif,mutation" desc="Take as input a position on a protein and an uniprot ACN, connect to  pfam.sanger.ac.uk and answers wether a amino acid is contained in a 'match'.">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d (char) delimiter default:tab</li>
+<li>-p (column-index) column containing the amino acid index.</li>
+<li>-a (acn) column containing the protein-acn (e.g.: Q04721 or  IF4G1\_HUMAN).</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ echo -e "#ACN\tPOS\nQ04721\t1650\nIF4G1_HUMAN\t1540\nQ04721\t300\nHello\t9980\n.\t." |\
+	pfamscan -a 1 -p 2 |\
+	verticalize
+
+
+>>>	2
+$1	#ACN      	Q04721
+$2	POS       	1650
+$3	pfam.beg  	1617
+$4	pfam.end  	1677
+$5	pfam.acn  	PF07684
+$6	pfam.id   	NODP
+$7	pfam.type 	Pfam-A
+$8	pfam.class	.
+<<<	2
+
+>>>	3
+$1	#ACN      	IF4G1_HUMAN
+$2	POS       	1540
+$3	pfam.beg  	1518
+$4	pfam.end  	1599
+$5	pfam.acn  	PF02020
+$6	pfam.id   	W2
+$7	pfam.type 	Pfam-A
+$8	pfam.class	.
+<<<	3
+
+>>>	4
+$1	#ACN      	Q04721
+$2	POS       	300
+$3	pfam.beg  	298
+$4	pfam.end  	338
+$5	pfam.acn  	PF07645
+$6	pfam.id   	EGF_CA
+$7	pfam.type 	Pfam-A
+$8	pfam.class	.
+<<<	4
+
+>>>	5
+$1	#ACN      	Hello
+$2	POS       	9980
+$3	pfam.beg  	.
+$4	pfam.end  	.
+$5	pfam.acn  	.
+$6	pfam.id   	.
+$7	pfam.type 	.
+$8	pfam.class	.
+<<<	5
+
+>>>	6
+$1	#ACN      	.
+$2	POS       	.
+$3	pfam.beg  	.
+$4	pfam.end  	.
+$5	pfam.acn  	.
+$6	pfam.id   	.
+$7	pfam.type 	.
+$8	pfam.class	.
+<<<	6
+]]></pre>
+</page>
+
+<page title="Vcf2bed" labels="vcf,bed" desc="Generates a BED file from a VCF">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d (column-delimiter) (default:tab)</li>
+<li>-c (CHROM col) (default:0)</li>
+<li>-p (POS col) (default:1)</li>
+<li>-S (bed score col) (default:-1)</li>
+<li>-N (col) adds this column for the 'name'</li>
+<li>-D (char) name separator.</li>
+<li>-t print ucsc custom track header.</li>
+</ul>
+<h2>Example</h2>
+
+
+<pre><![CDATA[
+$ gunzip -c file.vcf.gz |\
+  normalizechrom |\
+  vcf2bed -t -S 6 -N 3,4,5 -D _
+
+track name="__TRACK_NAME__" description="__TRACK_DESC__" 
+chr1	879316	879317	rs7523549_C_T	71	+
+chr1	880237	880238	rs3748592_A_G	51	+
+chr1	880389	880390	rs3748593_C_A	99	+
+chr1	881626	881627	rs2272757_G_A	99	+
+chr1	883624	883625	rs4970378_A_G	39	+
+chr1	887559	887560	rs3748595_A_C	99	+
+chr1	887800	887801	rs3828047_A_G	99	+
+chr1	888638	888639	rs3748596_T_C	99	+
+chr1	888658	888659	rs3748597_T_C	99	+
+chr1	889157	889158	rs56262069_G_C	51	+
+(...)
+]]></pre>
+</page>
+
+
+<page title="EmblStringSesolve" labels="embl,string,interactions" desc="Calls the service: EMBL String resolve">
+Calls the service: EMBL String resolve (<url>http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html</url> ).
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d (char) delimiter default:tab</li>
+<li>-c column identifier</li>
+<li>-t (int) taxon id</li>
+</ul>
+<h2>Example</h2>
+
+
+
+<pre><![CDATA[
+$ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" |\
+  emblstringresolve -c 1 |verticalize 
+>>>	2
+$1	#Gene        	NOTCH2
+$2	stringId     	9606.ENSP00000256646
+$3	preferredName	NOTCH2
+$4	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor...
+<<<	2
+
+>>>	3
+$1	#Gene        	EIF4G1
+$2	stringId     	9606.ENSP00000316879
+$3	preferredName	EIF4G1
+$4	annotation   	eukaryotic translation initiation factor 4 gamma, 1; ...
+<<<	3
+
+>>>	4
+$1	#Gene        	PABPC1
+$2	stringId     	9606.ENSP00000313007
+$3	preferredName	PABPC1
+$4	annotation   	poly(A) binding protein, cytoplasmic 1; Binds the...
+<<<	4
+]]></pre>
+</page>
+
+
+<page title="EmblStringInteractors" labels="embl,string,interactions" desc="Calls the service: EMBL String interactors">
+Calls the service: EMBL String interactors ( <url>http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html</url> ).
+&download;
+
+<h2>Options</h2>
+<ul>
+<li>-d (char) delimiter default:tab</li>
+<li>-c column identifier</li>
+</ul>
+<h2>Example</h2>
+
+
+<pre><![CDATA[
+$ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" |\
+  emblstringresolve -c 1 | \
+  emblstringinteractors -c 2 | \
+  emblstringresolve -c 5 | \
+  verticalize
+  
+>>>	2
+$1	#Gene        	NOTCH2
+$2	stringId     	9606.ENSP00000256646
+$3	preferredName	NOTCH2
+$4	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor for membr
+$5	interactor   	9606.ENSP00000256646
+$6	stringId     	9606.ENSP00000256646
+$7	preferredName	NOTCH2
+$8	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor for membr
+<<<	2
+
+>>>	3
+$1	#Gene        	NOTCH2
+$2	stringId     	9606.ENSP00000256646
+$3	preferredName	NOTCH2
+$4	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor for membr
+$5	interactor   	9606.ENSP00000345206
+$6	stringId     	9606.ENSP00000345206
+$7	preferredName	RBPJ
+$8	annotation   	recombination signal binding protein for immunoglobulin kappa J
+<<<	3
+
+>>>	4
+$1	#Gene        	NOTCH2
+$2	stringId     	9606.ENSP00000256646
+$3	preferredName	NOTCH2
+$4	annotation   	Notch homolog 2 (Drosophila); Functions as a receptor for membr
+$5	interactor   	9606.ENSP00000355718
+$6	stringId     	9606.ENSP00000355718
+$7	preferredName	DLL1
+  
+  
+]]></pre>
+
+
+</page>
+
+&download;
+
+<page title="EmblStringInteractions" labels="embl,string,interactions" desc="Calls the service: EMBL String interactions">
+Calls the service: EMBL String interactions ( <url>http://string-db.org/help/index.jsp?topic=/org.string-db.docs/api.html</url> ).
+<h2>Options</h2>
+<ul>
+<li>-d (char) delimiter default:tab</li>
+<li>-c column identifier</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ echo -e "#Gene\nNOTCH2\nEIF4G1\nPABPC1" | \
+   emblstringresolve -c 1 | \
+   emblstringinteractions -c 2 | \
+   verticalize 
+   
+>>>	2
+$1	#Gene          	NOTCH2
+$2	stringId       	9606.ENSP00000256646
+$3	preferredName  	NOTCH2
+$4	annotation     	Notch homolog 2 (Drosophila); Functions as a receptor for membrane-bound ligands Jagged1, Jagged2 and Delta1 to regulate cell-fate determination. Upon ligand activation through the released notch intracellular domain (NICD) it forms a transcriptional activator complex with RBP-J kappa and activates genes of the enhancer of split locus. Affects the implementation of differentiation, proliferation and apoptotic programs (By similarity)
+$5	interactorA    	string:9606.ENSP00000355718
+$6	interactorB    	string:9606.ENSP00000326366
+$7	labelA         	DLL1
+$8	labelB         	PSEN1
+$9	aliasesA       	-
+$10	aliasesB       	-
+$11	method         	-
+$12	firstAuthor    	-
+$13	publication    	-
+$14	taxonA         	taxid:9606
+$15	taxonB         	taxid:9606
+$16	types          	-
+$17	sources        	-
+$18	interaction.ids	-
+$19	score          	score:0.999|escore:0.639|dscore:0.9|tscore:0.984
+<<<	2
+
+>>>	3
+$1	#Gene          	NOTCH2
+$2	stringId       	9606.ENSP00000256646
+$3	preferredName  	NOTCH2
+$4	annotation     	Notch homolog 2 (Drosophila); Functions as a receptor for membrane-bound ligands Jagged1, Jagged2 and Delta1 to regulate cell-fate determination. Upon ligand activation through the released notch intracellular domain (NICD) it forms a transcriptional activator complex with RBP-J kappa and activates genes of the enhancer of split locus. Affects the implementation of differentiation, proliferation and apoptotic programs (By similarity)
+$5	interactorA    	string:9606.ENSP00000345206
+$6	interactorB    	string:9606.ENSP00000292599
+$7	labelA         	RBPJ
+
+]]></pre>
+</page>
+
+
+
+<page title="VcfCut" labels="vcf" desc="(very) simple 'cut this region'">
+&download;
+<pre><![CDATA[
+$ curl -s "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20100804/ALL.2of4intersection.20100804.sites.vcf.gz" |\
+   gunzip -c | grep -v "##" |\
+   vcfcut -e '2:10kb+500bp;1:10000-20000'
+   
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	10327	rs112750067	T	C	.	PASS	DP=65;AF=0.208;CB=BC,NCBI
+1	10469	rs117577454	C	G	.	PASS	DP=2055;AF=0.020;CB=UM,BC,NCBI
+1	10492	rs55998931	C	T	.	PASS	DP=231;AF=0.167;CB=BC,NCBI
+(...)
+1	16841	.	G	T	.	PASS	DP=2906;AF=0.004;CB=UM,BI;EUR_R2=0.248
+2	10038	.	C	A	.	PASS	DP=73;AF=0.409;CB=BC,NCBI
+2	10075	.	C	A	.	PASS	DP=31;AF=0.150;CB=BC,NCBI
+2	10144	.	C	A	.	PASS	DP=33;AF=0.562;CB=BC,NCBI
+2	10159	.	C	A	.	PASS	DP=32;AF=0.222;CB=BC,NCBI
+2	10205	.	T	G	.	PASS	DP=582;AF=0.107;CB=UM,BC
+2	10297	.	G	T	.	PASS	DP=500;AF=0.246;CB=UM,BC
+2	10363	.	G	A	.	PASS	DP=788;AF=0.016;CB=UM,BI;EUR_R2=0.273;AFR_R2=0.034
+2	10437	rs71337607	C	T	.	PASS	DP=324;AF=0.267;CB=UM,BC
+]]></pre>
+
+
+</page>
+
+<page title="UcscGenesPs" labels="ucsc,vcf,ngs,visualization,postscript" desc="Visualization of the mutations in the UCSC genes">
+Reads an ordered VCF (ordered by CHROM/POS and optionaly by SAMPLE) , connect to an UCSC database a print the
+variation in postscript.
+&download;
+<h2>Options</h2>
+<ul>
+<li>-c (int) CHROM column default:1</li>
+<li>-p (int) POS column default:2</li>
+<li>-s (int) SAMPLE column (optional) </li>
+<li>-r (int) COLOR column (optional)</li>
+<li>--host (mysql host) default:genome-mysql.cse.ucsc.edu</li>
+<li>--user (mysql user) default:genome</li>
+<li>--password (mysql password) default:</li>
+<li>--database (mysql database) default:hg19</li>
+<li>--port (mysql password) default:0</li>
+</ul>
+<h2>Example</h2>
+<img src="http://variationtoolkit.googlecode.com/svn/wiki/ucscgenesps.jpg"/>
+<!-- Structure of a gene -->
+
+<pre><![CDATA[
+$ cat sample2vcf.tsv | tr -d ' ' |\
+  scanvcf |\
+  awk -F '      ' '($3==".")' |\
+  normalizechrom |\
+  sort -t '  ' -k1,1 -k2,2n -k11,11 |\
+  head -n 10000 |\
+  ucscgenesps --host localhost --user username --port 3316 -s 11 > result.ps 
+]]></pre>
+</page>
+
+
+<page title="VcfIntersect" labels="bed,vcf" desc="Compute the intersection for an ordered VCF/BED with another source">
+Compute the intersection for an ordered VCF (ordered by CHROM/POS) with another source ordered by CHROM/POS.
+&download;
+<h2>Options</h2>
+<ul>
+<li>-f (external url/file) [required]</li>
+<li>-m (mode) 0:all 1:matching 2:unmatching default:0</li>
+<li>-n (string) no-match string default: NO\_MATCH</li>
+<li>-c1 (CHROM col) (default:1)</li>
+<li>-s1 (START col) (default:2)</li>
+<li>-e1 (END col) (default:2)</li>
+<li>-d1 (delimiter) (default:tab)</li>
+<li>-h1  toggle: input is half open (default:0)</li>
+<li>-z1  toggle: input zero-based (default:0)</li>
+<li>-c2 (CHROM col) (default:1)</li>
+<li>-s2 (START col) (default:2)</li>
+<li>-e2 (END col) (default:2)</li>
+<li>-d2 (delimiter) (default:tab)</li>
+<li>-h2  toggle: input is half open (default:1)</li>
+<li>-z2  toggle: input zero-based (default:1)</li>
+<li>--http  force database is a URL </li>
+<li>--gunzip  force database is a gzipped stream </li>
+</ul>
+<h2>Example</h2>
+annotate a VCF with the data from snp132 at the UCSC.
+
+<pre><![CDATA[
+$ echo -e "#CHROM\tPOS\nchr1\t10519\nchr1\t10520\nchr1\t10828"|\
+	vcfintersect -n NO\_MATCH -c2 2 -s2 3 -e2 4  \
+		-f "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/snp132.txt.gz" |\
+	verticalize -n
+
+>>>	1
+$1  	#CHROM
+$2  	POS
+<<<	1
+
+>>>	2
+$1  	chr1
+$2  	10519
+$3  	585
+$4  	chr1
+$5  	10518
+$6  	10519
+$7  	rs62636508
+$8  	0
+$9  	+
+$10 	G
+$11 	G
+$12 	C/G
+$13 	genomic
+$14 	single
+$15 	by-1000genomes
+$16 	0
+$17 	0
+$18 	unknown
+$19 	exact
+$20 	1
+$21 	
+$22 	2
+$23 	1000GENOMES,BCMHGSC_JDW,
+$24 	2
+$25 	G,C,
+$26 	112.000000,8.000000,
+$27 	0.933333,0.066667,
+$28 	
+<<<	2
+
+>>>	3
+$1  	chr1
+$2  	10520
+$3  	NO_MATCH
+<<<	3
+
+>>>	4
+$1  	chr1
+$2  	10828
+$3  	585
+$4  	chr1
+$5  	10827
+$6  	10828
+$7  	rs10218492
+$8  	0
+$9  	+
+$10 	G
+$11 	G
+$12 	A/G
+$13 	genomic
+$14 	single
+$15 	by-cluster
+$16 	0
+$17 	0
+$18 	unknown
+$19 	exact
+$20 	1
+$21 	
+$22 	1
+$23 	WUGSC_SSAHASNP,
+$24 	0
+$25 	
+$26 	
+$27 	
+$28 	
+<<<	4
+]]></pre>
+
+
+
+</page>
+
+
+
+<page title="Bam2wig" desc="Creates a WIG file for the coverage of a BAM file" labels="wig,wiggle,bam,ngs,samtools,sam">
+&download;
+<h2>Options:</h2>
+<ul>
+<li><b>-z</b> (int) number of depth=0 accepted before starting a new WIG file</li>
+<li><b>-o</b> (filename-out) save as... (default:stdout).</li>
+<li><b>-t</b> print a ucsc custom track header.</li>
+</ul>
+
+<pre>$ bam2wig -t  file.bam
+
+track name="__TRACK_NAME__" description="__TRACK_DESC__" type="wiggle_0"
+fixedStep chrom=chrM start=23 step=1 span=1
+2
+2
+3
+4
+5
+6
+6
+4
+(...)</pre>
+
+</page>
+
+<page title="Ttmap" labels="genome,browser,vcf,bed,visualization" desc="prints an ASCII genomic map">
+&download;
+<h2>Options:</h2>
+<ul>
+<li><b>-c</b> (int) chrom column</li>
+<li><b>-s</b> (int) start column</li>
+<li><b>-e</b> (int) end column default: start column</li>
+<li><b>-o</b> (int) strand column default (optional)</li>
+<li><b>-n</b> (int) name column default (optional)</li>
+<li><b>-d</b> (char) delimiter default:tab</li>
+<li><b>-C</b> (int) fix the number of output columns.</li>
+</ul>
+
+<h2>Example:</h2>
+<pre><![CDATA[$ curl -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.txt.gz" |\
+  gunzip -c |  grep chrM |\
+  ttmap -c 2 -s 4 -e 5 -o 3 -n 1 -C 50
+
+>chrM:236-15998
+<              .              .              .     uc004coq.3
+    >          .              .              .     uc004cor.1
+    >          .              .              .     uc004cos.3
+               . >            .              .     uc011mfh.1
+               .       >      .              .     uc004cou.3
+               .          >   .              .     uc011mfi.1
+               .              . >            .     uc004cov.3
+               .              .      >       .     uc004cow.1
+               .              .       >      .     uc004cox.3
+               .              .              .>    uc004coy.2]]></pre>
+
+</page>
+
+
+<page title="VcfLiftOver" labels="ucsc,bed,vcf" desc="Use the UCSC C API to process the data with 'liftOver'">
+Note: I saw some regions where the UCSC API seems to be broken and exit.
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d (char) column delimiter. default: TAB</li>
+<li>-c (int) chromosome column (1).</li>
+<li>-p (int) pos column (2).</li>
+<li>-1 data are NOT +1 based.</li>
+<li>-f (path) liftOver map file (required).</li>
+<li>-b (double) liftOver minblocks.</li>
+<li>-m (double) liftOver minMatch.</li>
+</ul>
+
+<h2>Example</h2>
+Download the data of snp129 from UCSC hg18, remove some columns and convert to hg19.
+
+<pre><![CDATA[
+$ curl  -s "http://hgdownload.cse.ucsc.edu/goldenPath/hg18/database/snp129.txt.gz" |\
+  gunzip  -c |\
+  cut -d '  ' -f 2,3,5 |\
+  vcfliftover -1 -f /path/tp/hg18ToHg19.over.chain 
+  
+chr1	433	rs56289060	chr1	10433	10434	.
+chr1	491	rs55998931	chr1	10491	10492	.
+chr1	518	rs62636508	chr1	10518	10519	.
+chr1	582	rs58108140	chr1	10582	10583	.
+chr1	690	rs10218492	chr1	10827	10828	.
+chr1	766	rs10218493	chr1	10903	10904	.
+chr1	789	rs10218527	chr1	10926	10927	.
+chr1	800	rs28853987	chr1	10937	10938	.
+chr1	876	rs28484712	chr1	11013	11014	.
+chr1	884	rs28775022	chr1	11021	11022	.
+(...)
+chr1	1609710	rs61776794	.	.	.	Deleted in new
+chr1	1609743	rs61776795	.	.	.	Deleted in new
+chr1	1609758	rs61776796	.	.	.	Deleted in new
+chr1	1609849	rs7413891	.	.	.	Deleted in new
+chr1	1610719	rs3737622	.	.	.	Deleted in new
+chr1	1610719	rs45576038	.	.	.	Deleted in new
+chr1	1610763	rs3737624	.	.	.	Deleted in new
+chr1	2475133	rs3091278	.	.	.	Deleted in new
+chr1	2475134	rs3091239	.	.	.	Deleted in new
+(...)
+]]></pre>
+</page>
+
+
+<page title="BackLocate" labels="protein,ucsc,mutation,variation" desc="convert a protein variation to a genomic position">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-g (column) gene name default:1</li>
+<li>-m (column) mutation in protein default:2</li>
+<li>-f (pasta to fasta reference indexed with faidx).</li>
+<li>-p print sequences.</li>
+<li>-d delimiter. Default:tab</li>
+<li>--host (mysql host) default:genome-mysql.cse.ucsc.edu</li>
+<li>--user (mysql user) default:genome</li>
+<li>--password (mysql password) default:</li>
+<li>--database (mysql database) default:hg19</li>
+<li>--port (mysql password) default:0</li>
+</ul>
+
+
+<pre><![CDATA[
+echo -e  "NOTCH2\tM1T\nEIF4G1\tD240Y" |\
+    backlocate -f /path/to/hg19.fa 
+
+#User.Gene	AA1	petide.pos.1	AA2	knownGene.name	knownGene.strand	knownGene.AA	index0.in.rna	codon	base.in.rna	chromosome	index0.in.genomic	exon
+##uc001eik.2
+NOTCH2	M	1	T	uc001eik.2	-	M	0	ATG	A	chr1	120612019	Exon 1
+NOTCH2	M	1	T	uc001eik.2	-	M	1	ATG	T	chr1	120612018	Exon 1
+NOTCH2	M	1	T	uc001eik.2	-	M	2	ATG	G	chr1	120612017	Exon 1
+##uc001eil.2
+NOTCH2	M	1	T	uc001eil.2	-	M	0	ATG	A	chr1	120612019	Exon 1
+NOTCH2	M	1	T	uc001eil.2	-	M	1	ATG	T	chr1	120612018	Exon 1
+NOTCH2	M	1	T	uc001eil.2	-	M	2	ATG	G	chr1	120612017	Exon 1
+##uc001eim.3
+NOTCH2	M	1	T	uc001eim.3	-	M	0	ATG	A	chr1	120548116	Exon 2
+NOTCH2	M	1	T	uc001eim.3	-	M	1	ATG	T	chr1	120548115	Exon 2
+NOTCH2	M	1	T	uc001eim.3	-	M	2	ATG	G	chr1	120548114	Exon 2
+##Warning ref aminod acid for uc003fnp.2  [240] is not the same (I/D)
+EIF4G1	D	240	Y	uc003fnp.2	+	I	717	ATC	A	chr3	184039089	Exon 10
+EIF4G1	D	240	Y	uc003fnp.2	+	I	718	ATC	T	chr3	184039090	Exon 10
+EIF4G1	D	240	Y	uc003fnp.2	+	I	719	ATC	C	chr3	184039091	Exon 10
+##Warning ref aminod acid for uc003fnu.3  [240] is not the same (I/D)
+EIF4G1	D	240	Y	uc003fnu.3	+	I	717	ATC	A	chr3	184039089	Exon 9
+EIF4G1	D	240	Y	uc003fnu.3	+	I	718	ATC	T	chr3	184039090	Exon 9
+EIF4G1	D	240	Y	uc003fnu.3	+	I	719	ATC	C	chr3	184039091	Exon 9
+##Warning ref aminod acid for uc003fnq.2  [240] is not the same (V/D)
+EIF4G1	D	240	Y	uc003fnq.2	+	V	717	GTA	G	chr3	184039350	Exon 7
+EIF4G1	D	240	Y	uc003fnq.2	+	V	718	GTA	T	chr3	184039351	Exon 7
+EIF4G1	D	240	Y	uc003fnq.2	+	V	719	GTA	A	chr3	184039352	Exon 7
+##Warning ref aminod acid for uc003fnr.2  [240] is not the same (L/D)
+EIF4G1	D	240	Y	uc003fnr.2	+	L	717	CTC	C	chr3	184039581	Exon 6
+EIF4G1	D	240	Y	uc003fnr.2	+	L	718	CTC	T	chr3	184039582	Exon 6
+EIF4G1	D	240	Y	uc003fnr.2	+	L	719	CTC	C	chr3	184039583	Exon 6
+##Warning ref aminod acid for uc003fny.3  [240] is not the same (T/D)
+EIF4G1	D	240	Y	uc003fny.3	+	T	717	ACC	A	chr3	184039677	Exon 3
+EIF4G1	D	240	Y	uc003fny.3	+	T	718	ACC	C	chr3	184039678	Exon 3
+EIF4G1	D	240	Y	uc003fny.3	+	T	719	ACC	C	chr3	184039679	Exon 3
+##uc010hxx.2
+EIF4G1	D	240	Y	uc010hxx.2	+	D	717	GAT	G	chr3	184038780	Exon 10
+EIF4G1	D	240	Y	uc010hxx.2	+	D	718	GAT	A	chr3	184039069	Exon 11
+EIF4G1	D	240	Y	uc010hxx.2	+	D	719	GAT	T	chr3	184039070	Exon 11
+##Warning ref aminod acid for uc003fns.2  [240] is not the same (L/D)
+EIF4G1	D	240	Y	uc003fns.2	+	L	717	CTC	C	chr3	184039209	Exon 10
+EIF4G1	D	240	Y	uc003fns.2	+	L	718	CTC	T	chr3	184039210	Exon 10
+EIF4G1	D	240	Y	uc003fns.2	+	L	719	CTC	C	chr3	184039211	Exon 10
+(...)
+]]></pre>
+</page>
+
+
+<page title="GenomeSim" labels="simulation,fasta,snp,variations" desc="Generates two mutated homologous sequences from a fasta file">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-o (file.tar) output tar file. contains chromosomes and mutations.</li>
+<li>-f (file) limit by genomic region (optional) read file:chrom(TAB)start(TAB)end</li>
+<li>-i (file) no mutation in those genomic regions (optional) read file:chrom(TAB)start(TAB)end</li>
+<li>-r (float) rate of mutations. default: 0.001</li>
+<li>-R (float) fraction of indels default: 0.1</li>
+<li>-X (float)  probability an indel is extended default: 0.1</li>
+<li>-u (filename) read a file containing user-defined mutations (optional). Format: (CHROM)\\t(POS+1)\\t(BASE1)\\t(BASE2)</li>
+<li>-m (chrom) (POS+1) (BASE1) (BASE2) insert user defined substitution. use dot('.') to not change the base.</li>
+</ul>
+
+
+<pre><![CDATA[
+$ genomesim -o chrom.tar -m chrM 10 A T -f regions.bed chrM.fa
+$ tar tvf chrom.tar 
+-rw-r--r-- 0/0           16795 2011-12-09 13:56 chrom/homologous1.fa
+-rw-r--r-- 0/0           16793 2011-12-09 13:56 chrom/homologous2.fa
+-rw-r--r-- 0/0             203 2011-12-09 13:56 chrom/mutations.txt
+]]></pre>
+</page>
+
+
+
+<page title="FastaSortUniq" labels="fasta" desc="sort/uniq on FASTA sequences">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-u uniq</li>
+<li>-i ignore case</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ fastaslice -e 1 -L 3 < nsp3.fasta |\
+  fastasortuniq -i -u | head
+
+>gi|77020788|gb|ABA60396.1| non-structural protein NSP3 [Human rotavirus B219]|slice:47-50
+AAF
+>gi|288187218|gb|ADC42131.1| translation enhancer NSP3 [Bovine rotavirus A]|slice:80-83
+AAK
+>gi|110558644|gb|ABG75781.1| NSP3 [Rotavirus A]|slice:20-23
+AAL
+>gi|284517165|gb|ADB92082.1| NSP3 [Human rotavirus A]|slice:48-51
+AAR
+>gi|256041817|gb|ACU64749.1| NSP3 protein [Rotavirus A AU32xUK reassortant (UKg9AU32)]|slice:24-27
+AAT
+
+]]></pre>
+</page>
+
+
+<page title="FastaRevComp" labels="fasta" desc="reverse complement FASTA sequences">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-p print original sequence.</li>
+<li>-c DISABLE complement.</li>
+<li>-r DISABLE reverse.</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ fastaslice -e 1 -L 20 < rotavirus.fasta  | fastarevcomp  -p | head
+>gi|27592135|slice:0-20
+GGAAGGGCTGCCCCACCATT
+>gi|27592135|slice:0-20|reverse-complement
+AATGGTGGGGCAGCCCTTCC
+>gi|27592135|slice:1-21
+GAAGGGCTGCCCCACCATTC
+>gi|27592135|slice:1-21|reverse-complement
+GAATGGTGGGGCAGCCCTTC
+>gi|27592135|slice:2-22
+AAGGGCTGCCCCACCATTCA
+]]></pre>
+</page>
+
+
+<page title="FastaTail" labels="fasta" desc="Prints the last sequences of a list of FASTA sequences">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-n number of sequences</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ fastaslice -e 50 -L 50 < rotavirus.fasta  |fastatail -n 2
+
+>gi|14662886|slice:200-250
+CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
+>gi|14662886|slice:250-275
+TTTGTAACCGGCCCCCCTTAAAACT
+]]></pre>
+</page>
+
+<page title="Fasta2Term" labels="fasta" desc="colorizes some fasta sequences when printing to stdout.">
+&download;
+<pre><![CDATA[
+$ cat input.fa | fasta2term
+]]></pre>
+</page>
+
+
+
+
+<page title="Fasta2Tsv" labels="fasta" desc="prints Fasta Sequences as Tab delimited values">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-d (char) delimiter. default: tab</li>
+<li>-u convert sequence to upper case</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ fastaslice -e 50 -L 50 < rotavirus.fasta  | fastatail -n 5 | fasta2tsv 
+
+gi|14662886|slice:50-100	CACTCCTTTCACAAATCCCGAATTCTCTATCTAACTAACATTTGGCATAT
+gi|14662886|slice:100-150	CAGGTTGCCCTTCTCTCAGCGCCAGTTACAGGCCCATTTCCCAGTCAAGT
+gi|14662886|slice:150-200	CCTATTCCGCGCTCAGGTATATCTTTTCAACCCATCAATATTGCAGCCTT
+gi|14662886|slice:200-250	CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
+gi|14662886|slice:250-275	TTTGTAACCGGCCCCCCTTAAAACT
+]]></pre>
+</page>
+
+<page title="FastaTac" labels="fasta" desc="Reverse the order of some fasta sequences">
+&download;
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ fastaslice -e 50 -L 50 < rotavirus.fasta  | fastatac  | head
+
+>gi|14662886|slice:250-275
+TTTGTAACCGGCCCCCCTTAAAACT
+>gi|14662886|slice:200-250
+CATCATTTCATACCATCATATCGGCATCAATCAAAATGGTCCCATGACTT
+>gi|14662886|slice:150-200
+CCTATTCCGCGCTCAGGTATATCTTTTCAACCCATCAATATTGCAGCCTT
+>gi|14662886|slice:100-150
+CAGGTTGCCCTTCTCTCAGCGCCAGTTACAGGCCCATTTCCCAGTCAAGT
+>gi|14662886|slice:50-100
+CACTCCTTTCACAAATCCCGAATTCTCTATCTAACTAACATTTGGCATAT
+]]></pre>
+</page>
+
+<page title="NcbiELink" labels="ncbi" desc="Retrieves related NCBI records using NCBI-ELink">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-f (ncbi-database-from) REQUIRED.</li>
+<li>-t (ncbi-database-to) REQUIRED.</li>
+<li>-d (delimiter) (default:tab)</li>
+<li>-c (column) index of column containing gi identifier for database-from.</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ echo -e "#Genbank_GI\n256041817" | ncbielink  -c 1 -f protein -t nucleotide
+
+#Genbank_GI	protein:nucleotide.linkName	protein:nucleotide.id
+256041817	protein_nuccore	256041816
+256041817	protein_nuccore_mrna	256041816]]></pre>
+</page>
+
+
+<page title="NcbiCited" labels="ncbi" desc="Retrieves  NCBI/Pubmed records citing a pmid using NCBI-ELink">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-p show pmids.</li>
+<li>-c (column) index of column containing gi identifier for database-from.</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ echo -e "#query\nNOTCH2"  |\
+  ncbiesearch  -q 'Caignec $1' | \
+  ncbicited -p -c 2
+
+#query	pubmed.id	count.citing	citing.pmid
+NOTCH2	21793104	.	.
+NOTCH2	21718643	.	.
+NOTCH2	21378989	2	21984761
+NOTCH2	21378989	2	22046109]]></pre></page>
+
+
+
+<page title="Protein2Genome" labels="ucsc,bed" desc="Maps a protein start/end back to the genome">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-p (column) protein name column default:1</li>
+<li>-s (column) protein start column (1-based) default:2</li>
+<li>-e (column) protein end column (1-based)  default:3</li>
+<li>-d (delimiter). Default:tab</li>
+<li>--host (mysql host) default:genome-mysql.cse.ucsc.edu</li>
+<li>--user (mysql user) default:genome</li>
+<li>--password (mysql password) default:</li>
+<li>--database (mysql database) default:hg19</li>
+<li>--port (mysql password) default:0</li>
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[
+$ echo -e "#Pep\tpepStart\tpepEnd\tDomain\nZC3H7B\t82\t115\tTPR\nNOTC2_HUMAN\t26\t63\tEGF_DOMAIN" |\
+  protein2genome | verticalize 
+  
+  
+>>>	2
+$1	#Pep            	ZC3H7B
+$2	pepStart        	82
+$3	pepEnd          	115
+$4	Domain          	TPR
+$5	knownGene.name  	uc003azw.2
+$6	knownGene.chrom 	chr22
+$7	knownGene.strand	+
+$8	knownGene.exon  	Exon 4
+$9	domain.start    	41721879
+$10	domain.end      	41721922
+<<<	2
+
+>>>	3
+$1	#Pep            	ZC3H7B
+$2	pepStart        	82
+$3	pepEnd          	115
+$4	Domain          	TPR
+$5	knownGene.name  	uc003azw.2
+$6	knownGene.chrom 	chr22
+$7	knownGene.strand	+
+$8	knownGene.exon  	Exon 5
+$9	domain.start    	41723209
+$10	domain.end      	41723268
+<<<	3
+
+>>>	4
+$1	#Pep            	NOTC2_HUMAN
+$2	pepStart        	26
+$3	pepEnd          	63
+$4	Domain          	EGF_DOMAIN
+$5	knownGene.name  	uc001eik.2
+$6	knownGene.chrom 	chr1
+$7	knownGene.strand	-
+$8	knownGene.exon  	Exon 2
+$9	domain.start    	120572528
+$10	domain.end      	120572609
+<<<	4
+
+>>>	5
+$1	#Pep            	NOTC2_HUMAN
+$2	pepStart        	26
+$3	pepEnd          	63
+$4	Domain          	EGF_DOMAIN
+$5	knownGene.name  	uc001eik.2
+$6	knownGene.chrom 	chr1
+$7	knownGene.strand	-
+$8	knownGene.exon  	Exon 3
+$9	domain.start    	120548178
+$10	domain.end      	120548211
+<<<	5
+]]></pre>
+</page>
+
+
+<page title="Colors" label="documentation" desc="Colors in the variation toolkit">
+Some programs use colors (e.g; <url>manhattan</url> ). Colors can be specified as a rgb triple (e.g: <code>'rgb(100,10,100), rgb(0.5)</code>, as a name (e.g: <code>'red'</code>), as an hexadecimal <code>'\#AAAAAA'</code>, etc...
+<h2>Base index</h2>
+The tools reading and writing VCF-like files use '+1' as the index of the first base.
+</page>
+
+
+<page title="XsltStream" label="xslt,xml,stream" desc="applies a XSLT stylesheet to some fragments of a SAX/XML stream.">
+<b>xsltstream</b> is the C++ version of my <a href="http://code.google.com/p/lindenb/wiki/Xsltstream">old java program</a> (see also: <url>http://plindenbaum.blogspot.com/2010/02/processing-large-xml-documents-with.html</url> ). It applies a XSLT stylesheet
+to a fragment of a large XML document. It avoids to load the whole XML document in memory.  
+&download;
+<h2>Dependencies</h2>
+the libxml and libxslt C libraries.
+<h2>Compilation</h2>
+
+<pre>$ cd variationtoolkit/src/
+$ make ../bin/xsltstream
+
+g++ -o ../bin/xsltstream xsltstream.cpp xstream.o application.o  -O3 -Wall `xml2-config --cflags --libs` `xslt-config --cflags --libs` -lz</pre>
+<h2>Usage</h2>
+<pre>xsltstream [options] (files.xml|files.xml.gz|stdin)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-f</b> (filename) xslt stylesheet.</li>
+<li><b>-n</b> (name) target element name (default:0).</li>
+<li><b>-d</b> (int) target element depth (default:none) root is '1'.</li>
+</ul>
+<h2>Example</h2>
+Say you want to transform a large XML <a href="http://genome.ucsc.edu/FAQ/FAQdownloads.html#download23">DAS</a> file from the UCSC to a set of SQL statements.
+The DAS looks like this (<url>http://genome.ucsc.edu/cgi-bin/das/hg19/features?segment=chr2:14504273,15722020;type=knownGene</url> ):
+<pre><![CDATA[<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DASGFF SYSTEM "http://www.biodas.org/dtd/dasgff.dtd">
+<DASGFF>
+<GFF version="1.0" href="http://genome.ucsc.edu/cgi-bin/das/hg19/features">
+<SEGMENT id="chr2" start="14504273" stop="14622020" version="1.00" label="chr2">
+<FEATURE id="uc002rby.2.chr2.14368998.0" label="uc002rby.2">
+ <TYPE id="knownGene" category="transcription" reference="no">knownGene</TYPE>
+ <METHOD></METHOD>
+ <START>14368999</START>
+ <END>14372188</END>
+ <SCORE>-</SCORE>
+ <ORIENTATION>-</ORIENTATION>
+ <PHASE>-</PHASE>
+ <GROUP id="uc002rby.2.chr2.14368998">
+  <LINK href="http://genome.ucsc.edu/cgi-bin/hgTracks?position=chr2:14368998-14541082&amp;db=hg19">Link to UCSC Browser</LINK>
+ </GROUP>
+</FEATURE>
+<FEATURE id="uc002rby.2.chr2.14368998.1" label="uc002rby.2">
+ <TYPE id="knownGene" category="transcription" reference="no">knownGene</TYPE>
+ <METHOD></METHOD>
+ <START>14376014</START>
+ <END>14376074</END>
+ <SCORE>-</SCORE>
+ <ORIENTATION>-</ORIENTATION>
+ <PHASE>-</PHASE>
+ <GROUP id="uc002rby.2.chr2.14368998">
+  <LINK href="http://genome.ucsc.edu/cgi-bin/hgTracks?position=chr2:14368998-14541082&amp;db=hg19">Link to UCSC Browser</LINK>
+ </GROUP>
+</FEATURE>
+(...)]]></pre>
+And this is the XSLT stylesheet we're going to use:
+<pre><![CDATA[<?xml version='1.0'  encoding="UTF-8" ?>
+<xsl:stylesheet
+	xmlns:xsl='http://www.w3.org/1999/XSL/Transform'
+	version='1.0'
+	>
+<xsl:output method="text" encoding="UTF-8"/>
+
+<xsl:template match="/">
+<xsl:apply-templates select="DASGFF"/>
+</xsl:template>
+
+<xsl:template match="DASGFF">
+<xsl:apply-templates select="GFF"/>
+</xsl:template>
+
+<xsl:template match="SEGMENT">
+<xsl:apply-templates select="FEATURE"/>
+</xsl:template>
+
+<xsl:template match="FEATURE">
+<xsl:text>insert into DasFeature(name,chrom,chromStart,chromEnd) values(&apos;</xsl:text>
+<xsl:value-of select="@label"/>
+<xsl:text>&apos;,&apos;</xsl:text>
+<xsl:value-of select="../@label"/>
+<xsl:text>&apos;,</xsl:text>
+<xsl:value-of select="START"/>
+<xsl:text>,</xsl:text>
+<xsl:value-of select="END"/>
+<xsl:text>);</xsl:text>
+</xsl:template>
+</xsl:stylesheet>]]></pre>
+Here is how we transform this large XML stream on the fly.
+<pre><![CDATA[curl -s "http://genome.ucsc.edu/cgi-bin/das/hg19/features?segment=chr2:14504273,15722020;type=knownGene" |\
+xsltstream -f stylesheet.xsl -n FEATURE
+
+
+insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2',14368999,14372188);
+insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2',14376014,14376074);
+insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2',14457093,14457227);
+insert into DasFeature(name,chrom,chromStart,chromEnd) values('uc002rby.2','chr2',14540967,14541082);
+(...)]]></pre>
+
+</page>
+
+<page title="GeneOntologyDbManager" labels="go,ontology,sqlite,xml,rdf" desc="Utilities for Gene Ontology">
+<p>A set of tools for GeneOntology:<url>http://geneontology.org</url> based on the &sqlite; library.</p>
+&download;
+<h2>Dependencies</h2>
+<url>http://www.sqlite.org/</url> : libraries and headers for &sqlite;<br/>
+<code>libxml</code> <url>http://xmlsoft.org/</url> ( see also: <url>HowToInstall</url> )<br/>
+<b>libxslt</b>: the C library for xslt <url>http://xmlsoft.org/XSLT/</url>.
+<h2>Compilation</h2>
+Define "<code>SQLITE_LIB</code>" and 
+"<code>SQLITE_CFLAGS</code>" in <code>config.mk</code> (see <url>HowToInstall</url> )
+<pre>$ cd variationtoolkit/src/
+$ make ../bin/godbmgr 
+
+if ! [ -z "-lsqlite3" ] ;then g++ -o ../bin/godbmgr godatabasemgr.cpp xsqlite.cpp application.o xstream.o xxml.o -g `xml2-config --cflags `  /usr/include/sqlite3.h   -lz -lsqlite3 `xml2-config  --libs` ; else g++ -o ../bin/godbmgr godatabasemgr.cpp  -DNOSQLITE -O3 -Wall  ; fi</pre>
+<h2>Usage</h2>
+<pre>godbmgr (program-name) -f database.sqlite [options] (file1.vcf file2... | stdin )</pre>
+
+<h2>Program: loadrdf</h2>
+Load the RDF/XML GO database (<url>http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz</url>) into the &sqlite; database.
+<h3>Usage</h3>
+<pre>godbmgr loadrdf -f database.sqlite (stdin|file)</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the &sqlite; database</li>
+</ul>
+<h3>Example</h3>
+<pre><![CDATA[$ curl -s "http://archive.geneontology.org/latest-termdb/go_daily-termdb.rdf-xml.gz" |\
+  gunzip -c |\
+  godbmgr loadrdf -f database.sqlite]]></pre>
+list the content of the database:
+<pre><![CDATA[$ sqlite3 -separator '  ' -header  database.sqlite 'select * from TERM where acn="GO:0000007"'
+acn	xml
+GO:0000007	<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0000007">
+            <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0000007</go:accession>
+            <go:name xmlns:go="http://www.geneontology.org/dtds/go.dtd#">low-affinity zinc ion transmembrane transporter activity</go:name>
+            <go:definition xmlns:go="http://www.geneontology.org/dtds/go.dtd#">Catalysis of the transfer of a solute or solutes from one side of a membrane to the other according to the reaction: Zn2+ = Zn2+, probably powered by proton motive force. In low affinity transport the transporter is able to bind the solute only if it is present at very high concentrations.</go:definition>
+            <go:is_a xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:resource="http://www.geneontology.org/go#GO:0005385"/>
+        </go:term>
+
+
+$ sqlite3 -separator '  ' -header  database.sqlite 'select * from TERM2REL where acn="GO:0000007"'
+acn	rel	target
+GO:0000007	is_a	GO:0005385]]></pre>
+<h2>Program: loadgoa</h2>
+inserts the database for GOA into a &sqlite; database (e.g: <url>ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz</url>)
+<h3>Usage</h3>
+<pre>godbmgr loadgoa -f database.sqlite (stdin|file)</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the &sqlite; database</li>
+</ul>
+<h3>Examples</h3>
+<pre><![CDATA[$  curl -s "ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz" |\
+     gunzip -c |\
+     godbmgr loadgoa -f database.sqlite]]></pre>
+list the content of the database:
+<pre><![CDATA[
+
+$ sqlite3 -line   database.sqlite 'select * from GOA where term="GO:0005385" limit 2' 
+              DB = UniProtKB
+    DB_Object_ID = B3KU87
+DB_Object_Symbol = SLC30A6
+            term = GO:0005385
+  DB_Object_Name = cDNA FLJ45816 fis, clone NT2RP7019682, highly similar to Homo sapiens solute carrier family 30 (zinc transporter), member 6 (SLC30A6), mRNA
+         Synonym = B3KU87_HUMAN|SLC30A6|hCG_23082|IPI01009565|B7WP49
+  DB_Object_Type = protein
+
+              DB = UniProtKB
+    DB_Object_ID = B5MCR8
+DB_Object_Symbol = SLC30A6
+            term = GO:0005385
+  DB_Object_Name = Solute carrier family 30 (Zinc transporter), member 6, isoform CRA_b
+         Synonym = B5MCR8_HUMAN|SLC30A6|hCG_23082|IPI00894292
+  DB_Object_Type = protein
+
+]]></pre>
+<h2>Program: desc</h2>
+print the descendants (children) of a given GO node.
+<h3>Usage</h3>
+<pre>godbmgr desc -f db.sqlite [options] term1 term2 ... termn</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the &sqlite; database</li>
+<li><b>-r</b> (rel) add a go relationship (<url>http://www.obofoundry.org/ro/</url>) (OPTIONAL, default: it adds "is_a").</li>
+<li><b>-t</b> output: xml, goa ,tsv ,acn</li>
+</ul>
+<h3>Examples</h3>
+<h4>Default output</h4>
+<pre><![CDATA[$ godbmgr desc -f database.sqlite "GO:0005385"
+GO:0000006
+GO:0000007
+GO:0005385
+GO:0015341
+GO:0015633
+GO:0016463
+GO:0022883]]></pre>
+<h4>xml/rdf output</h4>
+<pre><![CDATA[
+$ godbmgr desc -f database.sqlite  -t xml "GO:0005385" | head
+
+<go:go xmlns:go='http://www.geneontology.org/dtds/go.dtd#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+ <rdf:RDF>
+<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0000006">
+            <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0000006</go:accession>
+            <go:name xmlns:go="http://www.geneontology.org/dtds/go.dtd#">high affinity zinc uptake transmembrane transporter activity</go:name>
+            <go:definition xmlns:go="http://www.geneontology.org/dtds/go.dtd#">Catalysis of the transfer of a solute or solutes from one side of a membrane to the other according to the reaction: Zn2+(out) = Zn2+(in), probably powered by proton motive force. In high affinity transport the transporter is able to bind the solute even if it is only present at very low concentrations.</go:definition>
+            <go:is_a xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:resource="http://www.geneontology.org/go#GO:0005385"/>
+        </go:term>
+<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0000007">
+            <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0000007</go:accession>
+]]></pre>
+<h4>GOA output</h4>
+<pre><![CDATA[$godbmgr desc -f database.sqlite -t goa  "GO:0005385"
+
+UniProtKB	B3KU87	SLC30A6	GO:0005385	cDNA FLJ45816 fis, clone NT2RP7019682, highly similar to Homo sapiens solute carrier family 30 (zinc transporter), member 6 (SLC30A6), mRNA	B3KU87_HUMAN|SLC30A6|hCG_23082|IPI01009565|B7WP49	protein
+UniProtKB	B5MCR8	SLC30A6	GO:0005385	Solute carrier family 30 (Zinc transporter), member 6, isoform CRA_b	B5MCR8_HUMAN|SLC30A6|hCG_23082|IPI00894292	protein
+(..)
+UniProtKB	Q99726	SLC30A3	GO:0015633	Zinc transporter 3	ZNT3_HUMAN|ZNT3|SLC30A3|IPI00293793|Q8TC03protein
+]]></pre>
+<h4>TSV output</h4>
+<pre><![CDATA[$ godbmgr desc -f database.sqlite  -t tsv "GO:0022857" |\
+    cut -c 1-100 |\
+    head
+#go:accession	go.name	go.def
+GO:0000006	high affinity zinc uptake transmembrane transporter activity	Catalysis of the transfer of
+GO:0000007	low-affinity zinc ion transmembrane transporter activity	Catalysis of the transfer of a s
+GO:0000064	L-ornithine transmembrane transporter activity	Catalysis of the transfer of L-ornithine f
+GO:0000095	S-adenosylmethionine transmembrane transporter activity	Catalysis of the transfer of S-ad
+GO:0000099	sulfur amino acid transmembrane transporter activity	Catalysis of the transfer of sulfur 
+GO:0000100	S-methylmethionine transmembrane transporter activity	Catalysis of the transfer of S-meth
+GO:0000102	L-methionine secondary active transmembrane transporter activity	Catalysis of the transfe
+GO:0000227	oxaloacetate secondary active transmembrane transporter activity	Catalysis of the transfe
+GO:0000269	toxin export channel activity	Enables the energy independent passage of toxins, sized les
+(...)
+]]></pre>
+
+<h2>Program: asc</h2>
+prints the ascendants (parents) of a given node.
+<h3>Usage</h3>
+<pre>godbmgr asc -f db.sqlite [options] term1 term2 ... termn</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the &sqlite; database</li>
+<li><b>-r</b> (rel) add a go relationship (<url>http://www.obofoundry.org/ro/</url>) (OPTIONAL, default: it adds "is_a").</li>
+<li><b>-t</b> output: xml, goa ,tsv ,acn</li>
+</ul>
+<h3>Examples</h3>
+<h4>Default output</h4>
+<pre><![CDATA[$ godbmgr asc -f database.sqlite "GO:0022857"
+GO:0003674
+GO:0005215
+GO:0022857
+all]]></pre>
+<h4>xml/rdf output</h4>
+<pre><![CDATA[
+$ godbmgr asc -f database.sqlite  -t xml "GO:0022857" | head
+
+<go:go xmlns:go='http://www.geneontology.org/dtds/go.dtd#' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+ <rdf:RDF>
+<go:term xmlns:go="http://www.geneontology.org/dtds/go.dtd#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" rdf:about="http://www.geneontology.org/go#GO:0003674">
+            <go:accession xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0003674</go:accession>
+            <go:name xmlns:go="http://www.geneontology.org/dtds/go.dtd#">molecular_function</go:name>
+            <go:synonym xmlns:go="http://www.geneontology.org/dtds/go.dtd#">GO:0005554</go:synonym>
+            <go:synonym xmlns:go="http://www.geneontology.org/dtds/go.dtd#">molecular function</go:synonym>
+            <go:synonym xmlns:go="http://www.geneontology.org/dtds/go.dtd#">molecular function unknown</go:synonym>
+            <go:definition xmlns:go="http://www.geneontology.org/dtds/go.dtd#">Elemental activities, such as catalysis or binding, describing the actions of a gene product at the molecular level. A given gene product may exhibit one or more molecular functions.</go:definition>
+            <go:comment xmlns:go="http://www.geneontology.org/dtds/go.dtd#">Note that, in addition to forming the root of the molecular function ontology, this term is recommended for use for the annotation of gene products whose molecular function is unknown. Note that when this term is used for annotation, it indicates that no information was available about the molecular function of the gene product annotated as of the date the annotation was made; the evidence code ND, no data, is used to indicate this.</go:comment>
+]]></pre>
+<h4>GOA output</h4>
+<pre><![CDATA[$godbmgr desc -f database.sqlite -t goa  "GO:0005385"
+
+UniProtKB	B3KU87	SLC30A6	GO:0005385	cDNA FLJ45816 fis, clone NT2RP7019682, highly similar to Homo sapiens solute carrier family 30 (zinc transporter), member 6 (SLC30A6), mRNA	B3KU87_HUMAN|SLC30A6|hCG_23082|IPI01009565|B7WP49	protein
+UniProtKB	B5MCR8	SLC30A6	GO:0005385	Solute carrier family 30 (Zinc transporter), member 6, isoform CRA_b	B5MCR8_HUMAN|SLC30A6|hCG_23082|IPI00894292	protein
+(..)
+UniProtKB	Q99726	SLC30A3	GO:0015633	Zinc transporter 3	ZNT3_HUMAN|ZNT3|SLC30A3|IPI00293793|Q8TC03protein
+]]></pre>
+<h4>TSV output</h4>
+<pre><![CDATA[$ godbmgr asc -f database.sqlite  -t tsv "GO:0022857"   
+#go:accession	go.name	go.def
+GO:0003674	molecular_function	Elemental activities, such as catalysis or binding, describing the actions of a gene product at the molecular level. A given gene product may exhibit one or more molecular functions.
+GO:0005215	transporter activity	Enables the directed movement of substances (such as macromolecules, small molecules, ions) into, out of or within a cell, or between cells.
+GO:0022857	transmembrane transporter activity	Enables the transfer of a substance from one side of a membrane to the other.
+all	all	.
+]]></pre>
+
+<h2>program goa</h2>
+Annotate a TSV file with the GOA annotation.
+<h3>Usage</h3>
+<pre>godbmgr goa -f db.sqlite [options] (stdin|files)</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the &sqlite; database</li>
+<li><b>-c</b> (column index) REQUIRED. The observed column.</li>
+</ul>
+<h3>Example</h3>
+<pre><![CDATA[$ echo -e "#MyGene\nHello\nNOTCH2" |\
+   godbmgr goa -c 1 -f database.sqlite  |\
+   head -n 4 |\
+   verticalize
+
+>>>	2
+$1	#MyGene               	Hello
+$2	DB                    	.
+$3	DB_Object_ID          	.
+$4	DB_Object_Symbol      	.
+$5	term                  	.
+$6	DB_Object_Name,Synonym	.
+$7	DB_Object_Type        	.
+$8  	???                   	.
+<<<	2
+
+>>>	3
+$1	#MyGene               	NOTCH2
+$2	DB                    	UniProtKB
+$3	DB_Object_ID          	Q04721
+$4	DB_Object_Symbol      	NOTCH2
+$5	term                  	GO:0001709
+$6	DB_Object_Name,Synonym	Neurogenic locus notch homolog protein 2
+$7	DB_Object_Type        	NOTC2_HUMAN|NOTCH2|IPI00297655|Q5T3X7|Q99734|Q9H240
+$8  	???                   	protein
+<<<	3
+
+>>>	4
+$1	#MyGene               	NOTCH2
+$2	DB                    	UniProtKB
+$3	DB_Object_ID          	Q04721
+$4	DB_Object_Symbol      	NOTCH2
+$5	term                  	GO:0004872
+$6	DB_Object_Name,Synonym	Neurogenic locus notch homolog protein 2
+$7	DB_Object_Type        	NOTC2_HUMAN|NOTCH2|IPI00297655|Q5T3X7|Q99734|Q9H240
+$8  	???                   	protein]]></pre>
+<h2>Program: grep</h2>
+filters the line having an identifier (gene...) that is a children of a given GO term.
+<h3>Usage</h3>
+<pre>godbmgr grep -f db.sqlite [options] (stdin|files)</pre>
+<h3>Options</h3>
+<ul>
+<li><b>-f</b> (filename) the &sqlite; database</li>
+<li><b>-c</b> (column index) REQUIRED. The column containing a GO:acn</li>
+<li><b>-v</b> inverse selection</li>
+<li><b>-t</b> (GO:acn) add a GO term in the filter (One is REQUIRED).</li>
+<li><b>-r</b> (rel) add a go relationship  (<url>http://www.obofoundry.org/ro/</url>) (OPTIONAL, default: it adds "is_a").</li>
+</ul>
+<h3>Example</h3>
+<pre><![CDATA[$ 
+$ echo -e "#MyACN\nGO:0003674\nGO:0001618\n" |\
+  godbmgr grep -f database.sqlite -c 1 -t GO:0004872 -t GO:0004879 
+
+#MyACN
+GO:0001618
+$ echo -e "#MyACN\nGO:0003674\nGO:0001618\n" |\
+  godbmgr grep -f database.sqlite -c 1 -t GO:0004872 -t GO:0004879 -v
+
+#MyACN
+GO:0003674]]></pre>
+
+</page>
+
+<page title="ShowProgress" labels="unix" desc="Displays a progress bar on the console">
+Displays a progress bar on the console.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/showprogress]]></pre>
+<h2>Option</h2>
+<ul>
+<li><b>-e</b> (x:int) print every 'x' lines (optional)</li>
+<li><b>-p</b> (string) optional prefix.</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ tr "\0" "\n" < /dev/zero |\
+head -n 100000 |\awk '{for(i=0;i< 10;++i) {print $0,i;}}' |\
+showprogress | grep 8 > /dev/null
+1000000 lines.
+]]></pre>
+</page>
+
+<page title="Casava2Vcf" labels="ngs,casava,vcf" desc="DEPRECATED: Transforms Casava SNPs and INDEL to VCF">
+Transforms Casava SNPs and INDEL to VCF
+<h2>Warning</h2>
+This tool has been poorly designed and it only worked for an old version of Casava. You should really look for another software.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/casava2vcf]]></pre>
+<h2>Usage</h2>
+<pre>casava2vcf *.txt &gt; result.vcf </pre>
+<h2>Example</h2>
+<pre><![CDATA[$ casava2vcf *_indels.txt *_snps.txt
+
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Basecalls mapped to the site but filtered out before genotype calling">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	__SAMPLE__
+chr22.fa	16052167	.	A	AAAAC	365	.	INSERTION=4;DP=5;alt_reads=5;indel_reads=7;other_reads=14;repeat_unit=AAAC;ref_repeat_count=8;indel_repeat_count=9	GT:GQ:DP	0/1:203:5
+(...)
+chr22.fa	51243297	.	A	T	10	.	DP=1;bcalls_used=1;Q_snp=10;max_gt=AT;Q_max_gt=3;max_gt_poly_site=AT;Q_max_gt_poly_site=AT;A_used=0;C_used=0;G_used=0;T_used=1	GT:GQ:DP	0/1:3:0
+]]></pre>
+</page>
+
+<page title="VcfId" labels="ngs,snp,variation,vcf,genomics,snp" desc="fills the ID columns of a VCF using UCSC/snpX">
+&download;
+<h2>Options</h2>
+<ul>
+<li>-t (string) table name default:snp135</li>
+<li>-f limit to first snp.</li>
+<li>--host (mysql host) default:genome-mysql.cse.ucsc.edu</li>
+<li>--user (mysql user) default:genome</li>
+<li>--password (mysql password) default:</li>
+<li>--database (mysql database) default:hg19</li>
+<li>--port (mysql password) default:0</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ cat casava_chr1_snps.txt |\
+casava2vcf |\
+vcfid  --host localhost --user anonymous --port 3316  |\
+grep -v "##" |\
+verticalize
+
+(...)
+>	172
+$1	#CHROM    	chr1
+$2	POS       	601635
+$3	ID        	rs2531322
+$4	REF       	C
+$5	ALT       	A
+$6	QUAL      	16
+$7	FILTER    	.
+$8	INFO      	DP=6;bcalls_used=6;Q_snp=16;max_gt=AC;Q_max_gt=16;max_gt_poly_site=AC;Q_max_gt_poly_site=AC;A_used=2;C_used=4;G_used=0;T_used=0
+$9	FORMAT    	GT:GQ:DP
+$10	__SAMPLE__	0/1:16:6
+<<<	172
+
+>>>	173
+$1	#CHROM    	chr1
+$2	POS       	601841
+$3	ID        	rs148361140,rs406120
+$4	REF       	G
+$5	ALT       	C
+$6	QUAL      	18
+$7	FILTER    	.
+$8	INFO      	DP=4;bcalls_used=4;Q_snp=18;max_gt=CG;Q_max_gt=18;max_gt_poly_site=CG;Q_max_gt_poly_site=CG;A_used=0;C_used=2;G_used=2;T_used=0
+$9	FORMAT    	GT:GQ:DP
+$10	__SAMPLE__	0/1:18:4
+<<<	173
+
+(...)
+]]></pre>
+</page>
+
+<!--
+<page title="TabixServer" labels="bioinformatics,server,cgi,tabix" desc="Tabix files server">
+A CGI-bases server for <a href="http://samtools.sourceforge.net/tabix.shtml">tabix</a> files.
+&download;
+
+
+
+<h2>Example</h3>
+Download some genomics files from the UCSC:
+<pre><![CDATA[$ curl "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz" | gunzip -c > cytoBand.txt
+$ curl - "http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/fishClones.txt.txt.gz" | gunzip -c > fishClones.txt.txt]]></pre>
+Compress and index it with bgzip :
+<pre><![CDATA[$ tabix-0.2.5/bgzip cytoBand.txt
+$ tabix-0.2.5/bgzip chromInfo.txt]]></pre>
+And index the files with <a href="http://samtools.sourceforge.net/tabix.shtml">tabix</a>:
+<pre><![CDATA[$ tabix-0.2.5/tabix -p bed cytoBand.txt.gz 
+$ tabix-0.2.5/tabix -p bed fishClones.txt.txt.gz ]]></pre>
+
+
+Edit the apache2/httpd config <code>/etc/apache2/apache2.conf</code>:
+<pre>sudo nano /etc/apache2/apache2.conf</pre>
+and add the following lines, specify <b>TABIX_SERVER_PATH</b>, the path to the XML file
+<pre><![CDATA[<VirtualHost *:80>
+ServerName localhost
+DocumentRoot /var/www/
+AddHandler cgi-script .cgi .pl 
+SetEnv TABIX_SERVER_PATH /var/www/cgi-bin/tabixserver.xml    
+<Directory /cgi-bin/>
+        AllowOverride None
+        Options ExecCGI -MultiViews +SymLinksIfOwnerMatch
+        Order allow,deny
+        Allow from all    
+</Directory>
+
+</VirtualHost>]]></pre>
+and restart apache:
+<pre>sudo /etc/init.d/apache2 restart</pre>
+</page>
+-->
+
+<page title="VcfEvs" labels="unix,variation,evs,exome,server,annotation,sqlite" desc="Annotates a VCF with the data from exome variant server">
+Annotates a VCF with the data from the <a href="http://evs.gs.washington.edu/EVS/">Exome Variant Server</a> stored in a &sqlite; database.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/vcfevs]]></pre>
+<h2>Creating the SQLITE database</h2>
+The following java program dump all the data as XML from the EVS server:
+<gist id="2604781"/>
+
+Compile and run:
+
+<pre>javac DumpExomeVariantServerData
+java DumpExomeVariantServerData &gt; input.evs.tsv</pre>
+
+Create the  &sqlite; database and insert the data:
+
+<pre><![CDATA[$ sqlite3 evs.sqlite
+sqlite> create table evsData(chrom TEXT NOT NULL,pos INT NOT NULL,xml TEXT NOT NULL);
+sqlite> create index chrompos on evsData(chrom,pos);
+sqlite> .separator "\t";
+sqlite> .import "input.evs.tsv" evsData
+]]></pre>
+
+We can now query this sql database :
+
+<pre><![CDATA[$
+$ sqlite3 evs.sqlite 'select xml from evsData where chrom="1" and pos=69552' | xmllint  --format -
+
+<?xml version="1.0"?>
+<snpList>
+  <positionString>1:69552</positionString>
+  <chrPosition>69552</chrPosition>
+  <alleles>C/G</alleles>
+  <uaAlleleCounts>C=4/G=4644</uaAlleleCounts>
+  <aaAlleleCounts>C=0/G=2944</aaAlleleCounts>
+  <totalAlleleCounts>C=4/G=7588</totalAlleleCounts>
+  <uaMAF>0.0861</uaMAF>
+  <aaMAF>0.0</aaMAF>
+  <totalMAF>0.0527</totalMAF>
+  <avgSampleReadDepth>143</avgSampleReadDepth>
+  <geneList>OR4F5</geneList>
+  <snpFunction>
+    <chromosome>1</chromosome>
+    <position>69552</position>
+    <conservationScore>1.0</conservationScore>
+    <conservationScoreGERP>-0.1</conservationScoreGERP>
+    <snpFxnList>
+      <mrnaAccession>NM_001005484.1</mrnaAccession>
+      <fxnClassGVS>coding-synonymous</fxnClassGVS>
+      <aminoAcids>none</aminoAcids>
+      <proteinPos>154/306</proteinPos>
+      <cdnaPos>462</cdnaPos>
+      <pphPrediction>unknown</pphPrediction>
+      <granthamScore>NA</granthamScore>
+    </snpFxnList>
+    <refAllele>G</refAllele>
+    <ancestralAllele>C</ancestralAllele>
+    <firstRsId>55874132</firstRsId>
+    <secondRsId>0</secondRsId>
+    <filters>SVM</filters>
+    <clinicalLink>unknown</clinicalLink>
+  </snpFunction>
+  <conservationScore>1.0</conservationScore>
+  <conservationScoreGERP>-0.1</conservationScoreGERP>
+  <refAllele>G</refAllele>
+  <altAlleles>C</altAlleles>
+  <ancestralAllele>C</ancestralAllele>
+  <chromosome>1</chromosome>
+  <hasAtLeastOneAccession>true</hasAtLeastOneAccession>
+  <rsIds>rs55874132</rsIds>
+  <filters>SVM</filters>
+  <clinicalLink>unknown</clinicalLink>
+  <dbsnpVersion>dbSNP_129</dbsnpVersion>
+  <uaGenotypeCounts>CC=0/CG=4/GG=2320</uaGenotypeCounts>
+  <aaGenotypeCounts>CC=0/CG=0/GG=1472</aaGenotypeCounts>
+  <totalGenotypeCounts>CC=0/CG=4/GG=3792</totalGenotypeCounts>
+  <onExomeChip>false</onExomeChip>
+  <gwasPubmedIds>unknown</gwasPubmedIds>
+</snpList>]]></pre>
+
+
+<h2>Options</h2>
+<ul>
+<li><b>-f</b>(file) sqlite filename. (REQUIRED).</li>
+<li><b>-c</b> (column-name) limit header to this column name (can be used multiple times)</li>
+<li><b>-a</b> (column-index) column for alternal allele (optional)</li>
+<li><b>-x</b> (column-name) print xml</li>
+</ul>
+<h2>Examples</h2>
+<pre><![CDATA[$
+export LD_LIBRARY_PATH=/path/to/sqlite3/lib #if needed
+
+$ echo -e "#CHROM\tPOS\n1\t69511\n1\t69512\n1\t69552" |\
+vcfevs -f evs.sqlite 
+
+#CHROM	POS	evs.positionString	evs.chrPosition	evs.alleles	evs.uaAlleleCounts	evs.aaAlleleCounts	evs.totalAlleleCounts	evs.uaMAF	evs.aaMAF	evs.totalMAF	evs.avgSampleReadDepth	evs.geneList	evs.conservationScore	evs.conservationScoreGERP	evs.refAllele	evs.altAllelesevs.ancestralAllele	evs.chromosome	evs.hasAtLeastOneAccession	evs.rsIds	evs.filters	evs.clinicalLink	evs.dbsnpVersion	evs.uaGenotypeCounts	evs.aaGenotypeCounts	evs.totalGenotypeCounts	evs.onExomeChip	evs.gwasPubmedIds
+1	69511	1:69511	69511	G/A	G=4235/A=483	G=1707/A=1297	G=5942/A=1780	10.2374	43.1758	23.051	74	OR4F5	1.0	1.1	A	G	G1	true	rs75062661	PASS	unknown	dbSNP_131	GG=1964/GA=307/AA=88	GG=703/GA=301/AA=498	GG=2667/GA=608/AA=586	false	unknown
+1	69512	.	.	.	.	.	.	.	.	.	.	.	.	.	.	.	.	.	.	..	.	.	.	.	.	.	.
+1	69552	1:69552	69552	C/G	C=4/G=4644	C=0/G=2944	C=4/G=7588	0.0861	0.0	0.0527	143	OR4F5	1.0	-0.1	G	C	C1	true	rs55874132	SVM	unknown	dbSNP_129	CC=0/CG=4/GG=2320	CC=0/CG=0/GG=1472	CC=0/CG=4/GG=3792	false	unknown
+
+
+$ echo -e "#CHROM\tPOS\n1\t69511\n1\t69512\n1\t69552" |\
+vcfevs -f ~/WORK/20120506.evs.download/evs.sqlite -c uaMAF 
+#CHROM	POS	evs.uaMAF
+1	69511	10.2374
+1	69512	.
+1	69552	0.0861
+
+
+$ echo -e "#CHROM\tPOS\n1\t69511\n1\t69512\n1\t69552" |\
+vcfevs -f evs.sqlite  -x -c _ | cut -c 1-200
+
+#CHROM	POS	evs.xml
+1	69511	<snpList><positionString>1:69511</positionString><chrPosition>69511</chrPosition><alleles>G/A</alleles><uaAlleleCounts>G=4235/A=483</uaAlleleCounts><aaAlleleCounts>G=1707/A=1297</aaAlleleCount
+1	69512	.
+1	69552	<snpList><positionString>1:69552</positionString><chrPosition>69552</chrPosition><alleles>C/G</alleles><uaAlleleCounts>C=4/G=4644</uaAlleleCounts><aaAlleleCounts>C=0/G=2944</aaAlleleCounts><to
+]]></pre>
+</page>
+
+<page title="VcfNumericFilter" labels="vcf,filter" desc="Filters a VCF-like file on a numeric value">
+Filters a VCF-like file on a numeric value.
+Prints all the data for a given CHROM/POS/REF/ALT if <b>ANY</b> of the observed numeric data falls in the given range.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/vcfnumericfilter]]></pre>
+<h2>Option</h2>
+<ul>
+<li><b>--delim</b> (char) or -d  (char) (delimiter) default:tab</li>
+<li><b>--norefalt</b> : don't look at REF and ALT</li>
+<li><b>--sample</b> SAMPLE column index</li>
+<li><b>--chrom</b> CHROM column index: default 1</li>
+<li><b>--pos</b> POS position column index: default 2</li>
+<li><b>--ref</b> REF reference allele column index: default 4</li>
+<li><b>--alt</b> ALT alternate allele column index: default 5</li>
+<li><b>-c</b> observed column index. REQUIRED.</li>
+<li><b>-m</b> (min-inclusive value) OPTIONAL.</li>
+<li><b>-M</b> (max-inclusive value) OPTIONAL.</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[
+echo -e "1\t100\t.\tA\tT\t1\tSAMPLE1\n1\t100\t.\tA\tT\t50\tSAMPLE2\n1\t100\t.\tA\tT\t50\tSAMPLE3\n1\t200\t.\tG\tT\t1\tSAMPLE1\n1\t200\t.\tG\tT\t5\tSAMPLE2\n1\t200\t.\tG\tT\t5\tSAMPLE3" |\
+vcfnumericfilter  -c 6 
+
+1	100	.	A	T	1	SAMPLE1
+1	100	.	A	T	50	SAMPLE2
+1	100	.	A	T	50	SAMPLE3
+1	200	.	G	T	1	SAMPLE1
+1	200	.	G	T	5	SAMPLE2
+1	200	.	G	T	5	SAMPLE3
+
+$ echo -e "1\t100\t.\tA\tT\t1\tSAMPLE1\n1\t100\t.\tA\tT\t50\tSAMPLE2\n1\t100\t.\tA\tT\t50\tSAMPLE3\n1\t200\t.\tG\tT\t1\tSAMPLE1\n1\t200\t.\tG\tT\t5\tSAMPLE2\n1\t200\t.\tG\tT\t5\tSAMPLE3" |\
+vcfnumericfilter  -c 6 -m 20
+1	100	.	A	T	1	SAMPLE1
+1	100	.	A	T	50	SAMPLE2
+1	100	.	A	T	50	SAMPLE3]]></pre>
+</page>
+
+<page title="TeeC" labels="linux" desc="Tee for counting the rows">
+Equivalent of the linux 'tee' program, but it only counts the number of lines.
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/teec]]></pre>
+<h2>Usage</h2>
+<pre>teec file-count.txt &lt; input &gt; result</pre>
+</page>
+
+
+<page title="BamGrepReads" labels="bam,read,grep,ngs" desc="Search for short-read names in a BAM">
+Search for short-read names in a BAM file. Answer to <a>http://www.biostars.org/post/show/48211</a>.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/bamgrepreads]]></pre>
+<h2>Usage</h2>
+<pre>bamgrepreads -R file.txt [options] (stdin|bam1 bam2 ...)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-R</b>(file) list of reads names (REQUIRED).</li>
+<li><b>-f</b> (int) required flag (OPTIONAL)</li>
+<li><b>-F</b> (int) filtering flag (OPTIONAL)</li>
+<li><b>-e</b> one match per read (goes faster)</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$echo "HTKZQN1_353:6:1103:6755:52161" > list.txt
+$ bamgrepreads -R list.txt -F 4 -e input.bam
+
+HTKZQN1_353:6:1103:6755:52161   163     chr2    10012   254     100M    =      10184    272     AAGACAACCACCCTCACCCTCACCCTCACCCTCACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCAAA    CCBFFFFFHGHHHJJJJJJJJIJJJIJIJJJGIJJIIGGIJJIJIIJGIIIJJJJJHHHHFFFFFEDDCDDDDDDCDDDDDDDDDDDCDBDDDDDDDDDB    AM:i:0  BC:Z:0 XD:Z:CTA2CCTA5A5A5A5A66C SM:i:0  AS:i:425
+]]></pre>
+</page>
+
+<page title="BamNoCoverage" labels="bam,read,grep,ngs,bed" desc="prints the uncovered region in a BAM file">
+Prints the regions uncovered, with a low coverage, in a BAM file.
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/bamnocoverage]]></pre>
+<h2>Usage</h2>
+<pre>bamnocoverage [options] (stdin|bam1 bam2....)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-m</b>(int) min depth (OPTIONAL).</li>
+
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ bamnocoverage -m 10 testchr222.bam | head
+
+chr22	0	14438296	14438296
+chr22	14438297	14512511	74214
+chr22	14512518	14521021	8503
+chr22	14521025	14558541	37516
+chr22	14558544	14558549	5
+chr22	14558566	14558989	423
+chr22	14558995	14558998	3
+chr22	14559007	14747713	188706
+chr22	14747717	15032707	284990
+chr22	15032711	15392372	359661
+
+]]></pre>
+</page>
+
+<page title="AddHeader" labels="unix,utility" desc="inserts a header before a stream">
+Small linux utility inserting a header before a stream.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/addheader]]></pre>
+<h2>Usage</h2>
+<pre>addheader [options] (stdin)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-d</b>(CHAR) delimiter default:tab(OPTIONAL).</li>
+<li><b>-L</b> (CHAR) begin head line with... (default:# )  (optional) .</li>
+<li><b>-c</b> (INTEGER) (STRING) custom column def  (optional) .</li>
+<li><b>-f</b> (FILENAME) (optional) insert this file before header.</li>
+
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ echo -e "A\tG\tC\nA\tazd\tx" |\
+addheader -c 2 HELLO
+
+#$1	HELLO	$3
+A	G	C
+A	azd	x
+
+]]></pre>
+</page>
+
+<page title="FastQGrep" labels="fastq,ngs" desc="search for reads in one ot two (paired) FASTQ files.">
+search for reads in one ot two (paired) FASTQ files."
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/fastqgrep]]></pre>
+<h2>Usage</h2>
+<pre>fastqgrep -R file_of_names.txt [options] (stdin)|(fastq)|(fastq1 fastq2)</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-R</b> file_of_names.txt REQUIRED.</li>
+<li><b>-m</b> allow multiple hits per read  (optional) .</li>
+<li><b>-o1</b> (filename) file out1 OPTIONAL.</li>
+<li><b>-o2</b> (filename) file out2 OPTIONAL.</li>
+</ul>
+<h2>Example</h2>
+<pre><![CDATA[$ $ fastqgrep -R reads.txt  file2.fastq.gz  file1.fastq.gz | head
+@HWI-1KL149:2:C0KR2ACXX:8:2104:4474:86720 2:N:0:TGACAA	@HWI-1KL149:2:C0KR2ACXX:8:2104:4474:86720 1:N:0:TGACAA
+NNNNNTNNNNNNNNNANNNANNNNNNNTNNAANTTNNNNNNNNANNCNANTACNCGTANTNGCTTTNNTNANNACNNTTANATAGATTAGCAATCCTGNAC	AATCTCCTCCACCCCTACTGCCATTACTTTTTTAAAGTGCTAATCACACTATCATCTGTCCCCTTCCAACAAAAAAAAGAAAACCAGAAAAAAGAGTCCAG
++	+
+#####################################################################################################	@<@DFFFFHDHGFIJGGGGJJJJJFIJJJJJCGGIEABFHCGBFHGAHIHCFHEGIEH7=FGHGEHGHEH;EFFDA?=@D299?@B@8>@ABBD<?::>CC
+@HWI-1KL149:2:C0KR2ACXX:8:2104:4417:86728 2:N:0:GCCCAT	@HWI-1KL149:2:C0KR2ACXX:8:2104:4417:86728 1:N:0:GCCCAT
+NNNNNCNNNNNNNNNCNNNANNNNNNNANNATNCANNNNNNNNCNNANANCCCNGCCCNCNACGCGNNTNTNNTANNCTGNACCTCCCCTATGAAGGTNCA	CTTAAGGCAGAGTCAAAAACACAAATAGCTTTCCCTCATTTTTAGTCTAGTAATTCAAACTGAGTTTCAGATTTAGCAGTGTAGATGGATCTATGATAGTA
++	+
+#####################################################################################################	8+=?DBDDDD<ADEEA,AFFIIIF399?E>EEIIEIICDDEED?B9BDBBDD/??D?D)8=8B######################################
+@HWI-1KL149:2:C0KR2ACXX:8:2104:4666:86501 2:N:0:TGACAA	@HWI-1KL149:2:C0KR2ACXX:8:2104:4666:86501 1:N:0:TGACAA
+NNNNNANNNNNNNNNANNNCNNNNNNNCNNAGNAANNNNNNNNCNNANTNCACNAGACNANATTGANNTNANNGANNGGANAAATAGAAAAATCCAAANTT	GTTACTTGATAGCATTGTTCAGTTATTCTATATCTTTACTGACTTTCTGCTTATTTTTTCTATGAAATATTAAGAAATGAGTATAAAATCTCCAATGATAA
+]]></pre>
+</page>
+
+
+<page title="GenomeCoverage" labels="bam,ngs" desc="Computes the mean coverage for each chromosomes">
+Computes the mean coverage for each chromosomes
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/genomecoverage]]></pre>
+<h2>Usage</h2>
+<pre>genomecoverage -f reference.fasta [options] bam1 bam2...</pre>
+<h2>Options</h2>
+<ul>
+<li><b>-f</b> (file) reference genome</li>
+<li><b>-m</b> (int) min mapping quality (OPTIONAL)</li>
+</ul>
+<h2>Example</h2>
+The output is: chrom, chromLength, mean-depth, mean-depth ignoring the unknown ('N') bases.
+<pre><![CDATA[$ genomecoverage -f human.fasta  my.bam
+
+#chrom    length    mean-depth(my.bam)    mean-depth-noN(my.bam)
+1    249250621    28    30
+2    243199373    30    31
+3    198022430    30    31
+4    191154276    31    31
+5    180915260    30    31
+6    171115067    30    31
+7    159138663    30    30
+8    146364022    31    31
+9    141213431    26    30
+10    135534747    30    31
+11    135006516    29    30
+12    133851895    30    30
+13    115169878    26    31
+14    107349540    25    31
+15    102531392    24    30
+16    90354753    28    31
+17    81195210    27    29
+18    78077248    30    31
+19    59128983    25    27
+20    63025520    28    29
+21    48129895    24    33
+22    51304566    18    27
+X    155270560    31    32
+Y    59373566    1    3 
+]]></pre>
+</page>
+
+<page title="BedDepth" labels="bam,ngs" desc="Computes the mean depth for each Bam from a BED">
+Computes the mean depth of a set of BAMs in the regions of a BED.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd varkit/src
+make ../bin/beddepth]]></pre>
+<h2>Usage</h2>
+<pre>beddepth -f bam [options] (stdin|bam)..</pre>
+<h2>Options</h2>
+<ul>
+<li> -f (bam-file) add this bam file. Can be called multiple times</li>
+<li> -m (min-qual uint32) (optional) min SAM record Quality.</li>
+<li> -M (max-qual uint32) (optional) max SAM record Quality.</li>
+<li> -D (min-depth) (optional) min depth.  Can be called multiple times</li>
+<li> -d do NOT discard duplicates</li>
+</ul>
+<h2>Example</h2>
+The output is: chrom, chromLength, mean-depth, mean-depth ignoring the unknown ('N') bases.
+<pre><![CDATA[$ echo -e "seq2\t100\t200\nseq1\t0\t10\nseq2\t1500\t1550" |\
+beddepth -D 5 -D 100 -D 200 -f  sorted.bam -f ex1.bam |\
+verticalize 
+
+
+>>>	2
+$1	#chrom                                	seq2
+$2	start                                 	100
+$3	end                                   	200
+$4	size(sorted.bam)                      	100
+$5	covered[depth:0](sorted.bam)          	100
+$6	percent_covered[depth:0](sorted.bam)  	1
+$7	covered[depth:5](sorted.bam)          	100
+$8	percent_covered[depth:5](sorted.bam)  	1
+$9	covered[depth:100](sorted.bam)        	0
+$10	percent_covered[depth:100](sorted.bam)	0
+$11	covered[depth:200](sorted.bam)        	0
+$12	percent_covered[depth:200](sorted.bam)	0
+$13	min(sorted.bam)                       	18
+$14	max(sorted.bam)                       	93
+$15	median(sorted.bam)                    	57
+$16	mean(sorted.bam)                      	57.27
+$17	size(ex1.bam)                         	100
+$18	covered[depth:0](ex1.bam)             	100
+$19	percent_covered[depth:0](ex1.bam)     	1
+$20	covered[depth:5](ex1.bam)             	100
+$21	percent_covered[depth:5](ex1.bam)     	1
+$22	covered[depth:100](ex1.bam)           	0
+$23	percent_covered[depth:100](ex1.bam)   	0
+$24	covered[depth:200](ex1.bam)           	0
+$25	percent_covered[depth:200](ex1.bam)   	0
+$26	min(ex1.bam)                          	6
+$27	max(ex1.bam)                          	31
+$28	median(ex1.bam)                       	19
+$29	mean(ex1.bam)                         	19.09
+<<<	2
+
+>>>	3
+$1	#chrom                                	seq1
+$2	start                                 	0
+$3	end                                   	10
+$4	size(sorted.bam)                      	10
+$5	covered[depth:0](sorted.bam)          	10
+$6	percent_covered[depth:0](sorted.bam)  	1
+$7	covered[depth:5](sorted.bam)          	8
+$8	percent_covered[depth:5](sorted.bam)  	0.8
+$9	covered[depth:100](sorted.bam)        	0
+$10	percent_covered[depth:100](sorted.bam)	0
+$11	covered[depth:200](sorted.bam)        	0
+$12	percent_covered[depth:200](sorted.bam)	0
+$13	min(sorted.bam)                       	3
+$14	max(sorted.bam)                       	15
+$15	median(sorted.bam)                    	12
+$16	mean(sorted.bam)                      	9.3
+$17	size(ex1.bam)                         	10
+$18	covered[depth:0](ex1.bam)             	10
+$19	percent_covered[depth:0](ex1.bam)     	1
+$20	covered[depth:5](ex1.bam)             	2
+$21	percent_covered[depth:5](ex1.bam)     	0.2
+$22	covered[depth:100](ex1.bam)           	0
+$23	percent_covered[depth:100](ex1.bam)   	0
+$24	covered[depth:200](ex1.bam)           	0
+$25	percent_covered[depth:200](ex1.bam)   	0
+$26	min(ex1.bam)                          	1
+$27	max(ex1.bam)                          	5
+$28	median(ex1.bam)                       	4
+$29	mean(ex1.bam)                         	3.1
+<<<	3
+
+>>>	4
+$1	#chrom                                	seq2
+$2	start                                 	1500
+$3	end                                   	1550
+$4	size(sorted.bam)                      	50
+$5	covered[depth:0](sorted.bam)          	50
+$6	percent_covered[depth:0](sorted.bam)  	1
+$7	covered[depth:5](sorted.bam)          	50
+$8	percent_covered[depth:5](sorted.bam)  	1
+$9	covered[depth:100](sorted.bam)        	33
+$10	percent_covered[depth:100](sorted.bam)	0.66
+$11	covered[depth:200](sorted.bam)        	0
+$12	percent_covered[depth:200](sorted.bam)	0
+$13	min(sorted.bam)                       	45
+$14	max(sorted.bam)                       	129
+$15	median(sorted.bam)                    	114
+$16	mean(sorted.bam)                      	97.02
+$17	size(ex1.bam)                         	50
+$18	covered[depth:0](ex1.bam)             	50
+$19	percent_covered[depth:0](ex1.bam)     	1
+$20	covered[depth:5](ex1.bam)             	50
+$21	percent_covered[depth:5](ex1.bam)     	1
+$22	covered[depth:100](ex1.bam)           	0
+$23	percent_covered[depth:100](ex1.bam)   	0
+$24	covered[depth:200](ex1.bam)           	0
+$25	percent_covered[depth:200](ex1.bam)   	0
+$26	min(ex1.bam)                          	15
+$27	max(ex1.bam)                          	43
+$28	median(ex1.bam)                       	38
+$29	mean(ex1.bam)                         	32.34
+<<<	4
+
+
+]]></pre>
+</page>
+
+<page title="BamStats04" labels="bam,ngs" desc="Computes a statistics about the fraction of covered bases in a Bam.">
+Computes a statistics about the fraction of covered bases in a Bam.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd variationtoolkit/src
+make ../bin/bamstats04]]></pre>
+<h2>Usage</h2>
+<pre>bamstats04 [options]  -b file.bed file1.bam file2.bam ... fileN.bam</pre>
+<h2>Options</h2>
+<ul>
+<li> -m (min-qual int) (optional) min SAM record Quality.</li>
+<li> -M (max-qual int) (optional) max SAM record Quality.</li>
+<li> -b (bedfile) required.</li>
+<li> -g (groupid) optional.</li>
+<li> -d do NOT dicard reads marked as duplicates.</li>
+<li> --bin-max (int) max observed depth default:200</li>
+<li> --bin-step (int) category/depth step:10</li>
+<li> --cumulative (if coverage=100, then increase each bin from 0 to 100)</li>
+<li> -p print percentage instead of count</li>
+
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[$ bamstats04 -g mygroupid -p -b  my.bed my.bam |\
+  verticalize 
+
+>>>	2
+$1	#filename  	my.bam
+$2	total-bases	1338720
+$3	group-id   	mygroupid
+$4	[0-10[     	21.6465
+$5	[10-20[    	8.33647
+$6	[20-30[    	6.69251
+$7	[30-40[    	5.83699
+$8	[40-50[    	5.07828
+$9	[50-60[    	4.48645
+$10	[60-70[    	4.14956
+$11	[70-80[    	3.6009
+$12	[80-90[    	3.21912
+$13	[90-100[   	3.14248
+$14	[100-110[  	2.68988
+$15	[110-120[  	2.49074
+$16	[120-130[  	2.42142
+$17	[130-140[  	2.04322
+$18	[140-150[  	2.04554
+$19	[150-160[  	1.75115
+$20	[160-170[  	1.69154
+$21	[170-180[  	1.52168
+$22	[180-190[  	1.46409
+$23	[190-200[  	1.32769
+$24	[200-all[  	14.3638
+<<<	2
+
+]]></pre>
+</page>
+
+
+<page title="BamStats01" labels="bam,ngs" desc="Computes some statistics about the reads in a Bam.">
+Computes some statistics about the reads in a Bam.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd variationtoolkit/src
+make ../bin/bamstats01]]></pre>
+<h2>Usage</h2>
+<pre>bamstats01 [options] (stdin|file1.bam file2.bam ... fileN.bam)</pre>
+<h2>Options</h2>
+<ul>
+
+<li> -b (bedfile) optional.</li>
+<li> -g (groupid) optional.</li>
+
+
+</ul>
+<h2>Example</h2>
+<ul>
+<li>all: all reads</li>
+<li>q30: reads having a quality &gt; 30</li>
+<li>mapped: reads mapped on the reference</li>
+<li>mappedproperpair: reads in proper pair</li>
+<li>mappeddup: reads mapped on the reference and marked as duplicate</li>
+<li>mappedbed: reads mapped in target</li>
+<li>mappedbed30: reads mapped in target having a quality &gt; 30</li>
+<li>mappedbeddup: reads mapped int target and marked as duplicate</li>
+</ul>
+<pre><![CDATA[$ bamstats01 -b capture.bed  file1.bam file2.bam file3.bam file4.bam
+
+#BAM	all	q30	mapped	mappedproperpair	mappeddup	mappedbed	mappedbedq30	mappedbeddup
+file1.bam	118802226	113879690	118083439	115271815	69951710	81979191	80349586	49112045
+file2.bam	129023584	123865417	128474569	126954981	81926541	87948491	86093108	56540705
+file3.bam	192392854	183316380	190793205	187733660	133590003	124523963	122117063	87770525
+file4.bam	142838162	137089152	142180885	141085425	85571616	98484535	96465031	59782134
+
+
+]]></pre>
+
+<h2>Creating a graph with R</h2>
+<pre><![CDATA[pdf("hist.pdf",paper="A4r")
+T<-read.delim("output-of-bamstats01.tsv",header=T,sep="\t",row.names=1)
+barplot(as.matrix(t(T)),beside=TRUE,col=rainbow(8),las=2,cex.names=0.8,legend=colnames(T))
+dev.off()']]></pre>
+<img src="http://variationtoolkit.googlecode.com/svn/wiki/bamstats01.jpg"/>
+</page>
+
+<page title="BamStats05" labels="bam,ngs" desc=" Depth of coverage for each bases for one or more BAM">
+Depth of coverage for each bases for one or more BAM. It's slow and takes some memory, but it works fine.
+&download;
+<h2>Compilation</h2>
+<pre><![CDATA[$ cd variationtoolkit/src
+make ../bin/bamstats05]]></pre>
+<h2>Usage</h2>
+<pre>bamstats05 [options] (stdin|file1.bam file2.bam ... fileN.bam)</pre>
+<h2>Options</h2>
+<ul>
+
+
+<li> -m (min-qual uint32) (optional) min SAM record Quality.</li>
+<li> -M (max-qual uint32) (optional) max SAM record Quality.</li>
+<li> -b (bedfile) required.</li>
+<li> -g split by group (optional).</li>
+<li> -d do NOT dicard reads marked as duplicates.</li>
+
+</ul>
+<h2>Example</h2>
+
+<pre><![CDATA[$ bamstats05 -g -b target.bed *.bam
+#CHROM	POS	file1.bam : idp11184	file1..bam : idp8320	file2.bam : idp653008	file2.bam : idp655904	file3.bam : idp816976	file3.bam : idp819872	file4.bam : idp15056	file4.bam : idp17920	file5.bam : idp35264	file5.bam : idp38128
+chrX	480532	206	221	2	1	287	280	92	104	2	0
+chrX	480533	206	221	2	1	287	283	92	104	2	0
+chrX	480534	206	221	2	1	287	284	92	104	2	0
+chrX	480535	206	221	2	1	287	284	92	104	2	0
+chrX	480536	206	221	2	1	287	284	92	104	2	0
+chrX	480537	206	221	2	1	287	284	92	104	2	0
+chrX	480538	206	221	2	1	287	284	92	104	2	0
+chrX	480539	206	221	2	1	287	284	92	104	2	0
+chrX	480540	206	221	2	1	287	284	92	104	2	0
+chrX	480541	206	221	2	1	287	284	92	104	2	0
+chrX	480542	206	221	2	1	287	284	92	104	2	0
+chrX	480543	206	222	2	1	287	284	92	104	2	0
+chrX	480544	206	222	2	1	287	284	92	104	2	0
+chrX	480545	206	222	2	1	287	284	92	104	2	0
+chrX	480546	206	222	2	1	287	284	92	104	2	0
+chrX	480547	206	222	2	1	287	284	92	104	2	0
+chrX	480548	206	222	2	1	287	284	92	104	2	0
+chrX	480549	206	222	2	1	287	284	92	104	2	0
+chrX	480550	206	222	2	1	287	284	92	104	2	0
+chrX	480551	206	222	2	1	287	284	92	104	2	0
+chrX	480552	206	222	2	1	287	284	92	104	2	0
+chrX	480553	206	222	2	1	287	284	92	104	2	0
+chrX	480554	206	222	2	1	287	284	92	104	2	0
+chrX	480555	206	222	2	1	287	284	92	104	2	0
+chrX	480556	206	222	2	1	287	284	92	104	2	0
+chrX	480557	206	222	2	1	287	284	92	104	2	0
+chrX	480558	206	222	2	1	287	284	92	104	2	0
+chrX	480559	206	222	2	1	287	284	92	104	2	0
+chrX	480560	206	222	2	1	287	284	92	104	2	0
+chrX	480561	206	222	2	1	287	284	92	104	2	0
+chrX	480562	206	222	2	1	287	284	92	104	2	0
+chrX	480563	206	222	2	1	287	284	92	104	2	0
+chrX	480564	206	222	2	1	287	284	92	104	2	0
+chrX	480565	206	222	2	1	287	284	92	104	2	0
+chrX	480566	206	222	2	1	287	284	92	104	2	0
+chrX	480567	206	222	2	1	287	284	92	104	2	0
+chrX	480568	206	222	2	1	287	284	92	104	2	0
+chrX	480569	206	222	2	1	287	284	92	104	2	0
+chrX	480570	206	222	2	1	287	284	92	104	2	0
+chrX	480571	206	222	2	1	287	284	92	104	2	0
+chrX	480572	206	222	2	1	287	284	92	104	2	0
+chrX	480573	206	222	2	1	287	284	92	104	2	0
+chrX	480574	206	222	2	1	287	285	92	104	2	0
+chrX	480575	206	222	2	1	287	285	92	104	2	0
+chrX	480576	206	222	2	1	287	285	92	104	2	0
+chrX	480577	206	222	2	1	287	285	92	104	2	0
+chrX	480578	206	222	2	1	287	285	92	104	2	0
+chrX	480579	206	222	2	1	287	285	92	104	2	0
+chrX	480580	206	222	2	1	287	285	92	104	2	0
+chrX	480581	206	222	2	1	287	285	92	104	2	0
+chrX	480582	206	222	2	1	287	285	92	104	2	0
+chrX	480583	206	222	2	1	287	285	92	104	2	0
+chrX	480584	206	222	2	1	287	285	92	104	2	0
+chrX	480585	206	222	2	1	287	285	92	104	2	0
+chrX	480586	206	222	2	1	287	285	92	104	2	0
+(...)]]></pre>
+
+<h3>Example: inserting and querying with sqlite3 and awk</h3>.
+The following awk script was made for a file created using the <b>paste</b> command on multiple output of bamstats05.
+<pre><![CDATA[BEGIN	{
+	FS="[	]";
+	printf("begin transaction;");
+	printf("create table GID(id int unique,bam varchar(150),grp varchar(50));\n");
+	printf("create index GIDIDX1 on GID(bam);\n");
+	printf("create index GIDIDX2 on GID(grp);\n");
+	printf("create table BASES(chrom varchar(20),pos int,gid int,total int );\n");
+	printf("create index BASESIDX1 on BASES(gid);\n");
+	}
+
+NR==1	{
+	ncols=split($0,header);
+	for(i=1;i<= ncols;++i)
+		{
+		if(header[i]=="POS" || header[i]=="#CHROM") continue;
+		split(header[i],tokens,"[ ]");
+		printf("insert into GID(id,bam,grp) values (%d,'%s','%s');\n",i,tokens[1],tokens[3]);
+		}
+	next;
+	}
+
+	{
+	for(i=1;i<= NF;++i)
+		{
+		if(header[i]=="POS" || header[i]=="#CHROM") continue;
+		printf("insert into BASES(chrom,pos,gid,total) values ('%s',%s,%d,%s);\n",$1,$2,i,$i);
+		}
+	}
+	
+END	{
+	printf("end;\n");
+	}
+
+]]></pre>
+insert into sqlite3:
+<pre>cat bamstats05.output.tsv |awk -f haloplex.awk | sqlite3 file.sql</pre>
+and query:
+<pre>$ sqlite3 file.sql 'select sum(BASES.total) from BASES,GID where BASES.gid=GID.id and GID.bam="file001.bam";'</pre>
+
+</page>
+
+
+</documentation>

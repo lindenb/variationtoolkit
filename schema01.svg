@@ -1,0 +1,765 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   width="800"
+   height="500"
+   viewBox="0 0 20040 12690"
+   id="svg2"
+   style="fill-rule:evenodd"
+   inkscape:version="0.48.2 r9819"
+   sodipodi:docname="schema01.svg">
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="955"
+     inkscape:window-height="609"
+     id="namedview157"
+     showgrid="false"
+     inkscape:zoom="0.82"
+     inkscape:cx="300.04804"
+     inkscape:cy="270.98634"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg2" />
+  <metadata
+     id="metadata345">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs4">
+    <font
+       horiz-origin-x="0"
+       horiz-origin-y="0"
+       horiz-adv-x="2048"
+       vert-origin-x="45"
+       vert-origin-y="90"
+       vert-adv-y="90"
+       id="EmbeddedFont_1" />
+  </defs>
+  <g
+     transform="matrix(-1,0,0,-1,19002.122,8829.7284)"
+     id="g319-2"
+     style="fill-rule:evenodd;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none;visibility:visible">
+    <g
+       id="g321-8"
+       style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+      <g
+         id="g323-2"
+         style="fill:none;stroke:#000000;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+        <path
+           inkscape:connector-curvature="0"
+           d="m 8239,4048 -1396,0 0,1905 -1038,0"
+           id="path325-9"
+           style="fill:none;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none" />
+      </g>
+      <g
+         id="g327-9"
+         style="fill:#000000;stroke:none">
+        <path
+           inkscape:connector-curvature="0"
+           d="m 5445,5953 450,150 0,-300 -450,150 z"
+           id="path329-6" />
+      </g>
+    </g>
+  </g>
+  <g
+     transform="scale(0.9282075,0.45418755)"
+     id="Default"
+     style="visibility:visible">
+    <g
+       id="g42"
+       style="fill:none;stroke:none">
+      <rect
+         width="21590"
+         height="27940"
+         x="0"
+         y="0"
+         id="rect44" />
+    </g>
+  </g>
+  <g
+     transform="matrix(0.6395806,0,0,0.6395806,15837.664,10022.199)"
+     id="g47"
+     style="visibility:visible">
+    <g
+       id="g49">
+      <g
+         id="g51"
+         style="fill:#cfe7e5;stroke:none">
+        <path
+           d="m 2143,2143 4065,0 0,1524 -4065,0 0,-1524 0,0 z m 0,0 0,0 z m 4065,1525 0,0 z"
+           id="path53" />
+      </g>
+      <g
+         id="g55"
+         style="fill:none;stroke:#808080">
+        <path
+           d="m 2143,2143 4065,0 0,1524 -4065,0 0,-1524 0,0"
+           id="path57"
+           style="fill:none" />
+        <path
+           d="m 2143,2143 0,0"
+           id="path59"
+           style="fill:none" />
+        <path
+           d="m 6208,3668 0,0"
+           id="path61"
+           style="fill:none" />
+      </g>
+      <g
+         id="g63"
+         style="font-size:635px;font-weight:700;font-family:Liberation Sans embedded">
+        <g
+           id="g65"
+           style="fill:#3c3c3c;stroke:none">
+          <text
+             id="text67">
+            <tspan
+               x="3299 3828 4252 4594"
+               y="3126"
+               id="tspan69">META</tspan>
+          </text>
+        </g>
+        <g
+           id="g71"
+           style="fill:none;stroke:none">
+          <rect
+             width="4065"
+             height="1525"
+             x="2143"
+             y="2143"
+             id="rect73" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g75"
+     style="visibility:visible">
+    <g
+       id="g77">
+      <g
+         id="g79"
+         style="fill:#cfe7e5;stroke:none">
+        <path
+           d="m 3286,11414 4065,0 0,1524 -4065,0 0,-1524 0,0 z m 0,0 0,0 z m 4065,1525 0,0 z"
+           id="path81" />
+      </g>
+      <g
+         id="g83"
+         style="fill:none;stroke:#808080">
+        <path
+           d="m 3286,11414 4065,0 0,1524 -4065,0 0,-1524 0,0"
+           id="path85"
+           style="fill:none" />
+        <path
+           d="m 3286,11414 0,0"
+           id="path87"
+           style="fill:none" />
+        <path
+           d="m 7351,12939 0,0"
+           id="path89"
+           style="fill:none" />
+      </g>
+      <g
+         id="g91"
+         style="font-size:635px;font-weight:700;font-family:Liberation Sans embedded">
+        <g
+           id="g93"
+           style="fill:#3c3c3c;stroke:none">
+          <text
+             id="text95">
+            <tspan
+               x="3619 3996 4453 4910 5088 5499 5888 6066 6561"
+               y="12397"
+               id="tspan97">VARIATION</tspan>
+          </text>
+        </g>
+        <g
+           id="g99"
+           style="fill:none;stroke:none">
+          <rect
+             width="4065"
+             height="1525"
+             x="3286"
+             y="11414"
+             id="rect101" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g103"
+     style="visibility:visible">
+    <g
+       id="g105">
+      <g
+         id="g107"
+         style="fill:#cfe7e5;stroke:none">
+        <path
+           d="m 1381,5191 4065,0 0,1524 -4065,0 0,-1524 0,0 z m 0,0 0,0 z m 4065,1525 0,0 z"
+           id="path109" />
+      </g>
+      <g
+         id="g111"
+         style="fill:none;stroke:#808080">
+        <path
+           d="m 1381,5191 4065,0 0,1524 -4065,0 0,-1524 0,0"
+           id="path113"
+           style="fill:none" />
+        <path
+           d="m 1381,5191 0,0"
+           id="path115"
+           style="fill:none" />
+        <path
+           d="m 5446,6716 0,0"
+           id="path117"
+           style="fill:none" />
+      </g>
+      <g
+         id="g119"
+         style="font-size:635px;font-weight:700;font-family:Liberation Sans embedded">
+        <g
+           id="g121"
+           style="fill:#3c3c3c;stroke:none">
+          <text
+             id="text123">
+            <tspan
+               x="2088 2511 2969 3358 3747 3925 4315"
+               y="6174"
+               id="tspan125">VCFFILE</tspan>
+          </text>
+        </g>
+        <g
+           id="g127"
+           style="fill:none;stroke:none">
+          <rect
+             width="4065"
+             height="1525"
+             x="1381"
+             y="5191"
+             id="rect129" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g131"
+     style="visibility:visible">
+    <g
+       id="g133">
+      <g
+         id="g135"
+         style="fill:#cfe7e5;stroke:none">
+        <path
+           d="m 8239,3286 4065,0 0,1524 -4065,0 0,-1524 0,0 z m 0,0 0,0 z m 4065,1525 0,0 z"
+           id="path137" />
+      </g>
+      <g
+         id="g139"
+         style="fill:none;stroke:#808080">
+        <path
+           d="m 8239,3286 4065,0 0,1524 -4065,0 0,-1524 0,0"
+           id="path141"
+           style="fill:none" />
+        <path
+           d="m 8239,3286 0,0"
+           id="path143"
+           style="fill:none" />
+        <path
+           d="m 12304,4811 0,0"
+           id="path145"
+           style="fill:none" />
+      </g>
+      <g
+         id="g147"
+         style="font-size:635px;font-weight:700;font-family:Liberation Sans embedded">
+        <g
+           id="g149"
+           style="fill:#3c3c3c;stroke:none">
+          <text
+             id="text151">
+            <tspan
+               x="8760 9183 9641 10030 10559 10983 11325"
+               y="4269"
+               id="tspan153">VCFMETA</tspan>
+          </text>
+        </g>
+        <g
+           id="g155"
+           style="fill:none;stroke:none">
+          <rect
+             width="4065"
+             height="1525"
+             x="8239"
+             y="3286"
+             id="rect157" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g159"
+     style="visibility:visible">
+    <g
+       id="g161">
+      <g
+         id="g163"
+         style="fill:#cfe7e5;stroke:none">
+        <path
+           d="m 14081,2778 4065,0 0,1524 -4065,0 0,-1524 0,0 z m 0,0 0,0 z m 4065,1525 0,0 z"
+           id="path165" />
+      </g>
+      <g
+         id="g167"
+         style="fill:none;stroke:#808080">
+        <path
+           d="m 14081,2778 4065,0 0,1524 -4065,0 0,-1524 0,0"
+           id="path169"
+           style="fill:none" />
+        <path
+           d="m 14081,2778 0,0"
+           id="path171"
+           style="fill:none" />
+        <path
+           d="m 18146,4303 0,0"
+           id="path173"
+           style="fill:none" />
+      </g>
+      <g
+         id="g175"
+         style="font-size:635px;font-weight:700;font-family:Liberation Sans embedded">
+        <g
+           id="g177"
+           style="fill:#3c3c3c;stroke:none">
+          <text
+             id="text179">
+            <tspan
+               x="14790 15213 15671 16200 16623 17013"
+               y="3761"
+               id="tspan181">SAMPLE</tspan>
+          </text>
+        </g>
+        <g
+           id="g183"
+           style="fill:none;stroke:none">
+          <rect
+             width="4065"
+             height="1525"
+             x="14081"
+             y="2778"
+             id="rect185" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g187"
+     style="visibility:visible">
+    <g
+       id="g189">
+      <g
+         id="g191"
+         style="fill:#cfe7e5;stroke:none">
+        <path
+           d="m 7731,7731 4065,0 0,1524 -4065,0 0,-1524 0,0 z m 0,0 0,0 z m 4065,1525 0,0 z"
+           id="path193" />
+      </g>
+      <g
+         id="g195"
+         style="fill:none;stroke:#808080">
+        <path
+           d="m 7731,7731 4065,0 0,1524 -4065,0 0,-1524 0,0"
+           id="path197"
+           style="fill:none" />
+        <path
+           d="m 7731,7731 0,0"
+           id="path199"
+           style="fill:none" />
+        <path
+           d="m 11796,9256 0,0"
+           id="path201"
+           style="fill:none" />
+      </g>
+      <g
+         id="g203"
+         style="font-size:635px;font-weight:700;font-family:Liberation Sans embedded">
+        <g
+           id="g205"
+           style="fill:#3c3c3c;stroke:none">
+          <text
+             id="text207">
+            <tspan
+               x="8351 8774 9232 9621 10078 10574"
+               y="8714"
+               id="tspan209">VCFROW</tspan>
+          </text>
+        </g>
+        <g
+           id="g211"
+           style="fill:none;stroke:none">
+          <rect
+             width="4065"
+             height="1525"
+             x="7731"
+             y="7731"
+             id="rect213" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g215"
+     style="visibility:visible">
+    <g
+       id="g217">
+      <g
+         id="g219"
+         style="fill:#cfe7e5;stroke:none">
+        <path
+           d="m 14334,8874 5208,0 0,1524 -5208,0 0,-1524 0,0 z m 0,0 0,0 z m 5208,1525 0,0 z"
+           id="path221" />
+      </g>
+      <g
+         id="g223"
+         style="fill:none;stroke:#808080">
+        <path
+           d="m 14334,8874 5208,0 0,1524 -5208,0 0,-1524 0,0"
+           id="path225"
+           style="fill:none" />
+        <path
+           d="m 14334,8874 0,0"
+           id="path227"
+           style="fill:none" />
+        <path
+           d="m 19542,10399 0,0"
+           id="path229"
+           style="fill:none" />
+      </g>
+      <g
+         id="g231"
+         style="font-size:635px;font-weight:700;font-family:Liberation Sans embedded">
+        <g
+           id="g233"
+           style="fill:#3c3c3c;stroke:none">
+          <text
+             id="text235">
+            <tspan
+               x="14766 15189 15647 16036 16493 16989 17590 17767 18225 18614"
+               y="9857"
+               id="tspan237">VCFROWINFO</tspan>
+          </text>
+        </g>
+        <g
+           id="g239"
+           style="fill:none;stroke:none">
+          <rect
+             width="5208"
+             height="1525"
+             x="14335"
+             y="8874"
+             id="rect241" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g243"
+     style="visibility:visible">
+    <g
+       id="g245">
+      <g
+         id="g247"
+         style="fill:#cfe7e5;stroke:none">
+        <path
+           d="m 14462,6588 4065,0 0,1524 -4065,0 0,-1524 0,0 z m 0,0 0,0 z m 4065,1525 0,0 z"
+           id="path249" />
+      </g>
+      <g
+         id="g251"
+         style="fill:none;stroke:#808080">
+        <path
+           d="m 14462,6588 4065,0 0,1524 -4065,0 0,-1524 0,0"
+           id="path253"
+           style="fill:none" />
+        <path
+           d="m 14462,6588 0,0"
+           id="path255"
+           style="fill:none" />
+        <path
+           d="m 18527,8113 0,0"
+           id="path257"
+           style="fill:none" />
+      </g>
+      <g
+         id="g259"
+         style="font-size:635px;font-weight:700;font-family:Liberation Sans embedded">
+        <g
+           id="g261"
+           style="fill:#3c3c3c;stroke:none">
+          <text
+             id="text263">
+            <tspan
+               x="15013 15436 15894 16283 16740 17197 17587"
+               y="7571"
+               id="tspan265">VCFCALL</tspan>
+          </text>
+        </g>
+        <g
+           id="g267"
+           style="fill:none;stroke:none">
+          <rect
+             width="4065"
+             height="1525"
+             x="14462"
+             y="6588"
+             id="rect269" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g271"
+     style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none;visibility:visible">
+    <g
+       id="g273"
+       style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+      <g
+         id="g275"
+         style="fill:none;stroke:#000000;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+        <path
+           d="m 14335,9636 -1270,0 0,-1143 -910,0"
+           id="path277"
+           style="fill:none;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none" />
+      </g>
+      <g
+         id="g279"
+         style="fill:#000000;stroke:none">
+        <path
+           d="m 11795,8493 450,150 0,-300 -450,150 z"
+           id="path281" />
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g283"
+     style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none;visibility:visible">
+    <g
+       id="g285"
+       style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+      <g
+         id="g287"
+         style="fill:none;stroke:#000000;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+        <path
+           d="m 14462,7350 -1333,0 0,1143 -974,0"
+           id="path289"
+           style="fill:none;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none" />
+      </g>
+      <g
+         id="g291"
+         style="fill:#000000;stroke:none">
+        <path
+           d="m 11795,8493 450,150 0,-300 -450,150 z"
+           id="path293" />
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g295"
+     style="visibility:visible">
+    <g
+       id="g297">
+      <g
+         id="g299"
+         style="fill:none;stroke:#000000">
+        <path
+           d="m 7731,8493 -4318,0 0,-1418"
+           id="path301"
+           style="fill:none;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none" />
+      </g>
+      <g
+         id="g303"
+         style="fill:#000000;stroke:none">
+        <path
+           d="m 3413,6715 -150,450 300,0 -150,-450 z"
+           id="path305" />
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g307"
+     style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none;visibility:visible">
+    <g
+       id="g309"
+       style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+      <g
+         id="g311"
+         style="fill:none;stroke:#000000;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+        <path
+           d="m 16494,6588 0,-1142 2153,0 0,-1906 -142,0"
+           id="path313"
+           style="fill:none;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none" />
+      </g>
+      <g
+         id="g315"
+         style="fill:#000000;stroke:none">
+        <path
+           d="m 18145,3540 450,150 0,-300 -450,150 z"
+           id="path317" />
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g319"
+     style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none;visibility:visible">
+    <g
+       id="g321"
+       style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+      <g
+         id="g323"
+         style="fill:none;stroke:#000000;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+        <path
+           d="m 8239,4048 -1396,0 0,1905 -1038,0"
+           id="path325"
+           style="fill:none;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none" />
+      </g>
+      <g
+         id="g327"
+         style="fill:#000000;stroke:none">
+        <path
+           d="m 5445,5953 450,150 0,-300 -450,150 z"
+           id="path329" />
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-550,-1100)"
+     id="g331"
+     style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none;visibility:visible">
+    <g
+       id="g333"
+       style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+      <g
+         id="g335"
+         style="fill:none;stroke:#000000;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+        <path
+           d="m 9763,9255 0,2921 -2053,0"
+           id="path337"
+           style="fill:none;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none" />
+      </g>
+      <g
+         id="g339"
+         style="fill:#000000;stroke:none">
+        <path
+           d="m 7350,12176 450,150 0,-300 -450,150 z"
+           id="path341" />
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-557.96681,-720.50881)"
+     id="g319-0"
+     style="fill-rule:evenodd;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none;visibility:visible">
+    <g
+       id="g321-9"
+       style="stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+      <g
+         id="g323-6"
+         style="fill:none;stroke:#000000;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none">
+        <path
+           inkscape:connector-curvature="0"
+           d="M 13435.61,5953 5805,5953"
+           id="path325-3"
+           style="fill:none;stroke-width:87.2818222;stroke-miterlimit:4;stroke-dasharray:none"
+           sodipodi:nodetypes="cc" />
+      </g>
+      <g
+         id="g327-8"
+         style="fill:#000000;stroke:none">
+        <path
+           inkscape:connector-curvature="0"
+           d="m 5445,5953 450,150 0,-300 -450,150 z"
+           id="path329-5" />
+      </g>
+    </g>
+  </g>
+  <g
+     transform="translate(-5753.0366,1628.3536)"
+     id="g159-9"
+     style="fill-rule:evenodd;visibility:visible">
+    <path
+       style="fill:#cfe7e5;stroke:none"
+       inkscape:connector-curvature="0"
+       d="m 14081,2778 4807.829,0 0,1524 -4807.829,0 0,-1524 0,0 z m 0,0 0,0 z m 4807.829,1525 0,0 z"
+       id="path165-8" />
+    <path
+       inkscape:connector-curvature="0"
+       d="m 14081,2778 4065,0 0,1524 -4065,0 0,-1524 0,0"
+       id="path169-0"
+       style="fill:none;stroke:#808080" />
+    <path
+       inkscape:connector-curvature="0"
+       d="m 14081,2778 0,0"
+       id="path171-3"
+       style="fill:none;stroke:#808080" />
+    <path
+       inkscape:connector-curvature="0"
+       d="m 18146,4303 0,0"
+       id="path173-0"
+       style="fill:none;stroke:#808080" />
+    <text
+       style="font-size:635px;font-weight:700;fill:#3c3c3c;stroke:none;font-family:Liberation Sans embedded"
+       id="text179-4"
+       x="-422.1745"
+       y="-61.902435">
+      <tspan
+         id="tspan181-4"
+         y="3699.0974"
+         x="14367.826 14790.826 15248.826 15777.826 16200.826 16590.826"
+         style="font-size:558.35998535px">SAMPLE2FILE</tspan>
+    </text>
+    <rect
+       style="font-size:635px;font-weight:700;fill:none;stroke:none;font-family:Liberation Sans embedded"
+       id="rect185-6"
+       y="2778"
+       x="14081"
+       height="1525"
+       width="4065" />
+  </g>
+</svg>
